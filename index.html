@@ -70,7 +70,8 @@ $("unlockWallet").onclick=()=>{if(!localStorage.getItem(vaultKey)){openVault("cr
 $("vaultCancel").onclick=()=>{createModal.classList.remove("show");pendingWallet=null;};
 $("vaultAction").onclick=async()=>{
  const mode=createModal.dataset.mode,password=$("vaultPassword").value;
- if(password.length<12){$("vaultStatus").textContent="Use a password with at least 12 characters.";return;}\n if(mode==="create"&&!$("phraseBackedUp").checked){$("vaultStatus").textContent="Back up your recovery phrase before saving the wallet.";return;}
+ if(password.length<12){$("vaultStatus").textContent="Use a password with at least 12 characters.";return;}
+ if(mode==="create"&&!$("phraseBackedUp").checked){$("vaultStatus").textContent="Back up your recovery phrase before saving the wallet.";return;}
  try{
   $("vaultAction").disabled=true;$("vaultStatus").textContent=mode==="unlock"?"Decrypting wallet…":"Encrypting wallet locally…";
   if(mode==="create"){
