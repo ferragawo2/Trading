@@ -25,7 +25,7 @@
 </main>
 <div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Send crypto</h2><p class="sub" id="modalDesc">Your wallet will ask you to approve this transaction.</p><div class="field"><label>Asset</label><select id="sendAsset"><option value="native">Native coin</option></select></div><div class="field"><label>Recipient address</label><input id="recipient" placeholder="0x… or Bitcoin address" autocomplete="off"></div><div class="field"><label>Amount</label><input id="amountInput" type="number" min="0" step="any" placeholder="0.00"></div><div class="status" id="modalStatus"></div><div class="actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="confirm">Continue to wallet</button></div></div></div>
 <div class="modal" id="receiveModal"><div class="dialog"><h2>Receive crypto</h2><p class="sub">Only receive assets on the matching network.</p><div class="address" id="receiveAddress"></div><div class="actions"><button class="btn ghost" id="closeReceive">Close</button><button class="btn" id="copyAddress">Copy address</button></div></div></div>
-<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js" integrity="" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js" crossorigin="anonymous"></script>
 <script>
 const CHAINS={
 "1":{name:"Ethereum",symbol:"ETH",hex:"0x1",rpc:"https://cloudflare-eth.com"},
@@ -54,13 +54,13 @@ let localWallet=null, pendingWallet=null;
 const vaultKey="northstar.encrypted-wallet.v1";
 const createModal=document.createElement("div");
 createModal.className="modal";createModal.id="walletModal";
-createModal.innerHTML='<div class="dialog"><h2 id="walletModalTitle">Create a new wallet</h2><p class="sub" id="walletModalDesc">Your recovery phrase is shown once. Write it down offline and never share it.</p><div id="phraseWrap" style="display:none"><div class="address" id="phraseText" style="font-size:14px;line-height:2;color:#fff"></div><p class="tiny">Anyone with this phrase can control your funds. Do not screenshot it or send it to anyone.</p></div><div class="field"><label>Wallet password (12+ characters)</label><input id="vaultPassword" type="password" autocomplete="new-password" placeholder="Create a strong password"></div><div class="field"><label>Confirm password</label><input id="vaultPassword2" type="password" autocomplete="new-password" placeholder="Repeat password"></div><div class="status" id="vaultStatus"></div><div class="actions"><button class="btn ghost" id="vaultCancel">Cancel</button><button class="btn" id="vaultAction">Generate wallet</button></div></div>';
+createModal.innerHTML='<div class="dialog"><h2 id="walletModalTitle">Create a new wallet</h2><p class="sub" id="walletModalDesc">Your recovery phrase is shown once. Write it down offline and never share it.</p><div id="phraseWrap" style="display:none"><div class="address" id="phraseText" style="font-size:14px;line-height:2;color:#fff"></div><p class="tiny">Anyone with this phrase can control your funds. Do not screenshot it or send it to anyone.</p><label style="display:flex;gap:9px;align-items:flex-start;margin-top:12px;color:#dce6f7;font-size:12px"><input id="phraseBackedUp" type="checkbox" style="width:auto;margin-top:3px"> I have written down my recovery phrase and stored it somewhere private.</label></div><div class="field"><label>Wallet password (12+ characters)</label><input id="vaultPassword" type="password" autocomplete="new-password" placeholder="Create a strong password"></div><div class="field"><label>Confirm password</label><input id="vaultPassword2" type="password" autocomplete="new-password" placeholder="Repeat password"></div><div class="status" id="vaultStatus"></div><div class="actions"><button class="btn ghost" id="vaultCancel">Cancel</button><button class="btn" id="vaultAction">Generate wallet</button></div></div>';
 document.body.appendChild(createModal);
 function setAccount(addr){account=addr; $("address").textContent=addr?addr.slice(0,10)+"…"+addr.slice(-8):"Not connected"; $("connect").textContent=addr?"Wallet ready":"Connect wallet"; $("walletState").textContent=addr?"Wallet ready · "+addr.slice(0,8)+"…"+addr.slice(-6):"Unlock or connect a wallet"; updateButtons();}
 function openVault(mode){
   $("walletModalTitle").textContent=mode==="unlock"?"Unlock your wallet":"Create a new wallet";
   $("walletModalDesc").textContent=mode==="unlock"?"Enter the password used to encrypt this wallet on this device.":"Your recovery phrase is shown once. Write it down offline and never share it.";
-  $("phraseWrap").style.display="none";$("phraseText").textContent="";$("vaultPassword").value="";$("vaultPassword2").value="";
+  $("phraseWrap").style.display="none";$("phraseText").textContent="";if($("phraseBackedUp"))$("phraseBackedUp").checked=false;$("vaultPassword").value="";$("vaultPassword2").value="";
   $("vaultPassword2").style.display=mode==="unlock"?"none":"block";
   $("vaultAction").textContent=mode==="unlock"?"Unlock wallet":"Generate wallet";
   $("vaultStatus").textContent="";createModal.dataset.mode=mode;createModal.classList.add("show");
@@ -70,7 +70,7 @@ $("unlockWallet").onclick=()=>{if(!localStorage.getItem(vaultKey)){openVault("cr
 $("vaultCancel").onclick=()=>{createModal.classList.remove("show");pendingWallet=null;};
 $("vaultAction").onclick=async()=>{
  const mode=createModal.dataset.mode,password=$("vaultPassword").value;
- if(password.length<12){$("vaultStatus").textContent="Use a password with at least 12 characters.";return;}
+ if(password.length<12){$("vaultStatus").textContent="Use a password with at least 12 characters.";return;}\n if(mode==="create"&&!$("phraseBackedUp").checked){$("vaultStatus").textContent="Back up your recovery phrase before saving the wallet.";return;}
  try{
   $("vaultAction").disabled=true;$("vaultStatus").textContent=mode==="unlock"?"Decrypting wallet…":"Encrypting wallet locally…";
   if(mode==="create"){
