@@ -118,6 +118,7 @@ async function send(){
   $("confirm").disabled=false;setTimeout(()=>{$("modal").classList.remove("show");refresh()},1800);
  }catch(e){$("modalStatus").textContent=e.shortMessage||e.message||"Transaction failed or rejected.";$("confirm").disabled=false;}
 }
+const connectInjectedWallet=connect;connect=async()=>{localWallet=null;await connectInjectedWallet();};
 $("connect").onclick=connect;
 $("refreshBtn").onclick=refresh;
 $("network").onchange=async()=>{if(provider&&!localWallet)await switchChain();else await refresh();};
