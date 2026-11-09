@@ -66,7 +66,7 @@ function openVault(mode){
   $("vaultStatus").textContent="";createModal.dataset.mode=mode;createModal.classList.add("show");
 }
 $("createWallet").onclick=()=>{if(localStorage.getItem(vaultKey)){if(!confirm("A wallet vault already exists on this device. Creating a new one will replace it. Make sure you have backed up the existing recovery phrase. Continue?"))return;}pendingWallet=ethers.Wallet.createRandom();$("phraseWrap").style.display="block";$("phraseText").textContent=pendingWallet.mnemonic.phrase;openVault("create");$("phraseWrap").style.display="block";$("phraseText").textContent=pendingWallet.mnemonic.phrase;};
-$("unlockWallet").onclick=()=>{if(!localStorage.getItem(vaultKey)){openVault("create");return;}openVault("unlock");};
+$("unlockWallet").onclick=()=>{if(!localStorage.getItem(vaultKey)){$("createWallet").click();return;}openVault("unlock");};
 $("vaultCancel").onclick=()=>{createModal.classList.remove("show");pendingWallet=null;};
 $("vaultAction").onclick=async()=>{
  const mode=createModal.dataset.mode,password=$("vaultPassword").value;
