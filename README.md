@@ -12,7 +12,9 @@ A responsive, browser-based non-custodial wallet for selected EVM networks.
 **Important:** The recovery phrase is the ultimate backup. If it is lost, the password or encrypted browser vault cannot recover the funds. Anyone who obtains the phrase can control the wallet. Do not share it, photograph it, or enter it into a website or chat. Clearing browser storage or changing devices removes the local encrypted vault unless it has been backed up separately.
 
 ## Networks
-- EVM: Ethereum, BNB Smart Chain, Polygon, Arbitrum One, Base.
+- 39 built-in EVM mainnets, including Ethereum, BNB Smart Chain, Polygon, Arbitrum One, Base, Optimism, Avalanche, Gnosis, Linea, zkSync Era, Scroll, Mantle, Blast, opBNB, Celo, Sonic, Cronos, Moonbeam, Moonriver, Aurora, Harmony, Kava, Metis, Telos, Rootstock, Taiko, Zora, Berachain, Unichain, World Chain, Ink, Abstract, HyperEVM, Sei, Flare, Ethereum Classic, XDC, IoTeX, and Oasis Sapphire.
+- Add custom EVM networks using an HTTPS RPC endpoint. The wallet checks that the endpoint reports the supplied chain ID before saving the network locally in this browser.
+- When using an injected EIP-1193 wallet, the app requests the selected network be switched or added to that wallet. Your wallet extension may show a confirmation prompt.
 - Bitcoin: UniSat detection hook only; full Bitcoin wallet creation, balance, and send/receive are not implemented.
 
 ## Run locally
