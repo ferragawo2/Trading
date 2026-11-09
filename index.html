@@ -10,7 +10,7 @@
 </style>
 </head>
 <body><main class="shell">
-<header class="top"><div class="brand"><div class="logo">✦</div><div>northstar <span class="muted" style="font-weight:400">wallet</span></div></div><div class="topright"><span class="pill"><span class="live">●</span> Self-custody mode</span><button id="connect" class="btn">Connect wallet</button></div></header>
+<header class="top"><div class="brand"><div class="logo">✦</div><div>northstar <span class="muted" style="font-weight:400">wallet</span></div></div><div class="topright"><span class="pill"><span class="live">●</span> Self-custody mode</span><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button><button id="connect" class="btn">Connect wallet</button></div></header>
 <section class="hero">
 <div class="card balance"><div class="eyebrow">Total portfolio value</div><div class="amount" id="total">$0.00</div><div class="sub" id="walletState">Connect a wallet to load your on-chain balances</div><div class="actions"><button class="btn" id="sendBtn" disabled>↑ Send</button><button class="btn secondary" id="receiveBtn" disabled>↓ Receive</button><button class="btn ghost" id="refreshBtn" disabled>↻ Refresh</button></div></div>
 <div class="card network"><div class="eyebrow">Active network</div><select id="network"><option value="1">Ethereum Mainnet</option><option value="56">BNB Smart Chain</option><option value="137">Polygon</option><option value="42161">Arbitrum One</option><option value="8453">Base</option></select><div class="sub">Connected account</div><div id="address" class="address">Not connected</div><div class="tiny" id="networkHint">EVM networks · wallet approval required for every transaction</div></div>
@@ -25,6 +25,7 @@
 </main>
 <div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Send crypto</h2><p class="sub" id="modalDesc">Your wallet will ask you to approve this transaction.</p><div class="field"><label>Asset</label><select id="sendAsset"><option value="native">Native coin</option></select></div><div class="field"><label>Recipient address</label><input id="recipient" placeholder="0x… or Bitcoin address" autocomplete="off"></div><div class="field"><label>Amount</label><input id="amountInput" type="number" min="0" step="any" placeholder="0.00"></div><div class="status" id="modalStatus"></div><div class="actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="confirm">Continue to wallet</button></div></div></div>
 <div class="modal" id="receiveModal"><div class="dialog"><h2>Receive crypto</h2><p class="sub">Only receive assets on the matching network.</p><div class="address" id="receiveAddress"></div><div class="actions"><button class="btn ghost" id="closeReceive">Close</button><button class="btn" id="copyAddress">Copy address</button></div></div></div>
+<script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js" integrity="" crossorigin="anonymous"></script>
 <script>
 const CHAINS={
 "1":{name:"Ethereum",symbol:"ETH",hex:"0x1",rpc:"https://cloudflare-eth.com"},
@@ -47,4 +48,81 @@ $("connect").onclick=connect;$("refreshBtn").onclick=refresh;$("network").onchan
 $("receiveBtn").onclick=()=>{$("receiveAddress").textContent=account||"Connect wallet first";$("receiveModal").classList.add("show")};$("closeReceive").onclick=()=>$("receiveModal").classList.remove("show");$("copyAddress").onclick=async()=>{if(account){await navigator.clipboard.writeText(account);$("copyAddress").textContent="Copied"}};renderActivity();updateButtons();
 // Bitcoin: optional UniSat wallet integration, independent of EVM accounts.
 window.connectBitcoin=async()=>{if(!window.unisat){alert("Install the UniSat browser extension for Bitcoin wallet support.");return}try{const a=await window.unisat.requestAccounts();logActivity("Bitcoin wallet connected",a[0])}catch(e){alert(e.message)}};
+
+/* Local wallet vault: keys are generated and encrypted in this browser. */
+let localWallet=null, pendingWallet=null;
+const vaultKey="northstar.encrypted-wallet.v1";
+const createModal=document.createElement("div");
+createModal.className="modal";createModal.id="walletModal";
+createModal.innerHTML='<div class="dialog"><h2 id="walletModalTitle">Create a new wallet</h2><p class="sub" id="walletModalDesc">Your recovery phrase is shown once. Write it down offline and never share it.</p><div id="phraseWrap" style="display:none"><div class="address" id="phraseText" style="font-size:14px;line-height:2;color:#fff"></div><p class="tiny">Anyone with this phrase can control your funds. Do not screenshot it or send it to anyone.</p></div><div class="field"><label>Wallet password (12+ characters)</label><input id="vaultPassword" type="password" autocomplete="new-password" placeholder="Create a strong password"></div><div class="field"><label>Confirm password</label><input id="vaultPassword2" type="password" autocomplete="new-password" placeholder="Repeat password"></div><div class="status" id="vaultStatus"></div><div class="actions"><button class="btn ghost" id="vaultCancel">Cancel</button><button class="btn" id="vaultAction">Generate wallet</button></div></div>';
+document.body.appendChild(createModal);
+function setAccount(addr){account=addr; $("address").textContent=addr?addr.slice(0,10)+"…"+addr.slice(-8):"Not connected"; $("connect").textContent=addr?"Wallet ready":"Connect wallet"; $("walletState").textContent=addr?"Wallet ready · "+addr.slice(0,8)+"…"+addr.slice(-6):"Unlock or connect a wallet"; updateButtons();}
+function openVault(mode){
+  $("walletModalTitle").textContent=mode==="unlock"?"Unlock your wallet":"Create a new wallet";
+  $("walletModalDesc").textContent=mode==="unlock"?"Enter the password used to encrypt this wallet on this device.":"Your recovery phrase is shown once. Write it down offline and never share it.";
+  $("phraseWrap").style.display="none";$("phraseText").textContent="";$("vaultPassword").value="";$("vaultPassword2").value="";
+  $("vaultPassword2").style.display=mode==="unlock"?"none":"block";
+  $("vaultAction").textContent=mode==="unlock"?"Unlock wallet":"Generate wallet";
+  $("vaultStatus").textContent="";createModal.dataset.mode=mode;createModal.classList.add("show");
+}
+$("createWallet").onclick=()=>{if(localStorage.getItem(vaultKey)){if(!confirm("A wallet vault already exists on this device. Creating a new one will replace it. Make sure you have backed up the existing recovery phrase. Continue?"))return;}pendingWallet=ethers.Wallet.createRandom();$("phraseWrap").style.display="block";$("phraseText").textContent=pendingWallet.mnemonic.phrase;openVault("create");$("phraseWrap").style.display="block";$("phraseText").textContent=pendingWallet.mnemonic.phrase;};
+$("unlockWallet").onclick=()=>{if(!localStorage.getItem(vaultKey)){openVault("create");return;}openVault("unlock");};
+$("vaultCancel").onclick=()=>{createModal.classList.remove("show");pendingWallet=null;};
+$("vaultAction").onclick=async()=>{
+ const mode=createModal.dataset.mode,password=$("vaultPassword").value;
+ if(password.length<12){$("vaultStatus").textContent="Use a password with at least 12 characters.";return;}
+ try{
+  $("vaultAction").disabled=true;$("vaultStatus").textContent=mode==="unlock"?"Decrypting wallet…":"Encrypting wallet locally…";
+  if(mode==="create"){
+   if(password!==$("vaultPassword2").value){$("vaultStatus").textContent="Passwords do not match.";return;}
+   const encrypted=await pendingWallet.encrypt(password);
+   localStorage.setItem(vaultKey,encrypted);localWallet=pendingWallet;pendingWallet=null;
+   setAccount(localWallet.address);logActivity("Wallet created",localWallet.address);createModal.classList.remove("show");await refresh();
+  }else{
+   const encrypted=localStorage.getItem(vaultKey);localWallet=await ethers.Wallet.fromEncryptedJson(encrypted,password);
+   setAccount(localWallet.address);logActivity("Wallet unlocked",localWallet.address);createModal.classList.remove("show");await refresh();
+  }
+ }catch(e){$("vaultStatus").textContent=mode==="unlock"?"Incorrect password or damaged wallet vault.":(e.message||"Could not save wallet.");}
+ finally{$("vaultAction").disabled=false;}
+};
+async function refresh(){
+ if(!account)return;
+ const chain=$("network").value;
+ try{
+  const p=new ethers.JsonRpcProvider(CHAINS[chain].rpc,Number(chain));
+  const wei=await p.getBalance(account), native=Number(ethers.formatEther(wei));
+  $("assets").innerHTML='<div class="asset"><div class="coin">'+(CHAINS[chain].symbol==="ETH"?"◆":CHAINS[chain].symbol==="BNB"?"⬡":"◈")+'</div><div><div class="assetname">'+CHAINS[chain].symbol+'</div><div class="assetmeta">'+CHAINS[chain].name+'</div></div><div class="assetval">'+fmt(native)+'<div class="assetmeta">Native balance</div></div></div>';
+  $("assetCount").textContent="1 asset";$("total").textContent=fmt(native)+" "+CHAINS[chain].symbol;$("walletState").textContent="Live on-chain balance · "+CHAINS[chain].name;
+  logActivity("Balance refreshed",CHAINS[chain].name);
+ }catch(e){$("assets").innerHTML='<div class="empty">Balance unavailable: '+String(e.message||e).replace(/[<>]/g,"")+'</div>';}
+}
+async function send(){
+ const to=$("recipient").value.trim(),amount=$("amountInput").value,chain=$("network").value;
+ if(!ethers.isAddress(to)){$("modalStatus").textContent="Enter a valid EVM recipient address.";return;}
+ let value;try{value=ethers.parseEther(amount);}catch(e){$("modalStatus").textContent="Enter a valid amount.";return;}
+ if(value<=0n){$("modalStatus").textContent="Amount must be greater than zero.";return;}
+ try{
+  $("confirm").disabled=true;$("modalStatus").textContent="Preparing transaction…";
+  const p=new ethers.JsonRpcProvider(CHAINS[chain].rpc,Number(chain));
+  let signer;
+  if(localWallet) signer=localWallet.connect(p);
+  else if(provider){
+   const actual=(await provider.request({method:"eth_chainId"})).toLowerCase();
+   if(actual!==CHAINS[chain].hex.toLowerCase()){$("modalStatus").textContent="Switch your connected wallet to "+CHAINS[chain].name+" before sending.";return;}
+   const browserProvider=new ethers.BrowserProvider(provider);signer=await browserProvider.getSigner();
+  }else{$("modalStatus").textContent="Unlock or connect a wallet first.";return;}
+  $("modalStatus").textContent="Waiting for wallet signature…";
+  const tx=await signer.sendTransaction({to,value});
+  $("modalStatus").textContent="Submitted: "+tx.hash.slice(0,18)+"…";
+  logActivity("Sent "+amount+" "+CHAINS[chain].symbol,tx.hash.slice(0,16)+"…");
+  $("confirm").disabled=false;setTimeout(()=>{$("modal").classList.remove("show");refresh()},1800);
+ }catch(e){$("modalStatus").textContent=e.shortMessage||e.message||"Transaction failed or rejected.";$("confirm").disabled=false;}
+}
+$("connect").onclick=connect;
+$("refreshBtn").onclick=refresh;
+$("network").onchange=async()=>{if(provider&&!localWallet)await switchChain();else await refresh();};
+$("sendBtn").onclick=openSend;$("confirm").onclick=send;
+$("receiveBtn").onclick=()=>{$("receiveAddress").textContent=account||"Unlock or connect wallet first";$("receiveModal").classList.add("show")};
+$("copyAddress").onclick=async()=>{if(account){try{await navigator.clipboard.writeText(account);$("copyAddress").textContent="Copied";}catch(e){$("receiveAddress").textContent=account;}}};
+
 </script></body></html>
