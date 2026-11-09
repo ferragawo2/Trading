@@ -13,12 +13,12 @@
 <header class="top"><div class="brand"><div class="logo">✦</div><div>northstar <span class="muted" style="font-weight:400">wallet</span></div></div><div class="topright"><span class="pill"><span class="live">●</span> Self-custody mode</span><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button><button id="connect" class="btn">Connect wallet</button></div></header>
 <section class="hero">
 <div class="card balance"><div class="eyebrow">Total portfolio value</div><div class="amount" id="total">$0.00</div><div class="sub" id="walletState">Connect a wallet to load your on-chain balances</div><div class="actions"><button class="btn" id="sendBtn" disabled>↑ Send</button><button class="btn secondary" id="receiveBtn" disabled>↓ Receive</button><button class="btn ghost" id="refreshBtn" disabled>↻ Refresh</button></div></div>
-<div class="card network"><div class="eyebrow">Active network</div><select id="network"><option value="1">Ethereum Mainnet</option><option value="56">BNB Smart Chain</option><option value="137">Polygon</option><option value="42161">Arbitrum One</option><option value="8453">Base</option></select><div class="sub">Connected account</div><div id="address" class="address">Not connected</div><div class="tiny" id="networkHint">EVM networks · wallet approval required for every transaction</div></div>
+<div class="card network"><div class="eyebrow">Active network</div><select id="network" aria-label="Choose EVM network"></select><button class="btn secondary" id="addNetwork" type="button">＋ Add custom network</button><div class="sub">Connected account</div><div id="address" class="address">Not connected</div><div class="tiny" id="networkHint">EVM networks · wallet approval required for every transaction</div></div>
 </section>
 <section class="grid">
 <div class="card"><div class="sectionhead"><h2>Your assets</h2><span class="tiny" id="assetCount">0 assets</span></div><div id="assets"><div class="empty">Connect your wallet to view assets.</div></div></div>
 <div class="card"><div class="sectionhead"><h2>Recent activity</h2><span class="tiny">This session</span></div><div id="activity"><div class="empty">Your recent wallet actions will appear here.</div></div></div>
-<div class="card wide"><div class="sectionhead"><h2>Supported networks</h2><span class="tiny">Mainnets</span></div><div style="display:flex;gap:9px;flex-wrap:wrap"><span class="pill">₿ Bitcoin</span><span class="pill">◆ Ethereum</span><span class="pill">⬡ BNB Chain</span><span class="pill">⬡ Polygon</span><span class="pill">◈ Arbitrum</span><span class="pill">🔵 Base</span></div><p class="tiny" style="margin:15px 0 0">Bitcoin support requires a compatible browser wallet such as UniSat. EVM support requires MetaMask, Rabby, Coinbase Wallet, or another EIP-1193 wallet.</p></div>
+<div class="card wide"><div class="sectionhead"><h2>Supported networks</h2><span class="tiny" id="networkCount">EVM networks</span></div><div id="networkChips" style="display:flex;gap:9px;flex-wrap:wrap"></div><p class="tiny" style="margin:15px 0 0">Bitcoin support requires a compatible browser wallet such as UniSat. EVM support requires MetaMask, Rabby, Coinbase Wallet, or another EIP-1193 wallet.</p></div>
 </section>
 <div class="notice"><b>Security:</b> Northstar is a non-custodial wallet interface. Your wallet extension signs transactions locally. This site never asks for your recovery phrase or private key. Always verify the network, recipient, and amount in your wallet before approving.</div>
 <footer class="foot">Northstar Wallet · Trading · On-chain data may be delayed. Not financial advice.</footer>
@@ -28,23 +28,296 @@
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js" crossorigin="anonymous"></script>
 <script>
 const CHAINS={
-"1":{name:"Ethereum",symbol:"ETH",hex:"0x1",rpc:"https://cloudflare-eth.com"},
-"56":{name:"BNB Smart Chain",symbol:"BNB",hex:"0x38",rpc:"https://bsc-dataseed.binance.org"},
-"137":{name:"Polygon",symbol:"POL",hex:"0x89",rpc:"https://polygon-rpc.com"},
-"42161":{name:"Arbitrum One",symbol:"ETH",hex:"0xa4b1",rpc:"https://arb1.arbitrum.io/rpc"},
-"8453":{name:"Base",symbol:"ETH",hex:"0x2105",rpc:"https://mainnet.base.org"}};
+  "1": {
+    "name": "Ethereum",
+    "symbol": "ETH",
+    "hex": "0x1",
+    "rpc": "https://cloudflare-eth.com",
+    "explorer": "https://etherscan.io"
+  },
+  "10": {
+    "name": "OP Mainnet",
+    "symbol": "ETH",
+    "hex": "0xa",
+    "rpc": "https://mainnet.optimism.io",
+    "explorer": "https://optimistic.etherscan.io"
+  },
+  "14": {
+    "name": "Flare",
+    "symbol": "FLR",
+    "hex": "0xe",
+    "rpc": "https://flare-api.flare.network/ext/C/rpc",
+    "explorer": "https://flare-explorer.flare.network"
+  },
+  "25": {
+    "name": "Cronos",
+    "symbol": "CRO",
+    "hex": "0x19",
+    "rpc": "https://evm.cronos.org",
+    "explorer": "https://cronoscan.com"
+  },
+  "30": {
+    "name": "Rootstock",
+    "symbol": "RBTC",
+    "hex": "0x1e",
+    "rpc": "https://public-node.rsk.co",
+    "explorer": "https://explorer.rsk.co"
+  },
+  "40": {
+    "name": "Telos",
+    "symbol": "TLOS",
+    "hex": "0x28",
+    "rpc": "https://rpc.telos.net",
+    "explorer": "https://teloscan.io"
+  },
+  "50": {
+    "name": "XDC Network",
+    "symbol": "XDC",
+    "hex": "0x32",
+    "rpc": "https://rpc.xinfin.network",
+    "explorer": "https://xdcscan.com"
+  },
+  "56": {
+    "name": "BNB Smart Chain",
+    "symbol": "BNB",
+    "hex": "0x38",
+    "rpc": "https://bsc-dataseed.binance.org",
+    "explorer": "https://bscscan.com"
+  },
+  "61": {
+    "name": "Ethereum Classic",
+    "symbol": "ETC",
+    "hex": "0x3d",
+    "rpc": "https://etc.rivet.link",
+    "explorer": "https://etc.blockscout.com"
+  },
+  "100": {
+    "name": "Gnosis Chain",
+    "symbol": "xDAI",
+    "hex": "0x64",
+    "rpc": "https://rpc.gnosischain.com",
+    "explorer": "https://gnosisscan.io"
+  },
+  "130": {
+    "name": "Unichain",
+    "symbol": "ETH",
+    "hex": "0x82",
+    "rpc": "https://mainnet.unichain.org",
+    "explorer": "https://uniscan.xyz"
+  },
+  "137": {
+    "name": "Polygon",
+    "symbol": "POL",
+    "hex": "0x89",
+    "rpc": "https://polygon-rpc.com",
+    "explorer": "https://polygonscan.com"
+  },
+  "146": {
+    "name": "Sonic",
+    "symbol": "S",
+    "hex": "0x92",
+    "rpc": "https://rpc.soniclabs.com",
+    "explorer": "https://sonicscan.org"
+  },
+  "204": {
+    "name": "opBNB",
+    "symbol": "BNB",
+    "hex": "0xcc",
+    "rpc": "https://opbnb-mainnet-rpc.bnbchain.org",
+    "explorer": "https://opbnbscan.com"
+  },
+  "324": {
+    "name": "zkSync Era",
+    "symbol": "ETH",
+    "hex": "0x144",
+    "rpc": "https://mainnet.era.zksync.io",
+    "explorer": "https://explorer.zksync.io"
+  },
+  "480": {
+    "name": "World Chain",
+    "symbol": "ETH",
+    "hex": "0x1e0",
+    "rpc": "https://worldchain-mainnet.g.alchemy.com/public",
+    "explorer": "https://worldscan.org"
+  },
+  "999": {
+    "name": "HyperEVM",
+    "symbol": "HYPE",
+    "hex": "0x3e7",
+    "rpc": "https://rpc.hyperliquid.xyz/evm",
+    "explorer": "https://hyperevmscan.io"
+  },
+  "1088": {
+    "name": "Metis Andromeda",
+    "symbol": "METIS",
+    "hex": "0x440",
+    "rpc": "https://andromeda.metis.io/?owner=1088",
+    "explorer": "https://andromeda-explorer.metis.io"
+  },
+  "1284": {
+    "name": "Moonbeam",
+    "symbol": "GLMR",
+    "hex": "0x504",
+    "rpc": "https://rpc.api.moonbeam.network",
+    "explorer": "https://moonscan.io"
+  },
+  "1285": {
+    "name": "Moonriver",
+    "symbol": "MOVR",
+    "hex": "0x505",
+    "rpc": "https://rpc.api.moonriver.moonbeam.network",
+    "explorer": "https://moonriver.moonscan.io"
+  },
+  "1329": {
+    "name": "Sei EVM",
+    "symbol": "SEI",
+    "hex": "0x531",
+    "rpc": "https://evm-rpc.sei-apis.com",
+    "explorer": "https://seitrace.com"
+  },
+  "2222": {
+    "name": "Kava EVM",
+    "symbol": "KAVA",
+    "hex": "0x8ae",
+    "rpc": "https://evm.kava-rpc.com",
+    "explorer": "https://kavascan.com"
+  },
+  "2741": {
+    "name": "Abstract",
+    "symbol": "ETH",
+    "hex": "0xab5",
+    "rpc": "https://api.mainnet.abs.xyz",
+    "explorer": "https://abscan.org"
+  },
+  "4689": {
+    "name": "IoTeX",
+    "symbol": "IOTX",
+    "hex": "0x1251",
+    "rpc": "https://babel-api.mainnet.iotex.io",
+    "explorer": "https://iotexscan.io"
+  },
+  "5000": {
+    "name": "Mantle",
+    "symbol": "MNT",
+    "hex": "0x1388",
+    "rpc": "https://rpc.mantle.xyz",
+    "explorer": "https://mantlescan.xyz"
+  },
+  "8453": {
+    "name": "Base",
+    "symbol": "ETH",
+    "hex": "0x2105",
+    "rpc": "https://mainnet.base.org",
+    "explorer": "https://basescan.org"
+  },
+  "23294": {
+    "name": "Oasis Sapphire",
+    "symbol": "ROSE",
+    "hex": "0x5afe",
+    "rpc": "https://sapphire.oasis.io",
+    "explorer": "https://explorer.oasis.io/mainnet/sapphire"
+  },
+  "42161": {
+    "name": "Arbitrum One",
+    "symbol": "ETH",
+    "hex": "0xa4b1",
+    "rpc": "https://arb1.arbitrum.io/rpc",
+    "explorer": "https://arbiscan.io"
+  },
+  "42220": {
+    "name": "Celo",
+    "symbol": "CELO",
+    "hex": "0xa4ec",
+    "rpc": "https://forno.celo.org",
+    "explorer": "https://celoscan.io"
+  },
+  "43114": {
+    "name": "Avalanche C-Chain",
+    "symbol": "AVAX",
+    "hex": "0xa86a",
+    "rpc": "https://api.avax.network/ext/bc/C/rpc",
+    "explorer": "https://snowtrace.io"
+  },
+  "57073": {
+    "name": "Ink",
+    "symbol": "ETH",
+    "hex": "0xdef1",
+    "rpc": "https://rpc-gel.inkonchain.com",
+    "explorer": "https://inkscan.com"
+  },
+  "59144": {
+    "name": "Linea",
+    "symbol": "ETH",
+    "hex": "0xe708",
+    "rpc": "https://rpc.linea.build",
+    "explorer": "https://lineascan.build"
+  },
+  "80094": {
+    "name": "Berachain",
+    "symbol": "BERA",
+    "hex": "0x138de",
+    "rpc": "https://rpc.berachain.com",
+    "explorer": "https://berascan.com"
+  },
+  "81457": {
+    "name": "Blast",
+    "symbol": "ETH",
+    "hex": "0x13e31",
+    "rpc": "https://rpc.blast.io",
+    "explorer": "https://blastscan.io"
+  },
+  "167000": {
+    "name": "Taiko",
+    "symbol": "ETH",
+    "hex": "0x28c58",
+    "rpc": "https://rpc.mainnet.taiko.xyz",
+    "explorer": "https://taikoscan.io"
+  },
+  "534352": {
+    "name": "Scroll",
+    "symbol": "ETH",
+    "hex": "0x82750",
+    "rpc": "https://rpc.scroll.io",
+    "explorer": "https://scrollscan.com"
+  },
+  "7777777": {
+    "name": "Zora",
+    "symbol": "ETH",
+    "hex": "0x76adf1",
+    "rpc": "https://rpc.zora.energy",
+    "explorer": "https://explorer.zora.energy"
+  },
+  "1313161554": {
+    "name": "Aurora",
+    "symbol": "ETH",
+    "hex": "0x4e454152",
+    "rpc": "https://mainnet.aurora.dev",
+    "explorer": "https://explorer.aurora.dev"
+  },
+  "1666600000": {
+    "name": "Harmony",
+    "symbol": "ONE",
+    "hex": "0x63564c40",
+    "rpc": "https://api.harmony.one",
+    "explorer": "https://explorer.harmony.one"
+  }
+};
 const $=id=>document.getElementById(id);let account=null,provider=null,balances={},history=[];
 const fmt=n=>Number(n).toLocaleString(undefined,{maximumFractionDigits:6});
+function loadCustomNetworks(){try{const saved=JSON.parse(localStorage.getItem("northstar.custom-networks.v1")||"{}");for(const [id,c] of Object.entries(saved)){if(!CHAINS[id]&&c&&c.name&&c.rpc&&c.symbol)CHAINS[id]=c;}}catch(e){console.warn("Could not load custom networks",e)}}
+function renderNetworkOptions(){const select=$("network"),current=select.value;select.innerHTML="";Object.entries(CHAINS).sort((a,b)=>a[1].name.localeCompare(b[1].name)).forEach(([id,c])=>{const o=document.createElement("option");o.value=id;o.textContent=c.name+" · "+c.symbol;select.appendChild(o)});select.value=current&&CHAINS[current]?current:"1";const chips=$("networkChips");if(chips){chips.innerHTML="";Object.values(CHAINS).sort((a,b)=>a.name.localeCompare(b.name)).forEach(c=>{const s=document.createElement("span");s.className="pill";s.textContent=c.name;chips.appendChild(s)})}const count=$("networkCount");if(count)count.textContent=Object.keys(CHAINS).length+" EVM networks";}
+async function addCustomNetwork(){const name=prompt("Network name:");if(!name||!name.trim())return;const raw=prompt("EVM chain ID (decimal):");if(!raw)return;const id=raw.trim();if(!/^\\d+$/.test(id)||BigInt(id)<=0n){alert("Enter a valid positive chain ID.");return}if(CHAINS[id]){alert("That chain is already listed.");$("network").value=id;return}const symbol=prompt("Native currency symbol (for example ETH):");if(!symbol||!/^[A-Za-z0-9]{2,12}$/.test(symbol.trim())){alert("Enter a valid currency symbol.");return}const rpc=prompt("HTTPS RPC URL:");if(!rpc)return;let u;try{u=new URL(rpc.trim());if(u.protocol!=="https:")throw Error()}catch(e){alert("Use a valid HTTPS RPC URL.");return}const explorer=prompt("Block explorer HTTPS URL (optional):")||"";if(explorer){try{if(new URL(explorer).protocol!=="https:")throw Error()}catch(e){alert("Explorer URL must use HTTPS.");return}}try{const res=await fetch(u.href,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method:"eth_chainId",params:[]})});const data=await res.json();if(!data.result||BigInt(data.result)!==BigInt(id))throw Error("RPC chain ID does not match.");const c={name:name.trim(),symbol:symbol.trim().toUpperCase(),hex:"0x"+BigInt(id).toString(16),rpc:u.href,explorer:explorer.trim()};CHAINS[id]=c;const saved=JSON.parse(localStorage.getItem("northstar.custom-networks.v1")||"{}");saved[id]=c;localStorage.setItem("northstar.custom-networks.v1",JSON.stringify(saved));renderNetworkOptions();$("network").value=id;logActivity("Custom network added",c.name);if(provider&&!localWallet)await switchChain();else await refresh()}catch(e){alert("Network was not added: "+(e.message||"RPC validation failed"))}}
+loadCustomNetworks();renderNetworkOptions();
 async function rpc(chain,method,params){const r=await fetch(CHAINS[chain].rpc,{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({jsonrpc:"2.0",id:1,method,params})});const j=await r.json();if(j.error)throw Error(j.error.message);return j.result}
 function logActivity(label,detail){history.unshift({label,detail,time:new Date().toLocaleTimeString()});renderActivity()}
 function renderActivity(){$("activity").innerHTML=history.length?history.slice(0,6).map(x=>'<div class="tx"><div><b>'+x.label+'</b><div class="tiny">'+x.detail+'</div></div><span class="tiny">'+x.time+'</span></div>').join():'<div class="empty">No activity in this session yet.</div>'}
 function updateButtons(){["sendBtn","receiveBtn","refreshBtn"].forEach(id=>$(id).disabled=!account)}
 async function connect(){if(!window.ethereum){alert("No EVM wallet found. Install MetaMask, Rabby, or Coinbase Wallet.");return}try{provider=window.ethereum;const accts=await provider.request({method:"eth_requestAccounts"});account=accts[0];$("address").textContent=account.slice(0,10)+"…"+account.slice(-8);$("connect").textContent="Connected";$("walletState").textContent="Connected · "+account.slice(0,8)+"…"+account.slice(-6);updateButtons();await refresh();provider.on?.("accountsChanged",a=>{account=a[0]||null;location.reloadIfWalletChanged?.();$("address").textContent=account||"Not connected";updateButtons();if(account)refresh()});provider.on?.("chainChanged",()=>refresh())}catch(e){alert(e.message||"Wallet connection was not completed.")}}
 async function refresh(){if(!account)return;const chain=$("network").value;try{const hex=await rpc(chain,"eth_getBalance",[account,"latest"]);const native=Number(BigInt(hex))/1e18;balances[chain]=native;$("assets").innerHTML='<div class="asset"><div class="coin">'+(CHAINS[chain].symbol==="ETH"?"◆":CHAINS[chain].symbol==="BNB"?"⬡":"◈")+'</div><div><div class="assetname">'+CHAINS[chain].symbol+'</div><div class="assetmeta">'+CHAINS[chain].name+'</div></div><div class="assetval">'+fmt(native)+'<div class="assetmeta">Native balance</div></div></div>';$("assetCount").textContent="1 asset";$("total").textContent=fmt(native)+" "+CHAINS[chain].symbol;$("walletState").textContent="Live on-chain balance · "+CHAINS[chain].name;logActivity("Balance refreshed",CHAINS[chain].name)}catch(e){$("assets").innerHTML='<div class="empty">Could not load balance: '+e.message+'</div>'}}
-async function switchChain(){if(!account||!provider)return;const chain=$("network").value;try{await provider.request({method:"wallet_switchEthereumChain",params:[{chainId:CHAINS[chain].hex}]});await refresh()}catch(e){if(e.code===4902)alert("This network is not configured in your wallet. Add it using your wallet's trusted network settings.");else $("walletHint")&&($("walletHint").textContent=e.message)}}
+async function switchChain(){if(!account||!provider)return;const id=$("network").value,c=CHAINS[id];try{await provider.request({method:"wallet_switchEthereumChain",params:[{chainId:c.hex}]});await refresh()}catch(e){if(e.code===4902){try{await provider.request({method:"wallet_addEthereumChain",params:[{chainId:c.hex,chainName:c.name,nativeCurrency:{name:c.symbol,symbol:c.symbol,decimals:18},rpcUrls:[c.rpc],blockExplorerUrls:c.explorer?[c.explorer]:[]}]});await provider.request({method:"wallet_switchEthereumChain",params:[{chainId:c.hex}]});await refresh()}catch(a){alert(a.message||"Could not add network.")}}else alert(e.message||"Could not switch network.")}}
 function openSend(){if(!account)return;$("modal").classList.add("show");$("modalStatus").textContent="";$("recipient").value="";$("amountInput").value=""}
 async function send(){const to=$("recipient").value.trim(),amount=$("amountInput").value,chain=$("network").value;if(!/^0x[a-fA-F0-9]{40}$/.test(to)){ $("modalStatus").textContent="Enter a valid EVM recipient address.";return}if(!amount||!Number.isFinite(Number(amount))||Number(amount)<=0){$("modalStatus").textContent="Enter an amount greater than zero.";return}try{const actualChain=await provider.request({method:"eth_chainId"});if(actualChain.toLowerCase()!==CHAINS[chain].hex.toLowerCase()){$("modalStatus").textContent="Switch your wallet to "+CHAINS[chain].name+" before sending.";return}$("confirm").disabled=true;$("modalStatus").textContent="Waiting for wallet approval…";const value="0x"+(BigInt(amount.split(".")[0]||"0")*10n**18n+BigInt(((amount.split(".")[1]||"")+"000000000000000000").slice(0,18))).toString(16);const tx=await provider.request({method:"eth_sendTransaction",params:[{from:account,to,value}]});$("modalStatus").textContent="Transaction submitted: "+tx.slice(0,18)+"…";logActivity("Sent "+amount+" "+CHAINS[chain].symbol,tx.slice(0,16)+"…");setTimeout(()=>{ $("modal").classList.remove("show");$("confirm").disabled=false;refresh()},1800)}catch(e){$("modalStatus").textContent=e.message||"Transaction rejected."; $("confirm").disabled=false}}
-$("connect").onclick=connect;$("refreshBtn").onclick=refresh;$("network").onchange=switchChain;$("sendBtn").onclick=openSend;$("cancel").onclick=()=>$("modal").classList.remove("show");$("confirm").onclick=send;
+$("connect").onclick=connect;$("refreshBtn").onclick=refresh;$("network").onchange=switchChain;$("addNetwork").onclick=addCustomNetwork;$("sendBtn").onclick=openSend;$("cancel").onclick=()=>$("modal").classList.remove("show");$("confirm").onclick=send;
 $("receiveBtn").onclick=()=>{$("receiveAddress").textContent=account||"Connect wallet first";$("receiveModal").classList.add("show")};$("closeReceive").onclick=()=>$("receiveModal").classList.remove("show");$("copyAddress").onclick=async()=>{if(account){await navigator.clipboard.writeText(account);$("copyAddress").textContent="Copied"}};renderActivity();updateButtons();
 // Bitcoin: optional UniSat wallet integration, independent of EVM accounts.
 window.connectBitcoin=async()=>{if(!window.unisat){alert("Install the UniSat browser extension for Bitcoin wallet support.");return}try{const a=await window.unisat.requestAccounts();logActivity("Bitcoin wallet connected",a[0])}catch(e){alert(e.message)}};
@@ -122,7 +395,7 @@ async function send(){
 const connectInjectedWallet=connect;connect=async()=>{localWallet=null;await connectInjectedWallet();};
 $("connect").onclick=connect;
 $("refreshBtn").onclick=refresh;
-$("network").onchange=async()=>{if(provider&&!localWallet)await switchChain();else await refresh();};
+$("network").onchange=async()=>{if(provider&&!localWallet)await switchChain();else await refresh();};$("addNetwork").onclick=addCustomNetwork;
 $("sendBtn").onclick=openSend;$("confirm").onclick=send;
 $("receiveBtn").onclick=()=>{$("receiveAddress").textContent=account||"Unlock or connect wallet first";$("receiveModal").classList.add("show")};
 $("copyAddress").onclick=async()=>{if(account){try{await navigator.clipboard.writeText(account);$("copyAddress").textContent="Copied";}catch(e){$("receiveAddress").textContent=account;}}};
