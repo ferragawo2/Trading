@@ -386,6 +386,7 @@ async function refresh(){
   $("walletState").textContent="Balance updated · "+chain.name;
   $("networkHint").textContent="Live balance · verified RPC · automatic fallback enabled";
   logActivity("Balance refreshed",chain.name+" · "+amount+" "+chain.symbol);
+   await loadChainTokens(chainId);refreshTokenBalances(chainId,address).catch(console.warn);
  }catch(error){
   if(requestId!==balanceRequestId)return;
   $("assets").innerHTML='<div class="empty">Balance unavailable: '+safeText(error.message||"RPC request failed")+'</div>';
