@@ -73,17 +73,18 @@ select option{background:#080808;color:#fff}
  z-index:20;display:flex;align-items:center;justify-content:center;gap:3px;
  width:min(340px,calc(100vw - 84px));padding:6px;
  border:1px solid rgba(255,255,255,.42);border-radius:999px;
- background:rgba(12,12,12,.20);backdrop-filter:blur(18px) saturate(155%);
+ background:rgba(12,12,12,.10);backdrop-filter:blur(18px) saturate(155%);
  -webkit-backdrop-filter:blur(18px) saturate(155%);
  box-shadow:0 10px 42px rgba(0,0,0,.34),0 0 10px rgba(255,255,255,.16),0 0 26px rgba(255,255,255,.10),inset 0 1px 0 rgba(255,255,255,.58),inset 0 0 12px rgba(255,255,255,.045);
 }
 .nav-item{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;
  padding:11px 10px;border-radius:999px;background:transparent;color:#858585;
  border:1px solid transparent;font:600 12px/1 Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
- transition:background .2s ease,color .2s ease,border-color .2s ease;
+ transition:color .22s ease,text-shadow .22s ease,filter .22s ease;
 }
-.nav-item .nav-icon{font-size:18px;line-height:1;font-weight:400}
-.nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.13)}
+.nav-item .nav-icon{font-size:19px;line-height:1;font-weight:400;display:inline-flex;align-items:center;justify-content:center}
+.nav-item.active{color:#fff;background:transparent;border-color:transparent;text-shadow:0 0 7px rgba(255,255,255,.95),0 0 16px rgba(255,255,255,.8),0 0 28px rgba(255,255,255,.55);filter:drop-shadow(0 0 7px rgba(255,255,255,.55))}
+.nav-item.active .nav-icon{filter:drop-shadow(0 0 6px rgba(255,255,255,.9))}
 .nav-item:focus-visible{outline:2px solid #fff;outline-offset:2px}
 @media(max-width:760px){
  .shell{padding-bottom:calc(116px + env(safe-area-inset-bottom))}
@@ -114,13 +115,13 @@ select option{background:#080808;color:#fff}
     <span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span>
   </button>
   <button class="nav-item" type="button" data-tab="assets" aria-label="Assets">
-    <span class="nav-icon" aria-hidden="true">▣</span><span>Assets</span>
+    <span class="nav-icon" aria-hidden="true">◫</span><span>Assets</span>
   </button>
   <button class="nav-item" type="button" data-tab="trade" aria-label="Trade">
-    <span class="nav-icon" aria-hidden="true">⇄</span><span>Trade</span>
+    <span class="nav-icon" aria-hidden="true">⤧</span><span>Trade</span>
   </button>
   <button class="nav-item" type="button" data-tab="discover" aria-label="Discover">
-    <span class="nav-icon" aria-hidden="true">⌕</span><span>Discover</span>
+    <span class="nav-icon" aria-hidden="true">◎</span><span>Discover</span>
   </button>
 </nav>
 <div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Send crypto</h2><p class="sub" id="modalDesc">Your wallet will ask you to approve this transaction.</p><div class="field"><label>Asset</label><select id="sendAsset"><option value="native">Native coin</option></select></div><div class="field"><label>Recipient address</label><input id="recipient" placeholder="0x… or Bitcoin address" autocomplete="off"></div><div class="field"><label>Amount</label><input id="amountInput" type="number" min="0" step="any" placeholder="0.00"></div><div class="status" id="modalStatus"></div><div class="actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="confirm">Continue to wallet</button></div></div></div>
