@@ -3,14 +3,71 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080d18"><meta name="description" content="Northstar — your self-custody, multi-chain crypto wallet.">
-<title>Northstar Wallet · Trading</title>
+<title>NOIR Wallet · Digital Assets</title>
 <style>
-:root{color-scheme:dark;--bg:#080d18;--panel:#101827;--panel2:#141f31;--line:#243148;--muted:#8c9bb2;--text:#f4f7fc;--green:#36d69a;--blue:#7aa7ff;--red:#ff7777}
-*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 80% -10%,#1a3152 0,transparent 36%),var(--bg);color:var(--text);font:15px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,sans-serif}button,input,select{font:inherit}button{cursor:pointer;border:0}.shell{max-width:1180px;margin:auto;padding:28px 24px 60px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:34px}.brand{display:flex;align-items:center;gap:12px;font-weight:750;font-size:20px;letter-spacing:-.5px}.logo{width:38px;height:38px;border-radius:13px;background:linear-gradient(135deg,#6c9dff,#7d65eb);display:grid;place-items:center;font-size:21px;box-shadow:0 8px 28px #587bea55}.topright{display:flex;align-items:center;gap:12px}.pill{border:1px solid var(--line);border-radius:99px;padding:8px 12px;color:var(--muted);font-size:12px}.live{color:var(--green)}.btn{background:linear-gradient(135deg,#719cff,#8067ef);color:white;border-radius:12px;padding:11px 17px;font-weight:700;box-shadow:0 8px 24px #5e75d833}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.secondary{background:#1c2a40;border:1px solid #31435f;box-shadow:none}.btn.ghost{background:transparent;border:1px solid var(--line);box-shadow:none;color:var(--text)}.eyebrow{color:var(--muted);font-size:12px;text-transform:uppercase;letter-spacing:1.3px;font-weight:700}.hero{display:grid;grid-template-columns:1.4fr .8fr;gap:18px;margin-bottom:18px}.card{background:linear-gradient(145deg,#121d2e,#0e1726);border:1px solid var(--line);border-radius:20px;padding:24px;min-width:0}.balance{min-height:220px;position:relative;overflow:hidden}.balance:after{content:"";position:absolute;width:260px;height:260px;border-radius:50%;background:#6f8eff13;right:-80px;top:-90px}.amount{font-size:clamp(34px,5vw,48px);font-weight:750;letter-spacing:-2px;margin:12px 0 2px}.sub{color:var(--muted);font-size:13px}.actions{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}.network{display:flex;flex-direction:column;gap:12px}.network select,.field input,.field select{width:100%;background:#0b1422;color:var(--text);border:1px solid var(--line);border-radius:11px;padding:12px;outline:none}.grid{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin:18px 0}.asset{display:flex;align-items:center;gap:12px;padding:13px 0;border-bottom:1px solid #202c40}.asset:last-child{border:0}.coin{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#1d2a40;font-weight:800}.assetname{font-weight:650}.assetmeta{font-size:12px;color:var(--muted)}.assetval{margin-left:auto;text-align:right;font-weight:650}.sectionhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}.sectionhead h2{font-size:16px;margin:0}.muted{color:var(--muted)}.tx{padding:13px 0;border-bottom:1px solid #202c40;display:flex;justify-content:space-between;gap:12px;font-size:13px}.tx:last-child{border:0}.tag{font-size:11px;border-radius:20px;padding:4px 8px;background:#172d2a;color:var(--green)}.empty{padding:25px 4px;text-align:center;color:var(--muted);font-size:13px}.wide{grid-column:1/-1}.notice{border:1px solid #5b4b27;background:#30281777;color:#e6c98b;padding:13px 15px;border-radius:13px;font-size:12px;margin-top:18px}.foot{text-align:center;color:#66758b;font-size:11px;margin-top:26px}.modal{position:fixed;inset:0;background:#02050bcc;display:none;align-items:center;justify-content:center;padding:18px;z-index:5}.modal.show{display:flex}.dialog{width:min(440px,100%);background:#111c2c;border:1px solid #34445e;border-radius:20px;padding:23px;box-shadow:0 25px 90px #0009}.dialog h2{margin:0 0 5px}.field{margin:14px 0}.field label{display:block;font-size:12px;color:var(--muted);margin-bottom:7px}.dialog .actions{justify-content:flex-end}.status{font-size:12px;color:var(--muted);min-height:20px;margin-top:10px}.address{overflow-wrap:anywhere;font-size:12px;color:#a9bde0;background:#0a1320;padding:11px;border-radius:10px;margin-top:8px}.link{color:#9db9ff;text-decoration:none}.tiny{font-size:11px;color:var(--muted)}@media(max-width:760px){.shell{padding:20px 15px 40px}.hero,.grid{grid-template-columns:1fr}.wide{grid-column:auto}.top{align-items:flex-start}.topright{flex-direction:column;align-items:flex-end}.card{padding:19px}.amount{font-size:38px}}
+/* NOIR institutional mobile wallet refresh */
+:root{color-scheme:dark;--bg:#000;--panel:#080808;--panel2:#0d0d0d;--line:#242424;--muted:#929292;--text:#fff;--green:#19c784;--blue:#d5d5d5;--red:#ff7777}
+*{box-sizing:border-box}
+body{margin:0;background:#000;color:#fff;font:14px/1.5 Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display",Segoe UI,sans-serif;letter-spacing:-.01em}
+.shell{max-width:1120px;margin:auto;padding:22px 22px 56px}
+.top{position:sticky;top:0;z-index:4;margin:0 -22px 24px;padding:14px 22px;background:#000e;backdrop-filter:blur(18px);border-bottom:1px solid #1d1d1d}
+.brand{gap:11px;font-size:18px;letter-spacing:.12em;text-transform:uppercase;font-weight:700}
+.logo{width:34px;height:34px;border-radius:11px;background:#fff;color:#000;box-shadow:none;font-size:19px}
+.pill{border:1px solid #292929;color:#aaa;background:#080808}
+.live{color:#fff}
+.btn{background:#fff;color:#000;border:1px solid #fff;border-radius:10px;padding:11px 16px;font-weight:650;box-shadow:none}
+.btn:hover{background:#dedede}
+.btn:disabled{opacity:.3}
+.btn.secondary{background:#111;color:#fff;border:1px solid #333;box-shadow:none}
+.btn.ghost{background:transparent;border:1px solid #333;color:#fff;box-shadow:none}
+.eyebrow{color:#929292;font-size:10px;letter-spacing:1.6px}
+.card{background:#080808;border:1px solid #222;border-radius:17px;padding:22px}
+.balance{min-height:220px;background:#050505}
+.balance:after{background:#ffffff08}
+.amount{font-size:clamp(36px,5vw,48px);font-weight:550;letter-spacing:-2.2px}
+.sub,.muted,.assetmeta,.tiny{color:#929292}
+.network select,.field input,.field select,.field select,.dialog input{background:#050505;color:#fff;border:1px solid #2a2a2a;border-radius:10px}
+.asset{border-bottom:1px solid #1d1d1d}
+.coin{background:#151515;border:1px solid #292929}
+.assetname,.assetval{font-weight:600}
+.sectionhead h2{font-size:15px;font-weight:650;letter-spacing:-.2px}
+.tx{border-bottom:1px solid #1d1d1d}
+.tag{background:#102219;color:#48d69b}
+.notice{border:1px solid #38332a;background:#11100d;color:#c8b98f}
+.address{background:#050505;border:1px solid #222;color:#ddd}
+.dialog{background:#090909;border:1px solid #303030}
+.foot{color:#666}
+.link{color:#fff;text-decoration:underline}
+input::placeholder{color:#666}
+select option{background:#080808;color:#fff}
+@media(max-width:760px){
+ .shell{padding:12px 14px 92px}
+ .top{margin:0 -14px 15px;padding:12px 14px;align-items:center}
+ .topright{display:flex;flex-direction:row;gap:6px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
+ .topright .pill{display:none}
+ .topright .btn{font-size:11px;padding:8px 10px}
+ .brand{font-size:15px}
+ .logo{width:31px;height:31px}
+ .hero,.grid{grid-template-columns:1fr;gap:12px;margin:12px 0}
+ .card{padding:17px;border-radius:15px}
+ .balance{min-height:unset}
+ .amount{font-size:39px;margin:8px 0 0}
+ .actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:18px}
+ .actions .btn{width:100%;padding:11px 8px}
+ .network{gap:9px}
+ .wide{grid-column:auto}
+ .asset{padding:12px 0}
+ .modal{align-items:flex-end;padding:0}
+ .dialog{width:100%!important;max-height:90vh;overflow:auto;border-radius:20px 20px 0 0;padding:22px 18px calc(22px + env(safe-area-inset-bottom))}
+ .dialog .actions{display:flex}
+ .dialog .actions .btn{flex:1}
+ .notice{font-size:11px}
+ .foot{padding-bottom:12px}
+}
 </style>
 </head>
 <body><main class="shell">
-<header class="top"><div class="brand"><div class="logo">✦</div><div>northstar <span class="muted" style="font-weight:400">wallet</span></div></div><div class="topright"><span class="pill"><span class="live">●</span> Self-custody mode</span><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button><button id="connect" class="btn">Connect wallet</button></div></header>
+<header class="top"><div class="brand"><div class="logo">✦</div><div>NOIR <span class="muted" style="font-weight:400">WALLET</span></div></div><div class="topright"><span class="pill"><span class="live">●</span> Self-custody mode</span><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button><button id="connect" class="btn">Connect wallet</button></div></header>
 <section class="hero">
 <div class="card balance"><div class="eyebrow">Selected network balance</div><div class="amount" id="total">$0.00</div><div class="sub" id="walletState">Connect a wallet to load your on-chain balances</div><div class="actions"><button class="btn" id="sendBtn" disabled>↑ Send</button><button class="btn secondary" id="receiveBtn" disabled>↓ Receive</button><button class="btn ghost" id="swapBtn" disabled>⇄ Swap</button><button class="btn ghost" id="refreshBtn" disabled>↻ Refresh</button></div></div>
 <div class="card network"><div class="eyebrow">Active network</div><select id="network" aria-label="Choose EVM network"></select><div class="tiny" id="networkCount">Loading LI.FI-supported EVM networks…</div><div class="sub">Connected account</div><div id="address" class="address">Not connected</div><div class="tiny" id="networkHint">EVM networks · wallet approval required for every transaction</div></div>
@@ -21,7 +78,7 @@
 <div class="card wide"><div class="sectionhead"><h2>Supported networks</h2><span class="tiny" id="networkCountSummary">Loading LI.FI network list…</span></div><div id="networkChips" style="display:flex;gap:9px;flex-wrap:wrap"></div><p class="tiny" style="margin:15px 0 0">Bitcoin support requires a compatible browser wallet such as UniSat. EVM support requires MetaMask, Rabby, Coinbase Wallet, or another EIP-1193 wallet.</p></div>
 </section>
 <div class="notice"><b>Security:</b> Northstar is a non-custodial wallet interface. Your wallet extension signs transactions locally. This site never asks for your recovery phrase or private key. Always verify the network, recipient, and amount in your wallet before approving.</div>
-<footer class="foot">Northstar Wallet · Trading · On-chain data may be delayed. Not financial advice.</footer>
+<footer class="foot">NOIR WALLET · DIGITAL ASSETS · On-chain data may be delayed. Not financial advice.</footer>
 </main>
 <div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Send crypto</h2><p class="sub" id="modalDesc">Your wallet will ask you to approve this transaction.</p><div class="field"><label>Asset</label><select id="sendAsset"><option value="native">Native coin</option></select></div><div class="field"><label>Recipient address</label><input id="recipient" placeholder="0x… or Bitcoin address" autocomplete="off"></div><div class="field"><label>Amount</label><input id="amountInput" type="number" min="0" step="any" placeholder="0.00"></div><div class="status" id="modalStatus"></div><div class="actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="confirm">Continue to wallet</button></div></div></div>
 <div class="modal" id="swapModal"><div class="dialog" style="width:min(500px,100%)"><h2>Swap tokens</h2><p class="sub">Powered by LI.FI · compare live routes across supported networks.</p><div class="field"><label>From network</label><select id="swapFromChain"></select></div><div class="field"><label>From token</label><select id="swapFromToken"></select></div><div class="field"><label>Amount</label><input id="swapAmount" type="number" min="0" step="any" placeholder="0.00"></div><div class="field"><label>To network</label><select id="swapToChain"></select></div><div class="field"><label>To token</label><select id="swapToToken"></select></div><div class="status" id="swapStatus">Choose tokens and request a quote.</div><div id="swapQuote" class="address" style="display:none;line-height:1.8"></div><div class="actions"><button class="btn ghost" id="swapClose">Close</button><button class="btn secondary" id="getSwapQuote">Get quote</button><button class="btn" id="executeSwap" disabled>Confirm &amp; swap</button></div></div></div><div class="modal" id="receiveModal"><div class="dialog"><h2>Receive crypto</h2><p class="sub">Only receive assets on the matching network.</p><div class="address" id="receiveAddress"></div><div class="actions"><button class="btn ghost" id="closeReceive">Close</button><button class="btn" id="copyAddress">Copy address</button></div></div></div>
