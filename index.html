@@ -64,22 +64,65 @@ select option{background:#080808;color:#fff}
  .notice{font-size:11px}
  .foot{padding-bottom:12px}
 }
+
+/* Floating translucent primary navigation */
+.shell{padding-bottom:120px}
+#homePanel,#assetsPanel,#discoverPanel{scroll-margin-top:96px}
+.float-nav{
+ position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);
+ z-index:20;display:flex;align-items:center;justify-content:center;gap:4px;
+ width:min(420px,calc(100vw - 30px));padding:7px;
+ border:1px solid rgba(255,255,255,.17);border-radius:999px;
+ background:rgba(17,17,17,.66);backdrop-filter:blur(26px) saturate(145%);
+ -webkit-backdrop-filter:blur(26px) saturate(145%);
+ box-shadow:0 12px 48px rgba(0,0,0,.58),inset 0 1px 0 rgba(255,255,255,.08);
+}
+.nav-item{flex:1;min-width:0;display:flex;align-items:center;justify-content:center;gap:7px;
+ padding:11px 10px;border-radius:999px;background:transparent;color:#858585;
+ border:1px solid transparent;font:600 12px/1 Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
+ transition:background .2s ease,color .2s ease,border-color .2s ease;
+}
+.nav-item .nav-icon{font-size:18px;line-height:1;font-weight:400}
+.nav-item.active{color:#fff;background:rgba(255,255,255,.12);border-color:rgba(255,255,255,.13)}
+.nav-item:focus-visible{outline:2px solid #fff;outline-offset:2px}
+@media(max-width:760px){
+ .shell{padding-bottom:calc(116px + env(safe-area-inset-bottom))}
+ .float-nav{bottom:calc(12px + env(safe-area-inset-bottom));width:calc(100vw - 28px);gap:2px;padding:6px}
+ .nav-item{flex-direction:column;gap:4px;padding:8px 4px;font-size:10px}
+ .nav-item .nav-icon{font-size:19px}
+}
+@media(prefers-reduced-motion:reduce){.nav-item{transition:none}html{scroll-behavior:auto}}
 </style>
 </head>
 <body><main class="shell">
 <header class="top"><div class="brand"><div class="logo">✦</div><div>NOIR <span class="muted" style="font-weight:400">WALLET</span></div></div><div class="topright"><span class="pill"><span class="live">●</span> Self-custody mode</span><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button><button id="connect" class="btn">Connect wallet</button></div></header>
-<section class="hero">
+<section class="hero" id="homePanel">
 <div class="card balance"><div class="eyebrow">Selected network balance</div><div class="amount" id="total">$0.00</div><div class="sub" id="walletState">Connect a wallet to load your on-chain balances</div><div class="actions"><button class="btn" id="sendBtn" disabled>↑ Send</button><button class="btn secondary" id="receiveBtn" disabled>↓ Receive</button><button class="btn ghost" id="swapBtn" disabled>⇄ Swap</button><button class="btn ghost" id="refreshBtn" disabled>↻ Refresh</button></div></div>
 <div class="card network"><div class="eyebrow">Active network</div><select id="network" aria-label="Choose EVM network"></select><div class="tiny" id="networkCount">Loading LI.FI-supported EVM networks…</div><div class="sub">Connected account</div><div id="address" class="address">Not connected</div><div class="tiny" id="networkHint">EVM networks · wallet approval required for every transaction</div></div>
 </section>
 <section class="grid">
-<div class="card"><div class="sectionhead"><h2>Your assets</h2><span class="tiny" id="assetCount">0 assets</span></div><div id="assets"><div class="empty">Connect your wallet to view assets.</div></div><div class="sectionhead" style="margin-top:18px"><h2>Tokens on this network</h2><span class="tiny" id="tokenCount">Loading token list…</span></div><input id="tokenSearch" placeholder="Search tokens by name or symbol" style="width:100%;background:#0b1422;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><div id="tokenDirectory"><div class="empty">Token list loads when a network is selected.</div></div></div>
+<div class="card" id="assetsPanel"><div class="sectionhead"><h2>Your assets</h2><span class="tiny" id="assetCount">0 assets</span></div><div id="assets"><div class="empty">Connect your wallet to view assets.</div></div><div class="sectionhead" style="margin-top:18px"><h2>Tokens on this network</h2><span class="tiny" id="tokenCount">Loading token list…</span></div><input id="tokenSearch" placeholder="Search tokens by name or symbol" style="width:100%;background:#0b1422;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><div id="tokenDirectory"><div class="empty">Token list loads when a network is selected.</div></div></div>
 <div class="card"><div class="sectionhead"><h2>Recent activity</h2><span class="tiny">This session</span></div><div id="activity"><div class="empty">Your recent wallet actions will appear here.</div></div></div>
-<div class="card wide"><div class="sectionhead"><h2>Supported networks</h2><span class="tiny" id="networkCountSummary">Loading LI.FI network list…</span></div><div id="networkChips" style="display:flex;gap:9px;flex-wrap:wrap"></div><p class="tiny" style="margin:15px 0 0">Bitcoin support requires a compatible browser wallet such as UniSat. EVM support requires MetaMask, Rabby, Coinbase Wallet, or another EIP-1193 wallet.</p></div>
+<div class="card wide" id="discoverPanel"><div class="sectionhead"><h2>Supported networks</h2><span class="tiny" id="networkCountSummary">Loading LI.FI network list…</span></div><div id="networkChips" style="display:flex;gap:9px;flex-wrap:wrap"></div><p class="tiny" style="margin:15px 0 0">Bitcoin support requires a compatible browser wallet such as UniSat. EVM support requires MetaMask, Rabby, Coinbase Wallet, or another EIP-1193 wallet.</p></div>
 </section>
 <div class="notice"><b>Security:</b> Northstar is a non-custodial wallet interface. Your wallet extension signs transactions locally. This site never asks for your recovery phrase or private key. Always verify the network, recipient, and amount in your wallet before approving.</div>
 <footer class="foot">NOIR WALLET · DIGITAL ASSETS · On-chain data may be delayed. Not financial advice.</footer>
 </main>
+
+<nav class="float-nav" aria-label="Primary navigation">
+  <button class="nav-item active" type="button" data-tab="home" aria-label="Home">
+    <span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span>
+  </button>
+  <button class="nav-item" type="button" data-tab="assets" aria-label="Assets">
+    <span class="nav-icon" aria-hidden="true">▣</span><span>Assets</span>
+  </button>
+  <button class="nav-item" type="button" data-tab="trade" aria-label="Trade">
+    <span class="nav-icon" aria-hidden="true">⇄</span><span>Trade</span>
+  </button>
+  <button class="nav-item" type="button" data-tab="discover" aria-label="Discover">
+    <span class="nav-icon" aria-hidden="true">⌕</span><span>Discover</span>
+  </button>
+</nav>
 <div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Send crypto</h2><p class="sub" id="modalDesc">Your wallet will ask you to approve this transaction.</p><div class="field"><label>Asset</label><select id="sendAsset"><option value="native">Native coin</option></select></div><div class="field"><label>Recipient address</label><input id="recipient" placeholder="0x… or Bitcoin address" autocomplete="off"></div><div class="field"><label>Amount</label><input id="amountInput" type="number" min="0" step="any" placeholder="0.00"></div><div class="status" id="modalStatus"></div><div class="actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="confirm">Continue to wallet</button></div></div></div>
 <div class="modal" id="swapModal"><div class="dialog" style="width:min(500px,100%)"><h2>Swap tokens</h2><p class="sub">Powered by LI.FI · compare live routes across supported networks.</p><div class="field"><label>From network</label><select id="swapFromChain"></select></div><div class="field"><label>From token</label><select id="swapFromToken"></select></div><div class="field"><label>Amount</label><input id="swapAmount" type="number" min="0" step="any" placeholder="0.00"></div><div class="field"><label>To network</label><select id="swapToChain"></select></div><div class="field"><label>To token</label><select id="swapToToken"></select></div><div class="status" id="swapStatus">Choose tokens and request a quote.</div><div id="swapQuote" class="address" style="display:none;line-height:1.8"></div><div class="actions"><button class="btn ghost" id="swapClose">Close</button><button class="btn secondary" id="getSwapQuote">Get quote</button><button class="btn" id="executeSwap" disabled>Confirm &amp; swap</button></div></div></div><div class="modal" id="receiveModal"><div class="dialog"><h2>Receive crypto</h2><p class="sub">Only receive assets on the matching network.</p><div class="address" id="receiveAddress"></div><div class="actions"><button class="btn ghost" id="closeReceive">Close</button><button class="btn" id="copyAddress">Copy address</button></div></div></div>
 <script src="https://cdn.jsdelivr.net/npm/ethers@6.13.5/dist/ethers.umd.min.js" crossorigin="anonymous"></script>
@@ -501,6 +544,24 @@ function openSwap(){if(!account)return;if(!lifiChainsReady){$("swapModal").class
 async function getSwapQuote(){try{activeQuote=null;$("executeSwap").disabled=true;$("swapQuote").style.display="none";const fromChain=$("swapFromChain").value,toChain=$("swapToChain").value,fromToken=$("swapFromToken").value,toToken=$("swapToToken").value,amount=$("swapAmount").value;if(!isLifiChain(fromChain)||!isLifiChain(toChain))throw Error("One or both networks are not in LI.FI’s supported chain registry. Select supported networks.");if(!amount||!Number.isFinite(Number(amount))||Number(amount)<=0)throw Error("Enter an amount greater than zero.");if(fromChain===toChain&&fromToken.toLowerCase()===toToken.toLowerCase())throw Error("Choose two different tokens.");if(!fromToken||!toToken)throw Error("Select both tokens.");const decimals=Number($("swapFromToken").selectedOptions[0]?.dataset.decimals||18);const fromAmount=ethers.parseUnits(amount,decimals).toString();$("getSwapQuote").disabled=true;$("swapStatus").textContent="Finding the best executable route…";const params=new URLSearchParams({fromChain,toChain,fromToken,toToken,fromAmount,fromAddress:account,slippage:"0.005",integrator:"northstar-wallet"});const quote=await lifiGet("/quote?"+params.toString());if(!quote.transactionRequest?.to||!quote.transactionRequest?.data)throw Error("LI.FI returned no executable transaction for this pair.");activeQuote=quote;const out=ethers.formatUnits(BigInt(quote.estimate.toAmount),Number(quote.action?.toToken?.decimals??18));const symbol=quote.action?.toToken?.symbol||"destination token";const fee=(quote.estimate?.feeCosts||[]).map(x=>(x.name||"Fee")+": "+(x.amountUSD?"$"+Number(x.amountUSD).toFixed(2):x.amount)).join(" · ")||"Fees included in route estimate";$("swapQuote").innerHTML='<b>Estimated receive</b><br>'+safeText(out)+" "+safeText(symbol)+'<br><span class="tiny">Minimum / route estimate may change before execution · '+safeText(quote.tool||"LI.FI route")+' · '+safeText(fee)+'</span>';$("swapQuote").style.display="block";$("swapStatus").textContent="Review the route, then confirm to request wallet signature."; $("executeSwap").disabled=false;}catch(e){$("swapStatus").textContent=e.shortMessage||e.message||"Could not get a quote.";}finally{$("getSwapQuote").disabled=false;}}
 async function executeSwap(){if(!activeQuote)return;const q=activeQuote,chainId=String(q.action.fromChainId),token=q.action.fromToken,amount=BigInt(q.action.fromAmount),tx=q.transactionRequest;try{$("executeSwap").disabled=true;$("swapStatus").textContent="Preparing wallet transaction…";const signer=await signerForChain(chainId);if(token.address?.toLowerCase()!==NATIVE_TOKEN.toLowerCase()){const erc20=new ethers.Contract(token.address,ERC20_ABI,signer);const approvalAddress=q.estimate?.approvalAddress;if(approvalAddress){const allowance=await erc20.allowance(account,approvalAddress);if(allowance<amount){$("swapStatus").textContent="Approve "+token.symbol+" spending in your wallet…";const approval=await erc20.approve(approvalAddress,amount);await approval.wait();}}}const currentChain=(await signer.provider.getNetwork()).chainId;if(currentChain!==BigInt(chainId))throw Error("Wallet is connected to a different source network.");$("swapStatus").textContent="Confirm the swap transaction in your wallet…";const sent=await signer.sendTransaction({to:tx.to,data:tx.data,value:BigInt(tx.value||"0"),...(tx.gasLimit?{gasLimit:BigInt(tx.gasLimit)}:{}),...(tx.gasPrice?{gasPrice:BigInt(tx.gasPrice)}:{})});logActivity("LI.FI swap submitted",sent.hash.slice(0,18)+"…");$("swapStatus").textContent="Submitted "+sent.hash.slice(0,18)+"… waiting for confirmation.";await sent.wait();$("swapStatus").textContent="Source transaction confirmed. LI.FI route is processing; check the transaction status before assuming destination funds arrived.";const bridge=q.toolDetails?.name||q.tool||"";try{const statusParams=new URLSearchParams({txHash:sent.hash,fromChain:String(q.action.fromChainId),toChain:String(q.action.toChainId),bridge});const status=await lifiGet("/status?"+statusParams.toString());$("swapStatus").textContent="LI.FI status: "+(status.status||"PENDING")+". Track the route in your activity.";logActivity("LI.FI route status",status.status||"PENDING");}catch{}activeQuote=null;$("executeSwap").disabled=true;setTimeout(()=>refresh(),1200);}catch(e){$("swapStatus").textContent=e.shortMessage||e.message||"Swap failed or was rejected.";$("executeSwap").disabled=false;}}
 function initSwapUI(){$("swapFromChain").onchange=()=>{populateTokenSelect("swapFromToken",$("swapFromChain").value);loadChainTokens($("swapFromChain").value);activeQuote=null;$("executeSwap").disabled=true;};$("swapToChain").onchange=()=>{populateTokenSelect("swapToToken",$("swapToChain").value);loadChainTokens($("swapToChain").value);activeQuote=null;$("executeSwap").disabled=true;};$("getSwapQuote").onclick=getSwapQuote;$("executeSwap").onclick=executeSwap;$("swapClose").onclick=()=>$("swapModal").classList.remove("show");$("swapBtn").onclick=openSwap;$("tokenSearch").oninput=()=>renderTokenDirectory($("network").value,$("tokenSearch").value);}
+
+/* NOIR floating navigation */
+(function initFloatingNavigation(){
+ const items=[...document.querySelectorAll(".nav-item")];
+ const targets={home:"homePanel",assets:"assetsPanel",discover:"discoverPanel"};
+ function setActive(tab){items.forEach(item=>{const active=item.dataset.tab===tab;item.classList.toggle("active",active);item.setAttribute("aria-current",active?"page":"false");});}
+ items.forEach(item=>item.addEventListener("click",()=>{
+   const tab=item.dataset.tab;setActive(tab);
+   if(tab==="trade"){
+     if(typeof openSwap==="function" && account){openSwap();}
+     else {const state=document.getElementById("walletState");if(state)state.textContent="Connect or unlock your wallet to start trading.";window.scrollTo({top:0,behavior:"smooth"});}
+     return;
+   }
+   const target=document.getElementById(targets[tab]);
+   if(target)target.scrollIntoView({behavior:"smooth",block:"start"});
+ }));
+})();
+
 initSwapUI();
 loadLifiChains().then(()=>{updateLifiNetworkLabels();renderSwapChainOptions();loadChainTokens($("network").value);});
 
