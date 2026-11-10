@@ -82,7 +82,7 @@ select option{background:#080808;color:#fff}
  border:1px solid transparent;font:600 12px/1 Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;
  transition:color .22s ease,text-shadow .22s ease,filter .22s ease;
 }
-.nav-item .nav-icon{font-size:19px;line-height:1;font-weight:400;display:inline-flex;align-items:center;justify-content:center}
+.nav-item .nav-icon{width:20px;height:20px;line-height:1;font-weight:400;display:inline-flex;align-items:center;justify-content:center;flex:0 0 20px}.nav-item .nav-icon svg{width:20px;height:20px;display:block;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
 .nav-item.active{color:#fff;background:radial-gradient(ellipse at center,rgba(255,255,255,.19) 0%,rgba(255,255,255,.10) 48%,rgba(255,255,255,.025) 78%,transparent 100%);border-color:transparent;text-shadow:none;filter:none;box-shadow:inset 0 0 22px rgba(255,255,255,.10),0 0 18px rgba(255,255,255,.13)}
 .nav-item.active .nav-icon{filter:none}
 .nav-item:focus-visible{outline:2px solid #fff;outline-offset:2px}
@@ -90,7 +90,7 @@ select option{background:#080808;color:#fff}
  .shell{padding-bottom:calc(116px + env(safe-area-inset-bottom))}
  .float-nav{left:calc(50% + 42px);bottom:calc(26px + env(safe-area-inset-bottom));width:calc(100vw - 84px);gap:2px;padding:5px}
  .nav-item{flex-direction:column;gap:4px;padding:8px 4px;font-size:10px}
- .nav-item .nav-icon{font-size:19px}
+ .nav-item .nav-icon{width:20px;height:20px;flex-basis:20px}.nav-item .nav-icon svg{width:20px;height:20px}
 }
 @media(prefers-reduced-motion:reduce){.nav-item{transition:none}html{scroll-behavior:auto}}
 </style>
@@ -112,16 +112,16 @@ select option{background:#080808;color:#fff}
 
 <nav class="float-nav" aria-label="Primary navigation">
   <button class="nav-item active" type="button" data-tab="home" aria-label="Home">
-    <span class="nav-icon" aria-hidden="true">⌂</span><span>Home</span>
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"/><path d="M5.5 9v12h13V9M9.5 21v-7h5v7"/></svg></span><span>Home</span>
   </button>
   <button class="nav-item" type="button" data-tab="assets" aria-label="Assets">
-    <span class="nav-icon" aria-hidden="true">◫</span><span>Assets</span>
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="15" rx="2"/><path d="M3 9h18M16 14h.01"/></svg></span><span>Assets</span>
   </button>
   <button class="nav-item" type="button" data-tab="trade" aria-label="Trade">
-    <span class="nav-icon" aria-hidden="true">⤧</span><span>Trade</span>
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M7 7h14m0 0-4-4m4 4-4 4M17 17H3m0 0 4 4m-4-4 4-4"/></svg></span><span>Trade</span>
   </button>
   <button class="nav-item" type="button" data-tab="discover" aria-label="Discover">
-    <span class="nav-icon" aria-hidden="true">◎</span><span>Discover</span>
+    <span class="nav-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="m16.2 7.8-2.8 8.4-5.6-5.6z"/></svg></span><span>Discover</span>
   </button>
 </nav>
 <div class="modal" id="modal"><div class="dialog"><h2 id="modalTitle">Send crypto</h2><p class="sub" id="modalDesc">Your wallet will ask you to approve this transaction.</p><div class="field"><label>Asset</label><select id="sendAsset"><option value="native">Native coin</option></select></div><div class="field"><label>Recipient address</label><input id="recipient" placeholder="0x… or Bitcoin address" autocomplete="off"></div><div class="field"><label>Amount</label><input id="amountInput" type="number" min="0" step="any" placeholder="0.00"></div><div class="status" id="modalStatus"></div><div class="actions"><button class="btn ghost" id="cancel">Cancel</button><button class="btn" id="confirm">Continue to wallet</button></div></div></div>
