@@ -398,23 +398,20 @@ async function refresh(){
 }
 async function send(){
  const to=$("recipient").value.trim(),amount=$("amountInput").value,chain=$("network").value;
+ const tokenAddress=$("sendAsset").value,decimals=Number($("sendAsset").selectedOptions[0]?.dataset.decimals||18);
+ const isNative=!tokenAddress||tokenAddress==="native"||tokenAddress.toLowerCase()===NATIVE_TOKEN.toLowerCase();
  if(!ethers.isAddress(to)){$("modalStatus").textContent="Enter a valid EVM recipient address.";return;}
- let value;try{value=ethers.parseEther(amount);}catch(e){$("modalStatus").textContent="Enter a valid amount.";return;}
+ if(!amount||!Number.isFinite(Number(amount))||Number(amount)<=0){$("modalStatus").textContent="Enter an amount greater than zero.";return;}
+ let value;try{value=ethers.parseUnits(amount,isNative?18:decimals);}catch(e){$("modalStatus").textContent="Enter a valid amount for this asset.";return;}
  if(value<=0n){$("modalStatus").textContent="Amount must be greater than zero.";return;}
  try{
   $("confirm").disabled=true;$("modalStatus").textContent="Preparing transaction…";
-  const p=new ethers.JsonRpcProvider(CHAINS[chain].rpc,Number(chain));
-  let signer;
-  if(localWallet) signer=localWallet.connect(p);
-  else if(provider){
-   const actual=(await provider.request({method:"eth_chainId"})).toLowerCase();
-   if(actual!==CHAINS[chain].hex.toLowerCase()){$("modalStatus").textContent="Switch your connected wallet to "+CHAINS[chain].name+" before sending.";return;}
-   const browserProvider=new ethers.BrowserProvider(provider);signer=await browserProvider.getSigner();
-  }else{$("modalStatus").textContent="Unlock or connect a wallet first.";return;}
+  const signer=await signerForChain(chain);
   $("modalStatus").textContent="Waiting for wallet signature…";
-  const tx=await signer.sendTransaction({to,value});
+  const tx=isNative?await signer.sendTransaction({to,value}):await new ethers.Contract(tokenAddress,ERC20_ABI,signer).transfer(to,value);
   $("modalStatus").textContent="Submitted: "+tx.hash.slice(0,18)+"…";
-  logActivity("Sent "+amount+" "+CHAINS[chain].symbol,tx.hash.slice(0,16)+"…");
+  const symbol=$("sendAsset").selectedOptions[0]?.dataset.symbol||CHAINS[chain].symbol;
+  logActivity("Sent "+amount+" "+symbol,tx.hash.slice(0,16)+"…");
   $("confirm").disabled=false;setTimeout(()=>{$("modal").classList.remove("show");refresh()},1800);
  }catch(e){$("modalStatus").textContent=e.shortMessage||e.message||"Transaction failed or rejected.";$("confirm").disabled=false;}
 }
