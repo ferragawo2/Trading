@@ -253,13 +253,23 @@ select option{background:#080808;color:#fff}
 .noir-fga-showcase{width:min(100%,620px);height:360px;margin:0 auto 16px;display:flex;align-items:center;justify-content:center;overflow:visible}
 .noir-fga-showcase img{display:block;width:100%;height:100%;object-fit:contain;object-position:center;image-rendering:auto}
 @media(max-width:760px){.noir-fga-showcase{width:100%;height:320px;margin:0 auto 14px}}
-/* FGA virtual-card introduction */
-.noir-card-intro{max-width:680px;margin: -12px auto 28px;padding:0 14px;text-align:center}
-.noir-card-intro h1{margin:0 0 10px;color:#f4f1eb;font-size:clamp(21px,3.4vw,30px);font-weight:600;letter-spacing:.075em;line-height:1.2}
+/* FGA virtual-card introduction: compact accordion */
+.noir-card-intro{max-width:680px;margin:-12px auto 28px;padding:0 14px;text-align:center}
+.noir-card-intro-toggle{width:100%;display:flex;flex-direction:column;align-items:center;gap:12px;padding:0;border:0;background:transparent;color:inherit;cursor:pointer}
+.noir-card-intro h1{margin:0;color:#f4f1eb;font-size:clamp(21px,3.4vw,30px);font-weight:600;letter-spacing:.075em;line-height:1.2}
 .noir-card-intro h1 span{color:#d7b879}
+.noir-card-intro-controls{display:flex;align-items:center;justify-content:center;gap:12px}
+.noir-card-intro-chevron{width:30px;height:30px;display:grid;place-items:center;border:1px solid #292929;border-radius:50%;color:#c8b48d;transition:transform .22s ease,border-color .22s ease}
+.noir-card-intro-chevron svg{width:14px;height:14px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.noir-card-intro-cta{min-width:104px;padding:9px 21px;border:1px solid #5a4a30;border-radius:999px;background:linear-gradient(180deg,#211b12,#100e0a);color:#e4c98f;font-size:11px;font-weight:650;letter-spacing:.16em}
+.noir-card-intro-toggle:hover .noir-card-intro-cta{border-color:#9a7c4a}
+.noir-card-intro-toggle:focus-visible{outline:2px solid #9a7c4a;outline-offset:6px;border-radius:12px}
+.noir-card-intro[aria-expanded="true"] .noir-card-intro-chevron{transform:rotate(180deg);border-color:#75603d}
+.noir-card-intro-panel{max-width:560px;margin:0 auto;overflow:hidden;max-height:0;opacity:0;transition:max-height .28s ease,opacity .22s ease,margin .22s ease}
+.noir-card-intro[aria-expanded="true"] .noir-card-intro-panel{max-height:180px;opacity:1;margin-top:15px}
 .noir-card-intro h2{margin:0 0 9px;color:#d8d8d8;font-size:clamp(14px,2vw,17px);font-weight:500;letter-spacing:.015em}
-.noir-card-intro p{max-width:560px;margin:0 auto;color:#888;font-size:13px;line-height:1.65}
-@media(max-width:760px){.noir-card-intro{margin:-10px auto 23px;padding:0 8px}.noir-card-intro h1{font-size:20px;letter-spacing:.055em}.noir-card-intro h2{font-size:14px}.noir-card-intro p{font-size:12px;line-height:1.55}}
+.noir-card-intro p{margin:0 auto;color:#888;font-size:13px;line-height:1.65}
+@media(max-width:760px){.noir-card-intro{margin:-10px auto 23px;padding:0 8px}.noir-card-intro h1{font-size:20px;letter-spacing:.055em}.noir-card-intro h2{font-size:14px}.noir-card-intro p{font-size:12px;line-height:1.55}.noir-card-intro-controls{gap:10px}}
 </style>
 <link rel="preload" as="image" href="/43138-removebg-preview.png" fetchpriority="high">
 <link rel="preload" as="image" href="/file_00000000b6d88210822d4b19f6ac9459.png" media="(max-width: 760px)" fetchpriority="high">
@@ -303,10 +313,18 @@ select option{background:#080808;color:#fff}
 </div>
 
 <section class="noir-fga-showcase" aria-label="FGA premium cards and supported digital assets"><img src="/43138-removebg-preview.png" alt="FGA premium gold, black and red cards with Bitcoin, XRP and Tether symbols" width="1097" height="1536" fetchpriority="high" decoding="async"></section>
-<section class="noir-card-intro" aria-label="FGA virtual crypto payment cards">
-  <h1>YOUR CRYPTO. YOUR CARD. <span>YOUR FREEDOM.</span></h1>
-  <h2>A new standard for virtual crypto payments.</h2>
-  <p>Premium virtual payment cards designed around your digital assets — bringing a more elegant way to put crypto to work in everyday life.</p>
+<section class="noir-card-intro" id="noirCardIntro" aria-label="FGA virtual crypto payment cards" aria-expanded="false">
+  <button class="noir-card-intro-toggle" id="noirCardIntroToggle" type="button" aria-controls="noirCardIntroPanel" aria-expanded="false">
+    <h1>YOUR CRYPTO. YOUR CARD. <span>YOUR FREEDOM.</span></h1>
+    <span class="noir-card-intro-controls">
+      <span class="noir-card-intro-chevron" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="m5 9 7 7 7-7"/></svg></span>
+      <span class="noir-card-intro-cta">GET NOW</span>
+    </span>
+  </button>
+  <div class="noir-card-intro-panel" id="noirCardIntroPanel" aria-hidden="true">
+    <h2>A new standard for virtual crypto payments.</h2>
+    <p>Premium virtual payment cards designed around your digital assets — bringing a more elegant way to put crypto to work in everyday life.</p>
+  </div>
 </section>
 <div class="home-tagline"><span></span> BUILT FOR FREEDOM <span></span></div>
 <section class="home-features" id="homeFeatures">
@@ -800,6 +818,19 @@ function initSwapUI(){$("swapFromChain").onchange=()=>{populateTokenSelect("swap
  if(enter)enter.addEventListener("click",()=>leave(false));
  if(connect)connect.addEventListener("click",()=>leave(true));
  document.body.classList.add("noir-entrance-open");
+})();
+/* FGA intro accordion */
+(function(){
+ const section=document.getElementById("noirCardIntro");
+ const toggle=document.getElementById("noirCardIntroToggle");
+ const panel=document.getElementById("noirCardIntroPanel");
+ if(!section||!toggle||!panel)return;
+ toggle.addEventListener("click",()=>{
+   const expanded=toggle.getAttribute("aria-expanded")!=="true";
+   toggle.setAttribute("aria-expanded",String(expanded));
+   section.setAttribute("aria-expanded",String(expanded));
+   panel.setAttribute("aria-hidden",String(!expanded));
+ });
 })();
 initSwapUI();
 loadLifiChains().then(()=>{updateLifiNetworkLabels();renderSwapChainOptions();loadChainTokens($("network").value);});
