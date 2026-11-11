@@ -222,6 +222,19 @@ select option{background:#080808;color:#fff}
 
 /* Reserve the Home top area for the upcoming custom search/notification header. */
 .noir-pending-header{display:none!important}
+
+/* NOIR Home utility header */
+.noir-home-header{display:grid;grid-template-columns:46px minmax(0,1fr) 46px 46px;align-items:center;gap:12px;width:100%;max-width:620px;margin:2px 0 28px}
+.noir-header-circle{width:46px;height:46px;display:grid;place-items:center;padding:0;border:1px solid #292929;border-radius:50%;background:linear-gradient(145deg,#111,#050505);color:#eee;box-shadow:inset 0 1px 0 #ffffff0c,0 5px 18px #0008;transition:border-color .2s,background .2s}
+.noir-header-circle:hover{border-color:#555;background:#151515}
+.noir-header-circle svg{width:19px;height:19px;fill:none;stroke:currentColor;stroke-width:1.65;stroke-linecap:round;stroke-linejoin:round}
+.noir-search-pill{height:46px;min-width:0;display:flex;align-items:center;gap:10px;padding:0 16px;border:1px solid #292929;border-radius:999px;background:linear-gradient(110deg,#101010,#070707);box-shadow:inset 0 1px 0 #ffffff0a,0 5px 18px #0008;color:#888}
+.noir-search-pill svg{width:18px;height:18px;flex:0 0 18px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round}
+.noir-search-pill input{width:100%;min-width:0;padding:0;border:0!important;outline:0;background:transparent!important;color:#eee;font:400 13px/1.2 Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;box-shadow:none!important}
+.noir-search-pill input::placeholder{color:#777;opacity:1}
+.noir-header-circle:focus-visible,.noir-search-pill:focus-within{outline:2px solid #777;outline-offset:3px}
+@media(max-width:760px){.noir-home-header{grid-template-columns:42px minmax(0,1fr) 42px 42px;gap:9px;margin:0 0 25px}.noir-header-circle{width:42px;height:42px}.noir-search-pill{height:42px;padding:0 13px;gap:8px}.noir-search-pill input{font-size:12px}}
+@media(max-width:360px){.noir-home-header{gap:7px;grid-template-columns:40px minmax(0,1fr) 40px 40px}.noir-header-circle{width:40px;height:40px}.noir-search-pill{height:40px;padding:0 10px}}
 </style>
 <link rel="preload" as="image" href="/file_00000000b6d88210822d4b19f6ac9459.png" media="(max-width: 760px)" fetchpriority="high">
 <link rel="preload" as="image" href="/file_00000000f9f482438a8dd06d03ad9552.png" media="(min-width: 761px)" fetchpriority="high">
@@ -242,6 +255,21 @@ select option{background:#080808;color:#fff}
     </div>
   </div>
 </div><main class="shell">
+<header class="noir-home-header" aria-label="Wallet shortcuts">
+  <button class="noir-header-circle" type="button" id="profileButton" aria-label="Profile">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.7-3.1 3.2-5 7-5s6.3 1.9 7 5"/></svg>
+  </button>
+  <label class="noir-search-pill" aria-label="Search">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 4.2 4.2"/></svg>
+    <input id="noirGlobalSearch" type="search" placeholder="Search assets, networks..." autocomplete="off">
+  </label>
+  <button class="noir-header-circle" type="button" id="scanButton" aria-label="Scan QR code">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5M15 4h5v5M20 15v5h-5M9 20H4v-5"/><path d="M8 8h3v3H8zM15 8h1M8 15h1M13 13h3v3h-3zM18 18h.01"/></svg>
+  </button>
+  <button class="noir-header-circle" type="button" id="notificationButton" aria-label="Notifications">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M10 21h4"/></svg>
+  </button>
+</header>
 <div class="noir-pending-header" aria-hidden="true">
   <button id="createWallet" type="button" tabindex="-1">Create wallet</button>
   <button id="unlockWallet" type="button" tabindex="-1">Unlock</button>
