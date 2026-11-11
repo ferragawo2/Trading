@@ -219,6 +219,9 @@ select option{background:#080808;color:#fff}
  .noir-home-intro .home-actions .btn{min-height:44px;min-width:0;padding:10px 13px;font-size:12px}
 }
 
+
+/* Reserve the Home top area for the upcoming custom search/notification header. */
+.noir-pending-header{display:none!important}
 </style>
 <link rel="preload" as="image" href="/file_00000000b6d88210822d4b19f6ac9459.png" media="(max-width: 760px)" fetchpriority="high">
 <link rel="preload" as="image" href="/file_00000000f9f482438a8dd06d03ad9552.png" media="(min-width: 761px)" fetchpriority="high">
@@ -239,18 +242,12 @@ select option{background:#080808;color:#fff}
     </div>
   </div>
 </div><main class="shell">
-<header class="top"><div class="brand"><div class="logo">✦</div><div>NOIR <span class="muted" style="font-weight:400">WALLET</span></div></div><div class="topright"><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button></div></header>
-<section class="noir-home-hero noir-home-intro" id="homePanel">
-  <div class="noir-home-copy">
-    <div class="eyebrow">WELCOME TO NOIR</div>
-    <h1>Your assets.<br>Your rules.<br><em>Endless possibilities.</em></h1>
-    <p>Trade, explore and move across multiple networks with confidence. Your digital world, in one place.</p>
-    <div class="home-actions">
-      <button class="btn home-connect" id="connect">Connect wallet <span aria-hidden="true">↗</span></button>
-      <button class="btn ghost home-explore" onclick="document.getElementById('homeFeatures').scrollIntoView({behavior:'smooth'})">Explore NOIR <span aria-hidden="true">→</span></button>
-    </div>
-  </div>
-</section>
+<div class="noir-pending-header" aria-hidden="true">
+  <button id="createWallet" type="button" tabindex="-1">Create wallet</button>
+  <button id="unlockWallet" type="button" tabindex="-1">Unlock</button>
+  <button id="connect" type="button" tabindex="-1">Connect wallet</button>
+</div>
+
 <div class="home-tagline"><span></span> BUILT FOR FREEDOM <span></span></div>
 <section class="home-features" id="homeFeatures">
   <article class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3 20 6v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9.5 11v-1a2.5 2.5 0 0 1 5 0v1m-5 0h5v4h-5z"/></svg></div><h3>Your keys, your control</h3><p>Self-custody by design. You own what’s yours.</p></article>
