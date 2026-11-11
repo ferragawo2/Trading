@@ -93,18 +93,137 @@ select option{background:#080808;color:#fff}
  .nav-item .nav-icon{width:20px;height:20px;flex-basis:20px}.nav-item .nav-icon svg{width:20px;height:20px}
 }
 @media(prefers-reduced-motion:reduce){.nav-item{transition:none}html{scroll-behavior:auto}}
+
+/* NOIR home landing — cinematic crypto-finance direction */
+.home-landing{display:grid;grid-template-columns:minmax(0,.88fr) minmax(0,1.12fr);gap:20px;align-items:center;margin:20px 0 30px;position:relative}
+.home-copy{position:relative;z-index:2;padding:22px 0}
+.home-copy h1{font-family:Georgia,"Times New Roman",serif;font-size:clamp(38px,5.3vw,66px);line-height:1.04;letter-spacing:-1.8px;font-weight:400;margin:17px 0 20px;max-width:600px}
+.home-copy h1 em{color:#d5c2a1;font-weight:400}
+.home-copy p{color:#a7a7a7;font-size:15px;line-height:1.75;max-width:430px;margin:0 0 22px}
+.home-actions{display:flex;gap:10px;flex-wrap:wrap}
+.home-actions .btn{min-height:48px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+.home-connect{min-width:190px}
+.home-explore{min-width:155px}
+.home-art{position:relative;min-height:540px;border-radius:22px;overflow:hidden;background:radial-gradient(ellipse at 55% 25%,#18202a 0%,#080b10 50%,#020304 100%);border:1px solid #20242b;box-shadow:inset 0 0 70px #000}
+.home-art:after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(180deg,transparent,#0009 68%,#000)}
+.home-art svg{width:100%;height:100%;display:block;object-fit:cover}
+.home-tagline{grid-column:1/-1;display:flex;align-items:center;gap:14px;justify-content:center;color:#929292;letter-spacing:3px;font-size:11px;margin:0 0 2px}
+.home-tagline span{height:1px;background:#292929;flex:1}
+.home-features{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+.feature-card{background:linear-gradient(145deg,#101010,#060606);border:1px solid #292929;border-radius:16px;padding:18px;min-height:172px}
+.feature-icon{width:42px;height:42px;border-radius:12px;background:#161616;border:1px solid #383838;display:grid;place-items:center;margin-bottom:14px;color:#fff}
+.feature-icon svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.feature-card h3{font-size:14px;margin:0 0 8px;font-weight:600;color:#f3f3f3}
+.feature-card p{font-size:12px;line-height:1.6;color:#999;margin:0}
+#walletWorkspace{display:grid;grid-template-columns:minmax(0,1.35fr) minmax(250px,.75fr);gap:14px;margin:26px 0}
+#assetsPanel{grid-row:span 2}
+#assetsPanel>.balance,#assetsPanel>.network{margin:14px 0;background:#050505}
+#assetsPanel .sectionhead{display:flex;align-items:center;justify-content:space-between}
+#assetsPanel .amount{margin:8px 0}
+#assetsPanel .network{display:grid;gap:10px}
+#assetsPanel .network select{padding:10px;width:100%;margin:5px 0}
+@media(max-width:760px){
+ .top{position:relative;margin-bottom:8px}
+ .home-landing{display:flex;flex-direction:column;gap:12px;margin:8px 0 24px;align-items:stretch}
+ .home-copy{padding:18px 2px 0}
+ .home-copy h1{font-size:clamp(37px,10vw,49px);line-height:1.06;letter-spacing:-1.2px;margin:13px 0 14px}
+ .home-copy p{font-size:14px;line-height:1.65;margin-bottom:17px;max-width:340px}
+ .home-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+ .home-actions .btn{min-width:0;padding:11px 12px;font-size:12px;gap:7px;justify-content:center}
+ .home-art{min-height:0;height:390px;border-radius:17px}
+ .home-art svg{width:100%;height:100%}
+ .home-tagline{font-size:9px;letter-spacing:2px;gap:8px;margin:7px 0 2px}
+ .home-features{grid-template-columns:repeat(2,minmax(0,1fr));gap:9px}
+ .feature-card{padding:14px;min-height:156px}
+ .feature-card h3{font-size:13px}
+ .feature-card p{font-size:11px}
+ #walletWorkspace{display:grid;grid-template-columns:1fr;gap:12px;margin:18px 0}
+ #assetsPanel{grid-row:auto}
+ #assetsPanel>.balance,#assetsPanel>.network{padding:15px}
+}
+
 </style>
 </head>
 <body><main class="shell">
-<header class="top"><div class="brand"><div class="logo">✦</div><div>NOIR <span class="muted" style="font-weight:400">WALLET</span></div></div><div class="topright"><span class="pill"><span class="live">●</span> Self-custody mode</span><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button><button id="connect" class="btn">Connect wallet</button></div></header>
-<section class="hero" id="homePanel">
-<div class="card balance"><div class="eyebrow">Selected network balance</div><div class="amount" id="total">$0.00</div><div class="sub" id="walletState">Connect a wallet to load your on-chain balances</div><div class="actions"><button class="btn" id="sendBtn" disabled>↑ Send</button><button class="btn secondary" id="receiveBtn" disabled>↓ Receive</button><button class="btn ghost" id="swapBtn" disabled>⇄ Swap</button><button class="btn ghost" id="refreshBtn" disabled>↻ Refresh</button></div></div>
-<div class="card network"><div class="eyebrow">Active network</div><select id="network" aria-label="Choose EVM network"></select><div class="tiny" id="networkCount">Loading LI.FI-supported EVM networks…</div><div class="sub">Connected account</div><div id="address" class="address">Not connected</div><div class="tiny" id="networkHint">EVM networks · wallet approval required for every transaction</div></div>
+<header class="top"><div class="brand"><div class="logo">✦</div><div>NOIR <span class="muted" style="font-weight:400">WALLET</span></div></div><div class="topright"><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button></div></header>
+<section class="home-landing" id="homePanel">
+  <div class="home-copy">
+    <div class="eyebrow">WELCOME TO NOIR</div>
+    <h1>Your assets.<br>Your rules.<br><em>Endless possibilities.</em></h1>
+    <p>Trade, explore and move across multiple networks with confidence. Your digital world, in one place.</p>
+    <div class="home-actions">
+      <button class="btn home-connect" id="connect">Connect wallet <span aria-hidden="true">↗</span></button>
+      <button class="btn ghost home-explore" onclick="document.getElementById('discoverPanel').scrollIntoView({behavior:'smooth'})">Explore NOIR <span aria-hidden="true">→</span></button>
+    </div>
+  </div>
+  <div class="home-art" role="img" aria-label="A person overlooking a futuristic city beneath a planet, surrounded by colorful cryptocurrency coins and a black FGA payment card">
+    <svg viewBox="0 0 520 590" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+      <defs>
+        <radialGradient id="planet" cx="35%" cy="30%" r="75%"><stop stop-color="#dce5f1"/><stop offset=".24" stop-color="#758ca5"/><stop offset=".56" stop-color="#24364c"/><stop offset="1" stop-color="#05080e"/></radialGradient>
+        <linearGradient id="cityGlow" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#c6d5e6" stop-opacity=".75"/><stop offset="1" stop-color="#111722" stop-opacity="0"/></linearGradient>
+        <linearGradient id="cardFace" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#34383e"/><stop offset=".45" stop-color="#111316"/><stop offset="1" stop-color="#030405"/></linearGradient>
+        <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#fff0c2"/><stop offset=".45" stop-color="#c99742"/><stop offset="1" stop-color="#6f4616"/></linearGradient>
+        <linearGradient id="sol" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#68f3c5"/><stop offset=".5" stop-color="#7d6cff"/><stop offset="1" stop-color="#f05bbd"/></linearGradient>
+        <filter id="softGlow"><feGaussianBlur stdDeviation="12"/></filter>
+      </defs>
+      <rect width="520" height="590" fill="#05070b"/>
+      <circle cx="262" cy="185" r="176" fill="url(#planet)" opacity=".92"/>
+      <path d="M95 135A176 176 0 0 1 425 110" fill="none" stroke="#dce8f5" stroke-opacity=".8" stroke-width="2"/>
+      <path d="M80 170Q220 95 425 170" fill="none" stroke="#b8cbe0" stroke-opacity=".18"/>
+      <g fill="#dce8f5" opacity=".8"><circle cx="46" cy="52" r="1.4"/><circle cx="118" cy="30" r="1"/><circle cx="414" cy="54" r="1.5"/><circle cx="477" cy="112" r="1"/><circle cx="354" cy="24" r="1.2"/><circle cx="29" cy="236" r="1.2"/><circle cx="460" cy="255" r="1"/></g>
+      <path d="M0 330L22 330V270H40V310H57V250H73V322H92V286H111V335H132V258H150V321H170V278H190V342H212V290H228V335H248V266H267V329H287V284H304V339H326V268H346V324H367V245H386V331H408V280H428V338H449V259H468V315H490V278H520V590H0Z" fill="#080d14"/>
+      <path d="M0 360Q130 330 260 354T520 345V590H0Z" fill="url(#cityGlow)" opacity=".28"/>
+      <g fill="#d8c69d" opacity=".65">
+        <path d="M28 340h3v5h-3zm17-26h3v4h-3zm32 30h3v5h-3zm49-36h3v5h-3zm35 29h3v4h-3zm43-20h3v4h-3zm63 15h3v5h-3zm41-34h3v5h-3zm43 36h3v4h-3zm42-25h3v5h-3zm45 31h3v5h-3zm37-40h3v4h-3zm28 35h3v4h-3z"/>
+      </g>
+      <path d="M0 425Q110 394 220 425T520 410V590H0Z" fill="#080a0e"/>
+      <path d="M0 448L520 430M0 485L520 468M0 530L520 520" stroke="#8d9aab" stroke-opacity=".18"/>
+      <path d="M30 590L260 420L490 590" fill="none" stroke="#b5c3d4" stroke-opacity=".16"/>
+      <g transform="translate(190 340)">
+        <path d="M-38 52Q-46 5-25-17L-10-29H14L30-13Q48 17 39 54L53 156H-53Z" fill="#090b0e" stroke="#303944" stroke-width="2"/>
+        <path d="M-25-17Q-23-48 0-50Q25-48 27-16L15 2H-15Z" fill="#10151c" stroke="#4a5664" stroke-width="2"/>
+        <path d="M-15 2L0 24L15 2M0 24V90" fill="none" stroke="#66717d" stroke-opacity=".55" stroke-width="2"/>
+        <path d="M-33 54L-48 150M33 54L48 150" stroke="#171c23" stroke-width="15" stroke-linecap="round"/>
+        <path d="M-35 150L-42 212H-8L-3 150M35 150L42 212H8L3 150" fill="#080a0d"/>
+        <path d="M-43 212L-50 226H-4L-8 212M43 212L50 226H4L8 212" fill="#c4cbd2"/>
+      </g>
+      <g transform="translate(382 230) rotate(9)">
+        <rect x="-5" y="-5" width="126" height="194" rx="13" fill="#000" opacity=".65" filter="url(#softGlow)"/>
+        <rect width="126" height="194" rx="12" fill="url(#cardFace)" stroke="#b8bec6" stroke-opacity=".75" stroke-width="1.4"/>
+        <path d="M12 12H114" stroke="#fff" stroke-opacity=".12"/>
+        <text x="15" y="34" fill="#f3f3f3" font-family="Arial,sans-serif" font-size="17" font-style="italic" letter-spacing="2">FGA</text>
+        <path d="M15 113h30v23H15z" fill="url(#gold)" opacity=".85"/>
+        <path d="M30 113v23M15 124h30" stroke="#3e3425" stroke-width="1"/>
+        <path d="M83 23q13 7 0 14M89 20q18 10 0 20" fill="none" stroke="#d9dce1" stroke-width="1.4" opacity=".8"/>
+        <g fill="#c6ccd4" opacity=".32"><circle cx="70" cy="74" r="1"/><circle cx="82" cy="74" r="1"/><circle cx="94" cy="74" r="1"/><circle cx="106" cy="74" r="1"/><circle cx="70" cy="86" r="1"/><circle cx="82" cy="86" r="1"/><circle cx="94" cy="86" r="1"/><circle cx="106" cy="86" r="1"/></g>
+      </g>
+      <g transform="translate(88 235)"><circle r="34" fill="#e99522" stroke="#ffd08a" stroke-width="2"/><circle r="27" fill="none" stroke="#fff0d0" stroke-opacity=".55"/><text x="0" y="11" text-anchor="middle" font-size="34" font-weight="bold" fill="#fff">₿</text></g>
+      <g transform="translate(435 154)"><circle r="30" fill="#3156b9" stroke="#9bb9ff" stroke-width="2"/><path d="M0-18L15 0 0 18 -15 0Z" fill="#dce8ff"/><path d="M0-18V18L15 0Z" fill="#8ca9e9"/></g>
+      <g transform="translate(83 405)"><circle r="27" fill="#17121f" stroke="#a58aff" stroke-width="2"/><path d="M-14-8L0-15 14-8 -14-1 14 6 0 13 -14 6" fill="none" stroke="url(#sol)" stroke-width="5" stroke-linejoin="round"/></g>
+      <g transform="translate(455 430)"><circle r="27" fill="#176b54" stroke="#77e3ba" stroke-width="2"/><text x="0" y="10" text-anchor="middle" font-size="29" font-weight="bold" fill="#e3fff3">₮</text></g>
+      <g transform="translate(330 500)"><circle r="25" fill="#1d4c9c" stroke="#83b5ff" stroke-width="2"/><path d="M0-14L13-7 13 7 0 14 -13 7 -13-7Z" fill="none" stroke="#d8e9ff" stroke-width="4"/></g>
+    </svg>
+  </div>
+  <div class="home-tagline"><span></span> BUILT FOR FREEDOM <span></span></div>
+  <section class="home-features" id="homeFeatures">
+    <article class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3 20 6v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9.5 11v-1a2.5 2.5 0 0 1 5 0v1m-5 0h5v4h-5z"/></svg></div><h3>Your keys, your control</h3><p>Self-custody by design. You own what’s yours.</p></article>
+    <article class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></div><h3>Multi-chain access</h3><p>Explore and manage assets across supported networks.</p></article>
+    <article class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M7 7h14m0 0-4-4m4 4-4 4M17 17H3m0 0 4 4m-4-4 4-4"/></svg></div><h3>Swap effortlessly</h3><p>Move between supported assets with confidence.</p></article>
+    <article class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 2.6-6.4L3 8"/><path d="M3 3v5h5M12 7v5l3 2"/></svg></div><h3>Discover opportunities</h3><p>Explore networks and the wider crypto ecosystem.</p></article>
+  </section>
 </section>
-<section class="grid">
-<div class="card" id="assetsPanel"><div class="sectionhead"><h2>Your assets</h2><span class="tiny" id="assetCount">0 assets</span></div><div id="assets"><div class="empty">Connect your wallet to view assets.</div></div><div class="sectionhead" style="margin-top:18px"><h2>Tokens on this network</h2><span class="tiny" id="tokenCount">Loading token list…</span></div><input id="tokenSearch" placeholder="Search tokens by name or symbol" style="width:100%;background:#0b1422;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px"><div id="tokenDirectory"><div class="empty">Token list loads when a network is selected.</div></div></div>
-<div class="card"><div class="sectionhead"><h2>Recent activity</h2><span class="tiny">This session</span></div><div id="activity"><div class="empty">Your recent wallet actions will appear here.</div></div></div>
-<div class="card wide" id="discoverPanel"><div class="sectionhead"><h2>Supported networks</h2><span class="tiny" id="networkCountSummary">Loading LI.FI network list…</span></div><div id="networkChips" style="display:flex;gap:9px;flex-wrap:wrap"></div><p class="tiny" style="margin:15px 0 0">Bitcoin support requires a compatible browser wallet such as UniSat. EVM support requires MetaMask, Rabby, Coinbase Wallet, or another EIP-1193 wallet.</p></div>
+<section class="grid" id="walletWorkspace">
+  <div class="card" id="assetsPanel">
+    <div class="sectionhead"><h2>Your assets</h2><span class="tiny" id="assetCount">0 assets</span></div>
+    <div class="card balance"><div class="eyebrow">Selected network balance</div><div class="amount" id="total">$0.00</div><div class="sub" id="walletState">Connect a wallet to load your on-chain balances</div><div class="actions"><button class="btn" id="sendBtn" disabled>↑ Send</button><button class="btn secondary" id="receiveBtn" disabled>↓ Receive</button><button class="btn ghost" id="swapBtn" disabled>⇄ Swap</button><button class="btn ghost" id="refreshBtn" disabled>↻ Refresh</button></div></div>
+    <div class="card network"><div class="eyebrow">Active network</div><select id="network" aria-label="Choose EVM network"></select><div class="tiny" id="networkCount">Loading LI.FI-supported EVM networks…</div><div class="sub">Connected account</div><div id="address" class="address">Not connected</div><div class="tiny" id="networkHint">EVM networks · wallet approval required for every transaction</div></div>
+    <div class="sectionhead" style="margin-top:18px"><h2>Tokens on this network</h2><span class="tiny" id="tokenCount">Loading token list…</span></div>
+    <input id="tokenSearch" placeholder="Search tokens by name or symbol" style="width:100%;background:#0b1422;color:var(--text);border:1px solid var(--line);border-radius:10px;padding:10px;margin-bottom:8px">
+    <div id="tokenDirectory"><div class="empty">Token list loads when a network is selected.</div></div>
+    <div id="assets"><div class="empty">Connect your wallet to view assets.</div></div>
+  </div>
+  <div class="card"><div class="sectionhead"><h2>Recent activity</h2><span class="tiny">This session</span></div><div id="activity"><div class="empty">Your recent wallet actions will appear here.</div></div></div>
+  <div class="card wide" id="discoverPanel"><div class="sectionhead"><h2>Supported networks</h2><span class="tiny" id="networkCountSummary">Loading LI.FI network list…</span></div><div id="networkChips" style="display:flex;gap:9px;flex-wrap:wrap"></div><p class="tiny" style="margin:15px 0 0">Bitcoin support requires a compatible browser wallet such as UniSat. EVM support requires MetaMask, Rabby, Coinbase Wallet, or another EIP-1193 wallet.</p></div>
 </section>
 <div class="notice"><b>Security:</b> Northstar is a non-custodial wallet interface. Your wallet extension signs transactions locally. This site never asks for your recovery phrase or private key. Always verify the network, recipient, and amount in your wallet before approving.</div>
 <footer class="foot">NOIR WALLET · DIGITAL ASSETS · On-chain data may be delayed. Not financial advice.</footer>
