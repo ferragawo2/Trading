@@ -204,6 +204,21 @@ select option{background:#080808;color:#fff}
  #assetsPanel>.balance,#assetsPanel>.network{padding:15px}
 }
 
+
+/* Home is an image-free product hub; cinematic artwork remains exclusive to the entrance screen. */
+.noir-home-hero.noir-home-intro{min-height:0;height:auto;overflow:visible;display:block;border:0;border-radius:0;background:transparent;margin:20px 0 30px;padding:22px 0 8px}
+.noir-home-intro .noir-home-copy{width:min(100%,720px);padding:0}
+.noir-home-intro .noir-home-copy h1{font-size:clamp(38px,5.2vw,64px);margin:14px 0 14px}
+.noir-home-intro .noir-home-copy p{max-width:520px}
+.noir-home-intro .home-actions .btn{min-width:170px}
+@media(max-width:760px){
+ .noir-home-hero.noir-home-intro{height:auto;min-height:0;margin:16px 0 24px;padding:12px 2px 4px}
+ .noir-home-intro .noir-home-copy{width:100%;padding:0}
+ .noir-home-intro .noir-home-copy h1{font-size:clamp(34px,9vw,46px);line-height:1.04;margin:11px 0 12px}
+ .noir-home-intro .noir-home-copy p{font-size:13px;line-height:1.55;margin-bottom:16px}
+ .noir-home-intro .home-actions .btn{min-height:44px;min-width:0;padding:10px 13px;font-size:12px}
+}
+
 </style>
 <link rel="preload" as="image" href="/file_00000000b6d88210822d4b19f6ac9459.png" media="(max-width: 760px)" fetchpriority="high">
 <link rel="preload" as="image" href="/file_00000000f9f482438a8dd06d03ad9552.png" media="(min-width: 761px)" fetchpriority="high">
@@ -225,12 +240,7 @@ select option{background:#080808;color:#fff}
   </div>
 </div><main class="shell">
 <header class="top"><div class="brand"><div class="logo">✦</div><div>NOIR <span class="muted" style="font-weight:400">WALLET</span></div></div><div class="topright"><button id="createWallet" class="btn secondary">Create wallet</button><button id="unlockWallet" class="btn ghost">Unlock</button></div></header>
-<section class="noir-home-hero" id="homePanel">
-  <picture class="noir-hero-picture">
-    <source media="(max-width: 760px)" srcset="/file_00000000b6d88210822d4b19f6ac9459.png">
-    <img src="/file_00000000f9f482438a8dd06d03ad9552.png" alt="NOIR cinematic cityscape with a person overlooking the city, colorful crypto coins and an FGA payment card" fetchpriority="high" decoding="async">
-  </picture>
-  <div class="noir-hero-shade"></div>
+<section class="noir-home-hero noir-home-intro" id="homePanel">
   <div class="noir-home-copy">
     <div class="eyebrow">WELCOME TO NOIR</div>
     <h1>Your assets.<br>Your rules.<br><em>Endless possibilities.</em></h1>
