@@ -15,19 +15,41 @@
  const API="https://ferragawo-accumulator-oauth-api.onrender.com";
  const heading=document.getElementById("heading"),status=document.getElementById("status");
  const params=new URLSearchParams(location.search);
- const code=params.get("code"),state=params.get("state"),error=params.get("error");
+ const code=params.get("code"),state=params.get("state"),providerError=params.get("error");
+ const show=(title,stage,detail,extra="")=>{
+   heading.textContent=title;
+   status.textContent="Stage: "+stage+"\\nProblem: "+detail+(extra?"\\nDetails: "+extra:"")+"\\n\\nDiagnostic ID: OAUTH-"+Date.now().toString(36).toUpperCase();
+   status.style.whiteSpace="pre-wrap";
+ };
  history.replaceState(null,"",location.pathname);
- if(error){heading.textContent="Deriv connection was not completed";status.textContent=params.get("error_description")||"Authorization was cancelled. Return to the Accumulator app and try again.";return;}
- if(!code||!state){heading.textContent="Missing authorization response";status.textContent="No authorization code and state were received. Return to the Accumulator app and start again.";return;}
+ if(providerError){
+   show("Deriv authorization failed","Deriv consent",params.get("error_description")||providerError);
+   return;
+ }
+ if(!code||!state){
+   show("Authorization response incomplete","callback validation","The callback URL did not contain both the one-time authorization code and state.","code present: "+Boolean(code)+"; state present: "+Boolean(state));
+   return;
+ }
  try{
-   const response=await fetch(API+"/oauth/exchange",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,state})});
-   const data=await response.json();
-   if(!response.ok||!data.connected||!data.session_id)throw new Error(data.error||"The secure exchange could not be completed.");
-   // The API returns an opaque app-session handle, never the Deriv access token.
+   status.textContent="Stage: backend exchange\\nSending the one-time code securely to the Accumulator backend…";
+   const response=await fetch(API+"/oauth/exchange",{method:"POST",mode:"cors",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,state})});
+   const raw=await response.text();
+   let data={};
+   try{data=raw?JSON.parse(raw):{};}catch(parseError){
+     show("Backend returned an unreadable response","backend response","The OAuth backend did not return valid JSON.","HTTP "+response.status+"; content-type: "+(response.headers.get("content-type")||"missing")+"; response preview: "+raw.slice(0,240));
+     return;
+   }
+   if(!response.ok||!data.connected||!data.session_id){
+     show("Secure exchange failed",data.stage||"backend exchange",data.error||"Backend did not confirm a connected session.","HTTP "+response.status+"; code: "+(data.code||"not supplied")+(data.http_status?"; Deriv HTTP status: "+data.http_status:""));
+     return;
+   }
    sessionStorage.setItem("deriv_app_session",data.session_id);
    heading.textContent="Deriv connected";
-   status.textContent="Your authorization is complete. Returning to the Accumulator monitor…";
-   setTimeout(()=>location.replace("/?connected=1"),700);
- }catch(e){heading.textContent="Could not complete Deriv connection";status.textContent=e.message+" Return to the Accumulator app and try connecting again.";}
+   status.textContent="Stage: session handoff\\nThe backend created an app session. Returning to the Accumulator monitor…";
+   setTimeout(()=>location.replace("/?connected=1"),900);
+ }catch(e){
+   const detail=e&&e.message?e.message:String(e);
+   show("Could not reach the secure exchange","network / CORS",detail,"Check that the OAuth API is deployed and that APP_ORIGIN matches https://ferragawo-accumulator-lab.onrender.com exactly. No authorization code or token is shown here.");
+ }
 })();
 </script></body></html>
