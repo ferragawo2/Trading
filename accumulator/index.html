@@ -8,7 +8,7 @@
 :root{color-scheme:dark;--bg:#080b12;--panel:#101621;--line:#243144;--text:#edf3fb;--muted:#91a0b4;--green:#20d6a0;--red:#ff6c7a;--blue:#65a9ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a2a42 0,transparent 48%),var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
 .wrap{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#21d6a0,#438bff);display:grid;place-items:center;color:#061019;font-weight:900;font-size:20px}.brand h1{font-size:18px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.status{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#778397}.dot.on{background:var(--green);box-shadow:0 0 12px #20d6a077}
-.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chart{height:260px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}.market-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}.market-card:hover,.market-card.selected{border-color:var(--green);background:#0d1b20}.market-card strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:7px 0 2px}.market-card .name{font-size:12px;color:var(--text);min-height:34px}.market-card .meta{font-size:10px;color:var(--muted)}.log{height:150px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.note{border:1px solid #28503f;background:#0e211b;color:#a9e6cf;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.barrier-card h3{font-size:13px;margin:0 0 9px}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:10px;color:var(--muted)}.barrier-meta{font-size:10px;color:var(--muted);margin-top:9px;line-height:1.6}.barrier-status{font-size:10px;color:var(--blue);margin-top:7px}.survival-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.survival-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.survival-card h3{font-size:13px;margin:0 0 10px}.survival-rate{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.survival-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.survival-stats strong{display:block;font-size:14px;font-variant-numeric:tabular-nums}.survival-stats small{color:var(--muted);font-size:10px}.survival-state{font-size:10px;color:var(--blue);margin-top:9px;line-height:1.5}.run-history-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:10px}.run-history-cell{background:#172437;border:1px solid #26354a;border-radius:5px;text-align:center;padding:5px 1px;font:11px ui-monospace,monospace;color:#dce8f7;min-width:0}.run-history-cell.zero{color:#ff9aa5;background:#2a1921}.run-history-empty{grid-column:1/-1;color:var(--muted);font-size:11px;padding:8px 0}.stats-panel{margin-top:12px;padding:12px 13px;background:#0a111b;border:1px solid #26354a;border-radius:12px}.stats-heading{display:flex;align-items:center;gap:10px}.stats-heading>strong{font-size:13px;margin-right:auto}.stats-heading select{width:auto;min-width:58px;padding:5px 8px;font-size:11px}.stats-toggle{width:30px;height:28px;padding:0;border:1px solid #34465f;background:#172437;color:var(--text);border-radius:7px;font-size:17px;line-height:1}.stats-values,.stats-history-values{display:flex;gap:7px;overflow-x:auto;white-space:nowrap;padding:10px 0 2px;scrollbar-width:thin}.stats-value{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:7px 9px;border-radius:7px;background:#172437;border:1px solid #26354a;color:#e5edf8;font:600 12px ui-monospace,monospace}.stats-value.zero{color:#ff9aa5}.stats-empty{font-size:11px;color:var(--muted);padding:7px 0}.stats-history{border-top:1px solid #26354a;margin-top:10px;padding-top:9px}.stats-history-title{font-size:10px;color:var(--muted)}.stats-history-values{flex-wrap:wrap;white-space:normal;max-height:240px;overflow-y:auto}.stats-history-values .stats-value{min-width:38px}@media(max-width:520px){.run-history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}.account-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#101b29;border:1px solid #2b3a50;border-radius:14px;padding:14px 16px;margin:0 0 16px}.account-copy{min-width:180px;flex:1}.account-copy strong{display:block;font-size:13px}.account-copy span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.account-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.account-actions button{font-size:12px}.account-message{font-size:11px;color:var(--blue);margin-top:4px}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chart{height:260px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}.market-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}.market-card:hover,.market-card.selected{border-color:var(--green);background:#0d1b20}.market-card strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:7px 0 2px}.market-card .name{font-size:12px;color:var(--text);min-height:34px}.market-card .meta{font-size:10px;color:var(--muted)}.log{height:150px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.note{border:1px solid #28503f;background:#0e211b;color:#a9e6cf;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.barrier-card h3{font-size:13px;margin:0 0 9px}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:10px;color:var(--muted)}.barrier-meta{font-size:10px;color:var(--muted);margin-top:9px;line-height:1.6}.barrier-status{font-size:10px;color:var(--blue);margin-top:7px}.survival-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.survival-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.survival-card h3{font-size:13px;margin:0 0 10px}.survival-rate{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.survival-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.survival-stats strong{display:block;font-size:14px;font-variant-numeric:tabular-nums}.survival-stats small{color:var(--muted);font-size:10px}.survival-state{font-size:10px;color:var(--blue);margin-top:9px;line-height:1.5}.run-history-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:10px}.run-history-cell{background:#172437;border:1px solid #26354a;border-radius:5px;text-align:center;padding:5px 1px;font:11px ui-monospace,monospace;color:#dce8f7;min-width:0}.run-history-cell.zero{color:#ff9aa5;background:#2a1921}.run-history-empty{grid-column:1/-1;color:var(--muted);font-size:11px;padding:8px 0}.stats-panel{margin-top:12px;padding:12px 13px;background:#0a111b;border:1px solid #26354a;border-radius:12px}.stats-current{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:12px;padding:12px;background:#101d2b;border:1px solid #2b4058;border-radius:10px}.stats-current-label{width:100%;font-size:10px;letter-spacing:.06em;color:var(--muted)}.stats-current strong{font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;color:var(--green)}.stats-current span:last-child{font-size:11px;color:var(--muted)}.stats-heading{display:flex;align-items:center;gap:10px}.stats-heading>strong{font-size:13px;margin-right:auto}.stats-heading select{width:auto;min-width:58px;padding:5px 8px;font-size:11px}.stats-toggle{width:30px;height:28px;padding:0;border:1px solid #34465f;background:#172437;color:var(--text);border-radius:7px;font-size:17px;line-height:1}.stats-values,.stats-history-values{display:flex;gap:7px;overflow-x:auto;white-space:nowrap;padding:10px 0 2px;scrollbar-width:thin}.stats-value{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:7px 9px;border-radius:7px;background:#172437;border:1px solid #26354a;color:#e5edf8;font:600 12px ui-monospace,monospace}.stats-value.zero{color:#ff9aa5}.stats-empty{font-size:11px;color:var(--muted);padding:7px 0}.stats-history{border-top:1px solid #26354a;margin-top:10px;padding-top:9px}.stats-history-title{font-size:10px;color:var(--muted)}.stats-history-values{flex-wrap:wrap;white-space:normal;max-height:240px;overflow-y:auto}.stats-history-values .stats-value{min-width:38px}@media(max-width:520px){.run-history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}.account-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#101b29;border:1px solid #2b3a50;border-radius:14px;padding:14px 16px;margin:0 0 16px}.account-copy{min-width:180px;flex:1}.account-copy strong{display:block;font-size:13px}.account-copy span{display:block;color:var(--muted);font-size:11px;margin-top:3px}.account-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.account-actions button{font-size:12px}.account-message{font-size:11px;color:var(--blue);margin-top:4px}
 @media(max-width:800px){.wrap{padding:15px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr 1fr}.top{align-items:flex-start}.controls{grid-template-columns:1fr}.chart{height:220px}}
 </style>
 </head>
@@ -21,7 +21,7 @@
 <div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
 <div class="metrics"><div class="metric"><small>LIVE PRICE</small><strong id="price">—</strong></div><div class="metric"><small>LAST TICK</small><strong id="lastTick">—</strong></div><div class="metric"><small>TICKS RECEIVED</small><strong id="tickCount">0</strong></div></div>
 <div class="chart"><canvas id="chart"></canvas></div>
-<div class="stats-panel" id="statsPanel"><div class="stats-heading"><strong>Stats</strong><select id="statsGrowthRate" aria-label="Stats growth rate"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select><button type="button" class="stats-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsHistory"><span id="statsChevron">⌄</span></button></div><div class="stats-values" id="statsValues"><span class="stats-empty">Collecting completed runs…</span></div><div class="stats-history" id="statsHistory" hidden><div class="stats-history-title">Full run history · newest first</div><div class="stats-history-values" id="statsHistoryValues"></div></div></div>
+<div class="stats-panel" id="statsPanel"><div class="stats-heading"><strong>Stats</strong><select id="statsGrowthRate" aria-label="Stats growth rate"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select><button type="button" class="stats-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsHistory"><span id="statsChevron">⌄</span></button></div><div class="stats-current"><span class="stats-current-label">CURRENT RUN · LIVE FROM DERIV</span><strong id="statsCurrentValue">—</strong><span id="statsCurrentCaption">Waiting for Deriv’s current tick count…</span></div><div class="stats-history"><div class="stats-history-title">PREVIOUS RUNS · DERIV HISTORY</div><div class="stats-values" id="statsValues"><span class="stats-empty">Waiting for Deriv Stats data…</span></div><div class="stats-history" id="statsHistory" hidden><div class="stats-history-title">Full history · newest first</div><div class="stats-history-values" id="statsHistoryValues"></div></div></div></div>
 <div class="row between" style="margin:15px 0 9px"><h2 style="margin:0">RECENT TICKS</h2><span class="muted" id="feedNote">Waiting for feed</span></div><div class="muted" id="tickHistory">No ticks received yet.</div>
 </section>
 <section class="card"><h2>MARKET DISCOVERY</h2><div class="metrics"><div class="metric"><small>SUPPORTED SYNTHETICS</small><strong id="marketCount">—</strong></div><div class="metric"><small>LIVE STREAMS</small><strong id="liveCount">0</strong></div><div class="metric"><small>API SOURCE</small><strong>Deriv</strong></div></div>
@@ -37,45 +37,26 @@ const $ = id => document.getElementById(id);
 const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
-let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={}, tickCandidates={};
-const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};const survivalBySymbol={};const SURVIVAL_STORAGE_KEY="deriv_accumulator_survival_v5";const MAX_PENDING_CANDIDATES=30;
-function loadSurvivalHistory(){try{const saved=JSON.parse(localStorage.getItem(SURVIVAL_STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")Object.assign(survivalBySymbol,saved);}catch(e){console.warn("Could not load saved survival history",e);}}
-function saveSurvivalHistory(){try{localStorage.setItem(SURVIVAL_STORAGE_KEY,JSON.stringify(survivalBySymbol));}catch(e){console.warn("Could not save survival history",e);}}
-function recordCensoredRun(stats){
-  const length=Math.max(0,Number(stats.currentRun)||0);
-  stats.censoredRuns=(Number(stats.censoredRuns)||0)+1;
-  stats.censoredTicks=(Number(stats.censoredTicks)||0)+length;
-  if(!stats.censoredRunsByLength||typeof stats.censoredRunsByLength!=="object")stats.censoredRunsByLength={};
-  stats.censoredRunsByLength[length]=(Number(stats.censoredRunsByLength[length])||0)+1;
-  stats.currentRun=0;
+let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={};
+const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
+const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
+const nativeStatsByKey={};
+function loadNativeStats(){try{const saved=JSON.parse(localStorage.getItem(DERIV_STATS_STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")Object.assign(nativeStatsByKey,saved);}catch(e){console.warn("Could not load saved Deriv Stats history",e);}}
+function saveNativeStats(){try{localStorage.setItem(DERIV_STATS_STORAGE_KEY,JSON.stringify(nativeStatsByKey));}catch(e){console.warn("Could not save Deriv Stats history",e);}}
+function nativeStatsKey(symbol,rate){return symbol+"|"+Number(rate).toFixed(2);}
+function updateNativeStats(symbol,rate,raw){
+  if(!Array.isArray(raw))return;
+  const values=raw.map(value=>{if(typeof value==="number")return value;if(typeof value==="string"&&value.trim()!=="")return Number(value);return NaN;}).filter(value=>Number.isInteger(value)&&value>=0);
+  if(!values.length)return;
+  nativeStatsByKey[nativeStatsKey(symbol,rate)]={current:values[0],history:values.slice(1,101),updatedAt:Date.now()};
+  saveNativeStats();
+  if(symbol===selectedSymbol&&Number($("statsGrowthRate")?.value||0.01)===Number(rate))renderNativeStats();
 }
-function censorOpenRuns(reason){
-  let changed=false;
-  Object.values(survivalBySymbol).forEach(byRate=>Object.values(byRate||{}).forEach(stats=>{
-    if(!stats||!Number.isFinite(stats.currentRun)||stats.currentRun<=0)return;
-    recordCensoredRun(stats);stats.lastResult="Censored · "+reason;changed=true;
-  }));
-  if(changed)saveSurvivalHistory();
-}
-function censorRun(stats,reason){
-  if(stats.currentRun>0)recordCensoredRun(stats);
-  stats.lastResult="Unmatched · "+reason;
-}
-function censorSymbolRuns(symbol,reason){
-  const byRate=survivalBySymbol[symbol];if(!byRate)return;
-  let changed=false;
-  Object.values(byRate).forEach(stats=>{
-    if(!stats||!Number.isFinite(stats.currentRun)||stats.currentRun<=0)return;
-    recordCensoredRun(stats);stats.lastResult="Censored · "+reason;changed=true;
-  });
-  if(changed)saveSurvivalHistory();
-}
-loadSurvivalHistory();
+loadNativeStats();
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
 const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
 const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
 function connect(){
-  censorOpenRuns("market feed restarted");
   manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
   if(ws){const previous=ws;previous.onclose=null;previous.onerror=null;previous.onmessage=null;try{previous.close(1000,"Refreshing market feed")}catch{}}
   manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};tickCounts={};latestTicks={};
@@ -129,7 +110,7 @@ function handleSymbols(rows){
     send({ticks:symbols,subscribe:1});
     log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
   }catch(e){log("Could not subscribe to markets: "+e.message)}
-  requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);renderSurvivalCards();
+  requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);renderNativeStats();
 }
 function requestHistory(symbol){
   if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
@@ -148,7 +129,7 @@ function handleTick(t,m){
   // When the API responds to an array subscription, the tick payload identifies its own symbol.
   const key=Array.isArray(symbol)?null:symbol;
   if(!key||!marketBySymbol[key])return;
-  const previousTick=latestTicks[key];if(previousTick&&Number.isFinite(Number(previousTick.epoch))&&epoch>Number(previousTick.epoch)){queueAlignedTick(key,{previousEpoch:Number(previousTick.epoch),previousPrice:Number(previousTick.price),epoch,price,evaluatedRates:{}});}latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
   if(!priceHistory[key])priceHistory[key]=[];
   priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
   $("liveCount").textContent=String(Object.keys(latestTicks).length);
@@ -177,7 +158,6 @@ function renderMarketCards(){
 }
 function selectMarket(symbol){
   if(!marketBySymbol[symbol])return;
-  if(selectedSymbol&&symbol!==selectedSymbol)censorSymbolRuns(selectedSymbol,"market selection changed");
   selectedSymbol=symbol;$("symbol").value=symbol;
   const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
   $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
@@ -185,17 +165,15 @@ function selectMarket(symbol){
   $("tickCount").textContent=String(tickCounts[symbol]||0);
   $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
   $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
-  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderSurvivalCards();drawChart();
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();
 }
 
 function clearAccumulatorQuotes(){
   barrierSubscriptions.forEach(id=>{try{send({forget:id})}catch{}});
   barrierSubscriptions=[];barrierRequests={};barrierData={};
-  if(selectedSymbol)tickCandidates[selectedSymbol]=[];
 }
 function requestAccumulatorQuotes(symbol){
   if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
-  tickCandidates[symbol]=[];
   clearAccumulatorQuotes();
   $("barrierStatus").textContent="Requesting 1%–5% quotes";
   $("barrierGrid").replaceChildren();
@@ -223,126 +201,29 @@ function handleAccumulatorProposal(message){
   item.lastTickEpoch=numberOrNull(details.last_tick_epoch);item.maximumTicks=numberOrNull(details.maximum_ticks);
   item.maximumPayout=numberOrNull(details.maximum_payout);
   item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
-  if(Array.isArray(details.ticks_stayed_in)){
-    const stats=getSurvivalStats(selectedSymbol,rate);
-    const nativeValues=details.ticks_stayed_in.map(value=>{
-      if(typeof value==="number")return value;
-      if(typeof value==="string"&&value.trim()!=="")return Number(value);
-      return NaN;
-    }).filter(value=>Number.isInteger(value)&&value>=0);
-    // Deriv puts the current in-progress count first, followed by completed
-    // runs. Only persist completed history, never the live counter/reset zero.
-    const completed=nativeValues.slice(1).filter(value=>value>0).slice(0,100);
-    if(completed.length){
-      stats.derivRuns=completed;
-      stats.derivRunsUpdatedAt=Date.now();
-      saveSurvivalHistory();
-    }else if(!Array.isArray(stats.derivRuns)){
-      stats.derivRuns=[];
-      saveSurvivalHistory();
-    }
-  }
+  updateNativeStats(selectedSymbol,rate,details.ticks_stayed_in);
   item.subscriptionId=message.subscription?.id||null;
-  const anchor=numberOrNull(details.last_tick_epoch)??numberOrNull(proposal.spot_time);
-  if(item.high!==null&&item.low!==null&&item.high>item.low&&anchor!==null){if(!item.snapshotsByAnchor)item.snapshotsByAnchor={};const snapshot={high:item.high,low:item.low,anchorEpoch:anchor,spot:item.spot,receivedAt:Date.now(),used:false,anchorSource:details.last_tick_epoch!==undefined?"Deriv last_tick_epoch":"proposal spot_time"};item.snapshotsByAnchor[String(anchor)]=snapshot;const keys=Object.keys(item.snapshotsByAnchor).sort((a,b)=>Number(a)-Number(b));while(keys.length>120){delete item.snapshotsByAnchor[keys.shift()];}item.pendingSnapshot=snapshot;tryMatchCandidates(selectedSymbol,rate);}
   if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
   item.status=(item.high!==null&&item.low!==null&&item.high>item.low)?"Live Deriv barrier received":(item.high!==null&&item.low!==null?"Invalid barrier range returned":"Quote received; barrier fields not present");
-  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderSurvivalCards();
+  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderNativeStats();
 }
-function getSurvivalStats(symbol,rate){
-  if(!survivalBySymbol[symbol])survivalBySymbol[symbol]={};
-  if(!survivalBySymbol[symbol][rate])survivalBySymbol[symbol][rate]={observed:0,survived:0,knockouts:0,currentRun:0,longestRun:0,lastEvaluatedEpoch:0,lastResult:"Waiting for aligned tick",completedRuns:{},completedRunsTotal:0,recentRuns:[],unmatched:0,spotMismatches:0,ambiguousAnchors:0,censoredRuns:0,censoredTicks:0};
-  const stats=survivalBySymbol[symbol][rate];
-  if(!stats.completedRuns||typeof stats.completedRuns!=="object")stats.completedRuns={};
-  if(!Array.isArray(stats.recentRuns))stats.recentRuns=[];
-  if(!Number.isFinite(stats.completedRunsTotal))stats.completedRunsTotal=Object.values(stats.completedRuns).reduce((sum,n)=>sum+(Number(n)||0),0);
-  ["observed","survived","knockouts","currentRun","longestRun","unmatched","spotMismatches","ambiguousAnchors","censoredRuns","censoredTicks"].forEach(k=>{if(!Number.isFinite(stats[k]))stats[k]=0;});
-  if(!stats.censoredRunsByLength||typeof stats.censoredRunsByLength!=="object")stats.censoredRunsByLength={};
-  return stats;
-}
-function calculateRunStatistics(stats){
-  // Deriv's Stats panel shows the previous 100 completed runs.
-  // This is a rolling empirical history, not a modelled forecast.
-  const values=(Array.isArray(stats.recentRuns)?stats.recentRuns:[])
-    .map(Number).filter(n=>Number.isInteger(n)&&n>=0).slice(-100);
-  const sorted=values.slice().sort((x,y)=>x-y),count=values.length;
-  const mean=count?values.reduce((sum,n)=>sum+n,0)/count:null;
-  const median=count?(count%2?sorted[(count-1)/2]:(sorted[count/2-1]+sorted[count/2])/2):null;
-  return {count,mean,median,max:count?sorted[count-1]:null,latest:values.slice(-10)};
-}
-function queueAlignedTick(symbol,candidate){
-  if(!tickCandidates[symbol])tickCandidates[symbol]=[];
-  const candidates=tickCandidates[symbol];candidates.push(candidate);
-  while(candidates.length>MAX_PENDING_CANDIDATES){
-    const expired=candidates.shift();
-    growthRates.forEach(rate=>{
-      if(expired.evaluatedRates[rate]||expired.expiredRates?.[rate])return;
-      if(!expired.expiredRates)expired.expiredRates={};expired.expiredRates[rate]=true;
-      const stats=getSurvivalStats(symbol,rate);stats.unmatched++;censorRun(stats,"barrier quote did not align before sample expiry");saveSurvivalHistory();
-    });
+function renderNativeStats(){
+  const rate=Number($("statsGrowthRate")?.value||0.01);
+  const data=nativeStatsByKey[nativeStatsKey(selectedSymbol,rate)];
+  const current=$("statsCurrentValue"),caption=$("statsCurrentCaption");
+  const values=$("statsValues"),history=$("statsHistoryValues");
+  const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" ticks in the previous Deriv run";return el;};
+  values.replaceChildren();history.replaceChildren();
+  if(!data||!Number.isInteger(data.current)){
+    current.textContent="—";caption.textContent="Waiting for Deriv’s live Stats stream…";
+    const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="No previous runs received yet.";values.append(empty);
+    const full=document.createElement("span");full.className="stats-empty";full.textContent="Deriv history will appear here when supplied by its proposal stream.";history.append(full);return;
   }
-  growthRates.forEach(rate=>tryMatchCandidates(symbol,rate));
-}
-function tryMatchCandidates(symbol,rate){
-  if(!symbol||symbol!==selectedSymbol)return;
-  const item=barrierData[rate];if(!item?.snapshotsByAnchor)return;
-  const stats=getSurvivalStats(symbol,rate),candidates=tickCandidates[symbol]||[];
-  for(const candidate of candidates){
-    if(candidate.evaluatedRates[rate]||candidate.expiredRates?.[rate])continue;
-    const sameAnchor=candidates.filter(other=>other.previousEpoch===candidate.previousEpoch&&!other.evaluatedRates[rate]&&!other.expiredRates?.[rate]);
-    if(sameAnchor.length>1){
-      if(!candidate.ambiguousRates)candidate.ambiguousRates={};
-      if(!candidate.ambiguousRates[rate]){candidate.ambiguousRates[rate]=true;stats.ambiguousAnchors++;}
-      continue;
-    }
-    const snap=item.snapshotsByAnchor[String(candidate.previousEpoch)];
-    if(!snap||snap.used)continue;
-    if(Number.isFinite(snap.spot)){
-      const pip=Math.max(0,Math.min(8,marketBySymbol[symbol]?.pipSize??2));
-      const tolerance=Math.pow(10,-pip)/2+1e-12;
-      if(Math.abs(snap.spot-candidate.previousPrice)>tolerance){
-        if(!candidate.spotMismatchRates)candidate.spotMismatchRates={};
-        if(!candidate.spotMismatchRates[rate]){candidate.spotMismatchRates[rate]=true;stats.spotMismatches++;}
-        continue;
-      }
-    }
-    const survived=candidate.price>snap.low&&candidate.price<snap.high;
-    candidate.evaluatedRates[rate]=true;snap.used=true;
-    stats.observed++;stats.lastEvaluatedEpoch=candidate.epoch;
-    if(survived){stats.survived++;stats.currentRun++;stats.longestRun=Math.max(stats.longestRun,stats.currentRun);stats.lastResult="Survived · matched Deriv quote";}
-    else{
-      // Save the number of consecutive in-barrier ticks BEFORE resetting the counter.
-      // A zero-length attempt is not a completed in-barrier run and is not added to Stats.
-      const completedLength=stats.currentRun;
-      if(completedLength>0){
-        stats.completedRuns[completedLength]=(Number(stats.completedRuns[completedLength])||0)+1;
-        stats.completedRunsTotal++;
-        stats.recentRuns.push(completedLength);
-        if(stats.recentRuns.length>100)stats.recentRuns=stats.recentRuns.slice(-100);
-      }
-      stats.knockouts++;
-      stats.currentRun=0;
-      stats.lastResult=completedLength>0?"Knockout · saved "+completedLength+" ticks":"Knockout · no completed in-barrier run";
-    }
-    item.pendingSnapshot=null;saveSurvivalHistory();renderSurvivalCards();
-  }
-}
-
-function renderSurvivalCards(){
-  const rate=Number($("statsGrowthRate")?.value||0.01),item=barrierData[rate]||{};
-  // Stats records completed consecutive in-barrier tick runs.
-  // recentRuns is stored oldest-first; show the newest completed run first.
-  const stats=getSurvivalStats(selectedSymbol,rate);
-  const sourceRuns=Array.isArray(stats.derivRuns)&&stats.derivRuns.length?stats.derivRuns:stats.recentRuns;
-  const runs=(Array.isArray(sourceRuns)?sourceRuns:[])
-    .map(Number).filter(n=>Number.isInteger(n)&&n>0).slice(0,100);
-  const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" consecutive price ticks inside the barrier before breakout";return el;};
-  const values=$("statsValues");values.replaceChildren();
-  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="Waiting for Deriv Stats data…";values.append(empty);}
-  else runs.slice(0,10).forEach(n=>values.append(makeValue(n)));
-  const history=$("statsHistoryValues");history.replaceChildren();
-  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="Deriv has not returned run history for this growth rate yet.";history.append(empty);}
-  else runs.forEach(n=>history.append(makeValue(n)));
+  current.textContent=String(data.current);
+  caption.textContent=data.current===0?"Deriv reports zero ticks in the current run.":"Consecutive ticks currently inside Deriv’s live barrier.";
+  const runs=Array.isArray(data.history)?data.history.slice(0,100):[];
+  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="No previous completed runs returned yet.";values.append(empty);history.append(empty.cloneNode(true));}
+  else{runs.slice(0,10).forEach(n=>values.append(makeValue(n)));runs.forEach(n=>history.append(makeValue(n)));}
 }
 function renderBarrierCards(){
   const box=$("barrierGrid");box.replaceChildren();
@@ -410,10 +291,10 @@ $("derivLogout").onclick=disconnectDeriv;
 if(new URLSearchParams(location.search).get("connected")==="1"){history.replaceState(null,"",location.pathname);$("accountMessage").textContent="Deriv account authorization completed."; }
 refreshDerivAccount();
 $("connectBtn").onclick=connect;
-$("statsGrowthRate").onchange=renderSurvivalCards;
+$("statsGrowthRate").onchange=renderNativeStats;
 $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;panel.hidden=!open;$("statsToggle").setAttribute("aria-expanded",String(open));$("statsChevron").textContent=open?"⌃":"⌄";};
 $("symbol").onchange=()=>selectMarket($("symbol").value);
-window.addEventListener("resize",drawChart);renderSurvivalCards();
+window.addEventListener("resize",drawChart);renderNativeStats();
 connect();
 })();
 </script></body></html>
