@@ -40,18 +40,24 @@ let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHis
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};const survivalBySymbol={};const SURVIVAL_STORAGE_KEY="deriv_accumulator_survival_v4";const MAX_PENDING_CANDIDATES=30;
 function loadSurvivalHistory(){try{const saved=JSON.parse(localStorage.getItem(SURVIVAL_STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")Object.assign(survivalBySymbol,saved);}catch(e){console.warn("Could not load saved survival history",e);}}
 function saveSurvivalHistory(){try{localStorage.setItem(SURVIVAL_STORAGE_KEY,JSON.stringify(survivalBySymbol));}catch(e){console.warn("Could not save survival history",e);}}
+function recordCensoredRun(stats){
+  const length=Math.max(0,Number(stats.currentRun)||0);
+  stats.censoredRuns=(Number(stats.censoredRuns)||0)+1;
+  stats.censoredTicks=(Number(stats.censoredTicks)||0)+length;
+  if(!stats.censoredRunsByLength||typeof stats.censoredRunsByLength!=="object")stats.censoredRunsByLength={};
+  stats.censoredRunsByLength[length]=(Number(stats.censoredRunsByLength[length])||0)+1;
+  stats.currentRun=0;
+}
 function censorOpenRuns(reason){
   let changed=false;
   Object.values(survivalBySymbol).forEach(byRate=>Object.values(byRate||{}).forEach(stats=>{
     if(!stats||!Number.isFinite(stats.currentRun)||stats.currentRun<=0)return;
-    stats.censoredRuns=(Number(stats.censoredRuns)||0)+1;
-    stats.censoredTicks=(Number(stats.censoredTicks)||0)+stats.currentRun;
-    stats.currentRun=0;stats.lastResult="Censored · "+reason;changed=true;
+    recordCensoredRun(stats);stats.lastResult="Censored · "+reason;changed=true;
   }));
   if(changed)saveSurvivalHistory();
 }
 function censorRun(stats,reason){
-  if(stats.currentRun>0){stats.censoredRuns++;stats.censoredTicks+=stats.currentRun;stats.currentRun=0;}
+  if(stats.currentRun>0)recordCensoredRun(stats);
   stats.lastResult="Unmatched · "+reason;
 }
 function censorSymbolRuns(symbol,reason){
@@ -59,9 +65,7 @@ function censorSymbolRuns(symbol,reason){
   let changed=false;
   Object.values(byRate).forEach(stats=>{
     if(!stats||!Number.isFinite(stats.currentRun)||stats.currentRun<=0)return;
-    stats.censoredRuns=(Number(stats.censoredRuns)||0)+1;
-    stats.censoredTicks=(Number(stats.censoredTicks)||0)+stats.currentRun;
-    stats.currentRun=0;stats.lastResult="Censored · "+reason;changed=true;
+    recordCensoredRun(stats);stats.lastResult="Censored · "+reason;changed=true;
   });
   if(changed)saveSurvivalHistory();
 }
@@ -232,7 +236,31 @@ function getSurvivalStats(symbol,rate){
   if(!stats.completedRuns||typeof stats.completedRuns!=="object")stats.completedRuns={};
   if(!Number.isFinite(stats.completedRunsTotal))stats.completedRunsTotal=Object.values(stats.completedRuns).reduce((sum,n)=>sum+(Number(n)||0),0);
   ["observed","survived","knockouts","currentRun","longestRun","unmatched","spotMismatches","ambiguousAnchors","censoredRuns","censoredTicks"].forEach(k=>{if(!Number.isFinite(stats[k]))stats[k]=0;});
+  if(!stats.censoredRunsByLength||typeof stats.censoredRunsByLength!=="object")stats.censoredRunsByLength={};
   return stats;
+}
+function calculateRunStatistics(stats){
+  const completed=stats.completedRuns||{},censored=stats.censoredRunsByLength||{};
+  const lengths=Object.keys(completed).map(Number).filter(n=>Number.isInteger(n)&&n>=0).sort((a,b)=>a-b);
+  const values=[];lengths.forEach(n=>{for(let i=0;i<(Number(completed[n])||0);i++)values.push(n);});
+  const count=values.length,mean=count?values.reduce((a,b)=>a+b,0)/count:null;
+  const median=count?(count%2?values[(count-1)/2]:(values[count/2-1]+values[count/2])/2):null;
+  const max=count?values[count-1]:null;
+  const censorLengths=Object.keys(censored).map(Number).filter(n=>Number.isInteger(n)&&n>=0);
+  const eventTimes=new Set([...lengths.map(n=>n+1),...censorLengths]);
+  let atRisk=count+Object.values(censored).reduce((a,b)=>a+(Number(b)||0),0),survival=1;
+  const probabilityAt=tick=>{
+    let risk=atRisk,prob=1;
+    const times=[...eventTimes].filter(t=>t<=tick).sort((a,b)=>a-b);
+    for(const t of times){
+      const events=Number(completed[t-1])||0;
+      const censoredAt=Number(censored[t])||0;
+      if(events>0&&risk>0)prob*=1-events/risk;
+      risk-=events+censoredAt;
+    }
+    return Math.max(0,Math.min(1,prob));
+  };
+  return {count,mean,median,max,p5:probabilityAt(5),p10:probabilityAt(10),p20:probabilityAt(20)};
 }
 function queueAlignedTick(symbol,candidate){
   if(!tickCandidates[symbol])tickCandidates[symbol]=[];
@@ -286,13 +314,16 @@ function renderSurvivalCards(){
     const card=document.createElement("div");card.className="survival-card";
     const heading=document.createElement("h3");heading.textContent=Math.round(rate*100)+"% GROWTH";
     const ratio=stats.observed?stats.survived/stats.observed*100:null;
-    const rateEl=document.createElement("div");rateEl.className="survival-rate";rateEl.textContent=ratio===null?"—":ratio.toFixed(1)+"%";
-    const label=document.createElement("div");label.className="barrier-label";label.textContent="MATCHED-TICK SURVIVAL";
+    const runStats=calculateRunStatistics(stats);
+    const rateEl=document.createElement("div");rateEl.className="survival-rate";rateEl.textContent=runStats.count?((runStats.p10*100).toFixed(1)+"%"):"—";
+    const label=document.createElement("div");label.className="barrier-label";label.textContent="ESTIMATED CHANCE OF SURVIVING 10 TICKS · KAPLAN–MEIER";
     const statsEl=document.createElement("div");statsEl.className="survival-stats";
     [["Matched",stats.observed],["Survived",stats.survived],["Knockouts",stats.knockouts],["Current run",stats.currentRun],["Longest run",stats.longestRun],["Unmatched",stats.unmatched],["Spot mismatches",stats.spotMismatches],["Ambiguous anchors",stats.ambiguousAnchors],["Censored runs",stats.censoredRuns]].forEach(([name,value])=>{const cell=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");small.textContent=name;strong.textContent=String(value);cell.append(small,strong);statsEl.append(cell);});
-    const completed=document.createElement("div");completed.className="survival-state";const runLengths=Object.keys(stats.completedRuns).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);completed.textContent="Completed runs (consecutive matched ticks before barrier breach): "+(runLengths.length?runLengths.map(n=>n+" ticks × "+stats.completedRuns[n]).join(" · "):"No completed runs yet")+" · Total: "+stats.completedRunsTotal;
+    const summary=document.createElement("div");summary.className="survival-state";summary.textContent="Completed runs: "+runStats.count+" · Mean: "+(runStats.mean===null?"—":runStats.mean.toFixed(1))+" ticks · Median: "+(runStats.median===null?"—":runStats.median.toFixed(1))+" · Longest: "+(runStats.max===null?"—":runStats.max);
+    const probabilities=document.createElement("div");probabilities.className="survival-state";probabilities.textContent="Estimated survival: 5 ticks "+(runStats.count?(runStats.p5*100).toFixed(1)+"%":"—")+" · 10 ticks "+(runStats.count?(runStats.p10*100).toFixed(1)+"%":"—")+" · 20 ticks "+(runStats.count?(runStats.p20*100).toFixed(1)+"%":"—");
+    const completed=document.createElement("div");completed.className="survival-state";const runLengths=Object.keys(stats.completedRuns).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);completed.textContent="Completed run distribution (ticks survived before knockout): "+(runLengths.length?runLengths.map(n=>n+" ticks × "+stats.completedRuns[n]).join(" · "):"No completed runs yet")+" · Total: "+stats.completedRunsTotal+" · Censored: "+stats.censoredRuns;
     const state=document.createElement("div");state.className="survival-state";state.textContent=stats.lastResult+(item.pendingSnapshot?" · Latest quote anchor: "+item.pendingSnapshot.anchorEpoch:" · Waiting for fresh aligned barrier");
-    card.append(heading,rateEl,label,statsEl,completed,state);box.append(card);total+=stats.observed;if(item.pendingSnapshot)aligned++;
+    card.append(heading,rateEl,label,statsEl,summary,probabilities,completed,state);box.append(card);total+=stats.observed;if(item.pendingSnapshot)aligned++;
   });
   const queued=(tickCandidates[selectedSymbol]||[]).filter(t=>growthRates.some(rate=>!t.evaluatedRates[rate])).length;$("survivalStatus").textContent=total+" aligned observations · "+queued+" ticks awaiting quotes";
 }
