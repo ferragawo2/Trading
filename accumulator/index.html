@@ -94,6 +94,8 @@ function connect() {
 }
 function processTick(price,epoch){
   rates.forEach(rate=>{const m=monitors[rate];if(!Number.isFinite(m.high)||!Number.isFinite(m.low))return;
+    // Only count against a barrier snapshot that Deriv timestamps before this incoming tick.
+    if(!Number.isFinite(m.barrierEpoch)||epoch<=m.barrierEpoch){m.status="Waiting for synchronized barrier tick";return;}
     // Compare the incoming market tick against the most recently received Deriv-calculated band.
     if(price>=m.high||price<=m.low){m.crossings++;log((rate*100)+"% band touched/breached at "+price+" (upper "+m.high+", lower "+m.low+"); run ended at "+m.count+" ticks.");m.count=0;m.lastPrice=price;m.status="Barrier crossed";renderMonitors();}
     else {m.count++;m.lastPrice=price;m.status="Inside band";renderMonitors();}
