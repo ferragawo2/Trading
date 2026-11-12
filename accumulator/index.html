@@ -260,7 +260,7 @@ function calculateRunStatistics(stats){
     }
     return Math.max(0,Math.min(1,prob));
   };
-  return {count,mean,median,max,p5:probabilityAt(5),p10:probabilityAt(10),p20:probabilityAt(20)};
+  return {count,sampleCount:atRisk,mean,median,max,p5:probabilityAt(5),p10:probabilityAt(10),p20:probabilityAt(20)};
 }
 function queueAlignedTick(symbol,candidate){
   if(!tickCandidates[symbol])tickCandidates[symbol]=[];
@@ -315,12 +315,12 @@ function renderSurvivalCards(){
     const heading=document.createElement("h3");heading.textContent=Math.round(rate*100)+"% GROWTH";
     const ratio=stats.observed?stats.survived/stats.observed*100:null;
     const runStats=calculateRunStatistics(stats);
-    const rateEl=document.createElement("div");rateEl.className="survival-rate";rateEl.textContent=runStats.count?((runStats.p10*100).toFixed(1)+"%"):"—";
+    const rateEl=document.createElement("div");rateEl.className="survival-rate";rateEl.textContent=runStats.sampleCount?((runStats.p10*100).toFixed(1)+"%"):"—";
     const label=document.createElement("div");label.className="barrier-label";label.textContent="ESTIMATED CHANCE OF SURVIVING 10 TICKS · KAPLAN–MEIER";
     const statsEl=document.createElement("div");statsEl.className="survival-stats";
     [["Matched",stats.observed],["Survived",stats.survived],["Knockouts",stats.knockouts],["Current run",stats.currentRun],["Longest run",stats.longestRun],["Unmatched",stats.unmatched],["Spot mismatches",stats.spotMismatches],["Ambiguous anchors",stats.ambiguousAnchors],["Censored runs",stats.censoredRuns]].forEach(([name,value])=>{const cell=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");small.textContent=name;strong.textContent=String(value);cell.append(small,strong);statsEl.append(cell);});
     const summary=document.createElement("div");summary.className="survival-state";summary.textContent="Completed runs: "+runStats.count+" · Mean: "+(runStats.mean===null?"—":runStats.mean.toFixed(1))+" ticks · Median: "+(runStats.median===null?"—":runStats.median.toFixed(1))+" · Longest: "+(runStats.max===null?"—":runStats.max);
-    const probabilities=document.createElement("div");probabilities.className="survival-state";probabilities.textContent="Estimated survival: 5 ticks "+(runStats.count?(runStats.p5*100).toFixed(1)+"%":"—")+" · 10 ticks "+(runStats.count?(runStats.p10*100).toFixed(1)+"%":"—")+" · 20 ticks "+(runStats.count?(runStats.p20*100).toFixed(1)+"%":"—");
+    const probabilities=document.createElement("div");probabilities.className="survival-state";probabilities.textContent="Estimated survival: 5 ticks "+(runStats.sampleCount?(runStats.p5*100).toFixed(1)+"%":"—")+" · 10 ticks "+(runStats.sampleCount?(runStats.p10*100).toFixed(1)+"%":"—")+" · 20 ticks "+(runStats.sampleCount?(runStats.p20*100).toFixed(1)+"%":"—");
     const completed=document.createElement("div");completed.className="survival-state";const runLengths=Object.keys(stats.completedRuns).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);completed.textContent="Completed run distribution (ticks survived before knockout): "+(runLengths.length?runLengths.map(n=>n+" ticks × "+stats.completedRuns[n]).join(" · "):"No completed runs yet")+" · Total: "+stats.completedRunsTotal+" · Censored: "+stats.censoredRuns;
     const state=document.createElement("div");state.className="survival-state";state.textContent=stats.lastResult+(item.pendingSnapshot?" · Latest quote anchor: "+item.pendingSnapshot.anchorEpoch:" · Waiting for fresh aligned barrier");
     card.append(heading,rateEl,label,statsEl,summary,probabilities,completed,state);box.append(card);total+=stats.observed;if(item.pendingSnapshot)aligned++;
