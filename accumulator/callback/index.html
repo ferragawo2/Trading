@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b12">
+<title>Connecting Deriv · Accumulator Lab</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;min-height:100vh;display:grid;place-items:center;background:#080b12;color:#edf3fb;font:15px/1.5 system-ui,sans-serif;padding:20px}.panel{width:min(100%,460px);background:#101621;border:1px solid #243144;border-radius:18px;padding:26px;text-align:center}.mark{width:48px;height:48px;border-radius:14px;background:linear-gradient(135deg,#20d6a0,#438bff);display:grid;place-items:center;color:#061019;font-weight:900;font-size:22px;margin:0 auto 16px}.muted{color:#91a0b4;font-size:13px}a{color:#20d6a0}
+</style>
+</head>
+<body><main class="panel"><div class="mark">A</div><h1 id="heading">Completing secure Deriv connection…</h1><p class="muted" id="status">Checking the authorization response and exchanging the one-time code securely.</p></main>
+<script>
+(async()=>{
+ const API="https://ferragawo-accumulator-oauth-api.onrender.com";
+ const heading=document.getElementById("heading"),status=document.getElementById("status");
+ const params=new URLSearchParams(location.search);
+ const code=params.get("code"),state=params.get("state"),error=params.get("error");
+ history.replaceState(null,"",location.pathname);
+ if(error){heading.textContent="Deriv connection was not completed";status.textContent=params.get("error_description")||"Authorization was cancelled. Return to the Accumulator app and try again.";return;}
+ if(!code||!state){heading.textContent="Missing authorization response";status.textContent="No authorization code and state were received. Return to the Accumulator app and start again.";return;}
+ try{
+   const response=await fetch(API+"/oauth/exchange",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,state})});
+   const data=await response.json();
+   if(!response.ok||!data.connected)throw new Error(data.error||"The secure exchange could not be completed.");
+   heading.textContent="Deriv connected";
+   status.textContent="Your authorization is complete. Returning to the Accumulator monitor…";
+   setTimeout(()=>location.replace("/?connected=1"),700);
+ }catch(e){heading.textContent="Could not complete Deriv connection";status.textContent=e.message+" Return to the Accumulator app and try connecting again.";}
+})();
+</script></body></html>
