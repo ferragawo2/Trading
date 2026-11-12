@@ -111,9 +111,13 @@ select option{background:#080808;color:#fff}
 .noir-network-marquee{grid-column:1/-1;position:relative;overflow:hidden;width:100%;margin:2px 0 8px;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
 .noir-network-track{display:flex;width:max-content;animation:noir-network-scroll 34s linear infinite}
 .noir-network-group{display:flex;align-items:center;gap:10px;padding-right:10px}
-.noir-network-pill{height:42px;display:inline-flex;align-items:center;gap:9px;padding:0 16px;border:1px solid #292929;border-radius:999px;background:linear-gradient(180deg,#111,#080808);color:#e8e8e8;font-size:12px;font-weight:500;letter-spacing:.1px;white-space:nowrap;box-shadow:inset 0 1px 0 #ffffff08}
-.noir-network-pill img,.noir-network-pill .noir-network-fallback{width:19px;height:19px;flex:0 0 19px;object-fit:contain;border-radius:50%}
-.noir-network-pill .noir-network-fallback{display:grid;place-items:center;background:#202020;color:#eee;font-size:8px;font-weight:700}
+.noir-network-pill{width:154px;height:54px;flex:0 0 154px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:flex-start;gap:11px;padding:0 15px;border:1px solid #343a46;border-radius:999px;background:#030303;color:#f0f0f0;font-size:12px;font-weight:550;letter-spacing:.1px;white-space:nowrap;overflow:hidden;box-shadow:0 0 0 1px rgba(160,175,205,.08),0 0 13px rgba(125,145,185,.28),0 0 26px rgba(90,110,155,.18),inset 0 1px 0 rgba(255,255,255,.07)}
+.noir-network-pill img,.noir-network-pill .noir-network-fallback{width:28px;height:28px;flex:0 0 28px;object-fit:contain;border-radius:50%}
+.noir-network-pill .noir-network-fallback{display:grid;place-items:center;background:#202020;color:#eee;font-size:9px;font-weight:700}
+.noir-network-name{display:block;min-width:0;flex:1;overflow:hidden;white-space:nowrap;mask-image:linear-gradient(90deg,#000 0%,#000 86%,transparent 100%)}
+.noir-network-name-text{display:inline-block;white-space:nowrap}
+.noir-network-pill.is-name-overflow .noir-network-name-text{padding-right:24px;animation:noir-network-name-scroll 7s ease-in-out infinite alternate}
+@keyframes noir-network-name-scroll{from{transform:translateX(0)}to{transform:translateX(var(--noir-name-shift))}}
 @keyframes noir-network-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(hover:hover){.noir-network-marquee:hover .noir-network-track{animation-play-state:paused}}
 @media(prefers-reduced-motion:reduce){.noir-network-track{animation:none}}
@@ -894,8 +898,9 @@ function renderNoirNetworkMarquee(){
    }else{
     const fallback=document.createElement("span");fallback.className="noir-network-fallback";fallback.textContent=(chain.symbol||chain.name||"").slice(0,3).toUpperCase();pill.appendChild(fallback);
    }
-   const name=document.createElement("span");name.textContent=chain.name||("Network "+id);
-   pill.appendChild(name);group.appendChild(pill);
+   const name=document.createElement("span");name.className="noir-network-name";
+   const nameText=document.createElement("span");nameText.className="noir-network-name-text";nameText.textContent=chain.name||("Network "+id);
+   name.appendChild(nameText);pill.appendChild(name);pill.title=chain.name||("Network "+id);group.appendChild(pill);
   });
   return group;
  };
@@ -906,6 +911,14 @@ function renderNoirNetworkMarquee(){
  second.querySelectorAll("img").forEach(img=>{img.loading="eager";});
  track.appendChild(second);
  track.style.animationDuration=Math.max(28,entries.length*3.2)+"s";
+requestAnimationFrame(()=>{
+ track.querySelectorAll(".noir-network-pill").forEach(pill=>{
+  const viewport=pill.querySelector(".noir-network-name"),label=pill.querySelector(".noir-network-name-text");
+  if(!viewport||!label)return;
+  const overflow=Math.ceil(label.scrollWidth-viewport.clientWidth);
+  if(overflow>3){pill.classList.add("is-name-overflow");label.style.setProperty("--noir-name-shift",(-overflow)+"px");}
+ });
+});
 }
 renderNoirNetworkMarquee();
 initSwapUI();
