@@ -92,12 +92,15 @@ const server = http.createServer(async (req, res) => {
       const sid = crypto.randomBytes(32).toString("base64url");
       const expiresIn = Math.max(60, Number(tokenData.expires_in) || 3600);
       sessions.set(sid, { accessToken: tokenData.access_token, expires: Date.now() + expiresIn * 1000 });
-      return send(res, 200, { connected: true, expires_in: expiresIn }, {
-        "Set-Cookie": [cookie("deriv_session", sid, expiresIn), clearCookie("deriv_oauth_tx")]
+      // Return only an opaque, random app-session handle. The Deriv access token
+      // remains server-side; the browser stores this handle in same-origin sessionStorage.
+      return send(res, 200, { connected: true, expires_in: expiresIn, session_id: sid }, {
+        "Set-Cookie": cookie("deriv_session", sid, expiresIn)
       });
     }
 
-    const sid = cookies(req).deriv_session;
+    const bearer = (req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i);
+    const sid = bearer ? bearer[1] : cookies(req).deriv_session;
     const session = sid && sessions.get(sid);
     if (session && session.expires <= Date.now()) sessions.delete(sid);
 
