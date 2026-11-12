@@ -289,6 +289,14 @@ select option{background:#080808;color:#fff}
  .noir-home-header{grid-template-columns:40px minmax(0,1fr) 40px 40px;gap:7px}
  .noir-search-pill{width:calc(100% - 10px)}
 }
+
+/* Four-part image position indicator */
+.noir-fga-showcase{position:relative}
+.noir-showcase-pagination{position:absolute;z-index:2;top:12px;left:50%;transform:translateX(-50%);display:flex;align-items:center;justify-content:center;gap:6px;pointer-events:none}
+.noir-showcase-pagination span{display:block;width:23px;height:4px;border-radius:999px;background:rgba(255,255,255,.28);box-shadow:0 1px 5px rgba(0,0,0,.35)}
+.noir-showcase-pagination span.is-current{width:34px;background:#fff}
+@media(max-width:760px){.noir-showcase-pagination{top:10px;gap:5px}.noir-showcase-pagination span{width:20px;height:3px}.noir-showcase-pagination span.is-current{width:30px}}
+
 </style>
 <link rel="preload" as="image" href="/43138-removebg-preview.png" fetchpriority="high">
 <link rel="preload" as="image" href="/file_00000000b6d88210822d4b19f6ac9459.png" media="(max-width: 760px)" fetchpriority="high">
@@ -331,7 +339,12 @@ select option{background:#080808;color:#fff}
   <button id="connect" type="button" tabindex="-1">Connect wallet</button>
 </div>
 
-<section class="noir-fga-showcase" aria-label="FGA premium cards and supported digital assets"><img src="/43138-removebg-preview.png" alt="FGA premium gold, black and red cards with Bitcoin, XRP and Tether symbols" width="1097" height="1536" fetchpriority="high" decoding="async"></section>
+<section class="noir-fga-showcase" aria-label="FGA premium cards and supported digital assets">
+  <div class="noir-showcase-pagination" role="img" aria-label="Image 1 of 4">
+    <span class="is-current"></span><span></span><span></span><span></span>
+  </div>
+  <img src="/43138-removebg-preview.png" alt="FGA premium gold, black and red cards with Bitcoin, XRP and Tether symbols" width="1097" height="1536" fetchpriority="high" decoding="async">
+</section>
 <section class="noir-card-intro" id="noirCardIntro" aria-label="FGA virtual crypto payment cards" aria-expanded="false">
   <button class="noir-card-intro-toggle" id="noirCardIntroToggle" type="button" aria-controls="noirCardIntroPanel" aria-expanded="false">
     <h1>YOUR CRYPTO. YOUR CARD. <span>YOUR FREEDOM.</span></h1>
