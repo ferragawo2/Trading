@@ -2,7 +2,6 @@ services:
   - type: web
     name: ferragawo-accumulator-lab
     runtime: static
-    plan: free
     branch: Trading
     rootDir: accumulator
     buildCommand: 'echo "Static Accumulator Lab: no build step required"'
