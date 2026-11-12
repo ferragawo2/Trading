@@ -46,7 +46,7 @@ const server = http.createServer(async (req, res) => {
     res.setHeader("Access-Control-Allow-Origin", APP_ORIGIN);
     res.setHeader("Access-Control-Allow-Credentials", "true");
     res.setHeader("Vary", "Origin");
-    res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+    res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
     res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
   }
   if (req.method === "OPTIONS") { res.writeHead(204); return res.end(); }
@@ -99,7 +99,7 @@ const server = http.createServer(async (req, res) => {
       });
     }
 
-    const bearer = (req.headers.authorization || "").match(/^Bearer\\s+(.+)$/i);
+    const bearer = (req.headers.authorization || "").match(/^Bearer\s+(.+)$/i);
     const sid = bearer ? bearer[1] : cookies(req).deriv_session;
     const session = sid && sessions.get(sid);
     if (session && session.expires <= Date.now()) sessions.delete(sid);
