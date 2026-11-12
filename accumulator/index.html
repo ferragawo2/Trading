@@ -54,7 +54,7 @@ function updateNativeStats(symbol,rate,raw,anchorEpoch){
   const epoch=Number.isFinite(Number(anchorEpoch))?Number(anchorEpoch):Date.now()/1000;
   // Ignore older proposal snapshots so a delayed response cannot move the
   // counter backwards or insert a completed run out of sequence.
-  if(Number.isFinite(previous.lastEpoch)&&epoch<previous.lastEpoch)return;
+  if(Number.isFinite(previous.lastEpoch)&&epoch<=previous.lastEpoch)return;
   const history=Array.isArray(previous.history)?previous.history.slice():[];
   // A completed run is created only by a live-counter rollover. Store a
   // unique completion timestamp and never replace history from proposal
