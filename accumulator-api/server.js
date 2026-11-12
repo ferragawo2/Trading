@@ -59,26 +59,24 @@ const server = http.createServer(async (req, res) => {
       const verifier = crypto.randomBytes(48).toString("base64url");
       const challenge = crypto.createHash("sha256").update(verifier).digest("base64url");
       const state = crypto.randomBytes(24).toString("hex");
-      const txId = crypto.randomBytes(32).toString("base64url");
-      transactions.set(txId, { verifier, state, expires: Date.now() + 10 * 60 * 1000 });
+      // Use the high-entropy state as the transaction key; no redirect cookie required.
+      transactions.set(state, { verifier, expires: Date.now() + 10 * 60 * 1000 });
       const params = new URLSearchParams({
         response_type: "code", client_id: CLIENT_ID, redirect_uri: REDIRECT_URI,
         scope: "trade", state, code_challenge: challenge, code_challenge_method: "S256"
       });
-      return send(res, 200, { authorization_url: `${AUTH_URL}?${params}` }, {
-        "Set-Cookie": cookie("deriv_oauth_tx", txId, 600)
-      });
+      return send(res, 200, { authorization_url: `${AUTH_URL}?${params}` });
     }
 
     if (req.method === "POST" && url.pathname === "/oauth/exchange") {
-      const txId = cookies(req).deriv_oauth_tx;
-      const tx = txId && transactions.get(txId);
       const input = await bodyJson(req);
-      if (!tx || tx.expires < Date.now() || !input.state || input.state !== tx.state || typeof input.code !== "string") {
-        if (txId) transactions.delete(txId);
-        return send(res, 400, { error: "OAuth state check failed or login expired. Please connect again." }, { "Set-Cookie": clearCookie("deriv_oauth_tx") });
+      const state = typeof input.state === "string" ? input.state : "";
+      const tx = state && transactions.get(state);
+      if (!tx || tx.expires < Date.now() || typeof input.code !== "string") {
+        if (state) transactions.delete(state);
+        return send(res, 400, { error: "OAuth state check failed or login expired. Please connect again." });
       }
-      transactions.delete(txId);
+      transactions.delete(state);
       const form = new URLSearchParams({
         grant_type: "authorization_code", client_id: CLIENT_ID, code: input.code,
         code_verifier: tx.verifier, redirect_uri: REDIRECT_URI
@@ -88,7 +86,8 @@ const server = http.createServer(async (req, res) => {
       });
       const tokenData = await tokenResponse.json();
       if (!tokenResponse.ok || !tokenData.access_token) {
-        return send(res, 502, { error: "Deriv token exchange failed. Please try connecting again." }, { "Set-Cookie": clearCookie("deriv_oauth_tx") });
+        console.error("Deriv token exchange rejected:", tokenResponse.status, tokenData.error || tokenData.message || "No access token");
+        return send(res, 502, { error: "Deriv token exchange failed. Please try connecting again." });
       }
       const sid = crypto.randomBytes(32).toString("base64url");
       const expiresIn = Math.max(60, Number(tokenData.expires_in) || 3600);
