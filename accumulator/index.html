@@ -297,14 +297,18 @@ function tryMatchCandidates(symbol,rate){
 }
 
 function renderSurvivalCards(){
-  const rate=Number($("statsGrowthRate")?.value||0.01),stats=getSurvivalStats(selectedSymbol,rate);
-  const runs=Array.isArray(stats.recentRuns)?stats.recentRuns.slice(-100).reverse():[];
-  const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" ticks survived";return el;};
+  const rate=Number($("statsGrowthRate")?.value||0.01),item=barrierData[rate]||{};
+  // Deriv supplies this native run-history array in proposal.contract_details.
+  // Never substitute locally reconstructed public-tick runs for Deriv Stats.
+  const runs=Array.isArray(item.ticksStayedIn)
+    ?item.ticksStayedIn.map(Number).filter(n=>Number.isInteger(n)&&n>=0).slice(0,100)
+    :[];
+  const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" consecutive ticks in range (Deriv Stats)";return el;};
   const values=$("statsValues");values.replaceChildren();
-  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="Collecting completed runs…";values.append(empty);}
+  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="Waiting for Deriv Stats data…";values.append(empty);}
   else runs.slice(0,10).forEach(n=>values.append(makeValue(n)));
   const history=$("statsHistoryValues");history.replaceChildren();
-  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="No completed runs yet.";history.append(empty);}
+  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="Deriv has not returned run history for this growth rate yet.";history.append(empty);}
   else runs.forEach(n=>history.append(makeValue(n)));
 }
 function renderBarrierCards(){
