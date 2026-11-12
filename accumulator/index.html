@@ -223,19 +223,6 @@ function handleAccumulatorProposal(message){
   item.lastTickEpoch=numberOrNull(details.last_tick_epoch);item.maximumTicks=numberOrNull(details.maximum_ticks);
   item.maximumPayout=numberOrNull(details.maximum_payout);
   item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
-  if(Array.isArray(details.ticks_stayed_in)){
-    const stats=getSurvivalStats(selectedSymbol,rate);
-    // Zero is a valid completed run in Deriv Stats. Reject null/blank values
-    // before numeric conversion so they cannot be mistaken for zero.
-    const nativeRuns=details.ticks_stayed_in.map(value=>{
-      if(typeof value==="number")return value;
-      if(typeof value==="string"&&value.trim()!=="")return Number(value);
-      return NaN;
-    }).filter(value=>Number.isInteger(value)&&value>=0).slice(0,100);
-    stats.derivRuns=nativeRuns;
-    stats.derivRunsUpdatedAt=Date.now();
-    saveSurvivalHistory();
-  }
   item.subscriptionId=message.subscription?.id||null;
   const anchor=numberOrNull(details.last_tick_epoch)??numberOrNull(proposal.spot_time);
   if(item.high!==null&&item.low!==null&&item.high>item.low&&anchor!==null){if(!item.snapshotsByAnchor)item.snapshotsByAnchor={};const snapshot={high:item.high,low:item.low,anchorEpoch:anchor,spot:item.spot,receivedAt:Date.now(),used:false,anchorSource:details.last_tick_epoch!==undefined?"Deriv last_tick_epoch":"proposal spot_time"};item.snapshotsByAnchor[String(anchor)]=snapshot;const keys=Object.keys(item.snapshotsByAnchor).sort((a,b)=>Number(a)-Number(b));while(keys.length>120){delete item.snapshotsByAnchor[keys.shift()];}item.pendingSnapshot=snapshot;tryMatchCandidates(selectedSymbol,rate);}
@@ -304,20 +291,32 @@ function tryMatchCandidates(symbol,rate){
     candidate.evaluatedRates[rate]=true;snap.used=true;
     stats.observed++;stats.lastEvaluatedEpoch=candidate.epoch;
     if(survived){stats.survived++;stats.currentRun++;stats.longestRun=Math.max(stats.longestRun,stats.currentRun);stats.lastResult="Survived · matched Deriv quote";}
-    else{const completedLength=stats.currentRun;stats.completedRuns[completedLength]=(Number(stats.completedRuns[completedLength])||0)+1;stats.completedRunsTotal++;stats.recentRuns.push(completedLength);if(stats.recentRuns.length>100)stats.recentRuns=stats.recentRuns.slice(-100);stats.knockouts++;stats.currentRun=0;stats.lastResult="Knockout · completed run "+completedLength+" ticks";}
+    else{
+      // Save the number of consecutive in-barrier ticks BEFORE resetting the counter.
+      // A zero-length attempt is not a completed in-barrier run and is not added to Stats.
+      const completedLength=stats.currentRun;
+      if(completedLength>0){
+        stats.completedRuns[completedLength]=(Number(stats.completedRuns[completedLength])||0)+1;
+        stats.completedRunsTotal++;
+        stats.recentRuns.push(completedLength);
+        if(stats.recentRuns.length>100)stats.recentRuns=stats.recentRuns.slice(-100);
+      }
+      stats.knockouts++;
+      stats.currentRun=0;
+      stats.lastResult=completedLength>0?"Knockout · saved "+completedLength+" ticks":"Knockout · no completed in-barrier run";
+    }
     item.pendingSnapshot=null;saveSurvivalHistory();renderSurvivalCards();
   }
 }
 
 function renderSurvivalCards(){
   const rate=Number($("statsGrowthRate")?.value||0.01),item=barrierData[rate]||{};
-  // Deriv supplies this native run-history array in proposal.contract_details.
-  // Never substitute locally reconstructed public-tick runs for Deriv Stats.
+  // Stats records completed consecutive in-barrier tick runs.
+  // recentRuns is stored oldest-first; show the newest completed run first.
   const stats=getSurvivalStats(selectedSymbol,rate);
-  const runs=Array.isArray(item.ticksStayedIn)
-    ?item.ticksStayedIn.map(value=>typeof value==="number"?value:(typeof value==="string"&&value.trim()!==""?Number(value):NaN)).filter(n=>Number.isInteger(n)&&n>=0).slice(0,100)
-    :(Array.isArray(stats.derivRuns)?stats.derivRuns.slice(0,100):[]);
-  const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" consecutive ticks in range (Deriv Stats)";return el;};
+  const runs=(Array.isArray(stats.recentRuns)?stats.recentRuns:[])
+    .map(Number).filter(n=>Number.isInteger(n)&&n>0).slice(-100).reverse();
+  const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" consecutive price ticks inside the barrier before breakout";return el;};
   const values=$("statsValues");values.replaceChildren();
   if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="Waiting for Deriv Stats data…";values.append(empty);}
   else runs.slice(0,10).forEach(n=>values.append(makeValue(n)));
