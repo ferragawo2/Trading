@@ -54,6 +54,17 @@ function censorRun(stats,reason){
   if(stats.currentRun>0){stats.censoredRuns++;stats.censoredTicks+=stats.currentRun;stats.currentRun=0;}
   stats.lastResult="Unmatched · "+reason;
 }
+function censorSymbolRuns(symbol,reason){
+  const byRate=survivalBySymbol[symbol];if(!byRate)return;
+  let changed=false;
+  Object.values(byRate).forEach(stats=>{
+    if(!stats||!Number.isFinite(stats.currentRun)||stats.currentRun<=0)return;
+    stats.censoredRuns=(Number(stats.censoredRuns)||0)+1;
+    stats.censoredTicks=(Number(stats.censoredTicks)||0)+stats.currentRun;
+    stats.currentRun=0;stats.lastResult="Censored · "+reason;changed=true;
+  });
+  if(changed)saveSurvivalHistory();
+}
 loadSurvivalHistory();
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
 const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
@@ -160,7 +171,9 @@ function renderMarketCards(){
   });
 }
 function selectMarket(symbol){
-  if(!marketBySymbol[symbol])return;selectedSymbol=symbol;$("symbol").value=symbol;
+  if(!marketBySymbol[symbol])return;
+  if(selectedSymbol&&symbol!==selectedSymbol)censorSymbolRuns(selectedSymbol,"market selection changed");
+  selectedSymbol=symbol;$("symbol").value=symbol;
   const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
   $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
   $("lastTick").textContent=t?new Date(t.epoch*1000).toLocaleTimeString():"—";
