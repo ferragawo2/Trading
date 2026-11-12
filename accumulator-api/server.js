@@ -53,7 +53,7 @@ const server = http.createServer(async (req, res) => {
   const url = new URL(req.url, "http://localhost");
   try {
     if (url.pathname === "/health") return send(res, 200, { ok: true, service: "accumulator-oauth-api" });
-    if (!CLIENT_ID || !REDIRECT_URI || !APP_ORIGIN) return send(res, 503, { error: "OAuth service is not configured" });
+    if (!CLIENT_ID || !REDIRECT_URI || !APP_ORIGIN) return send(res, 503, { stage: "configuration", code: "OAUTH_CONFIG_MISSING", error: "OAuth service is not configured. Check OAuth environment variables on Render." });
 
     if (req.method === "POST" && url.pathname === "/oauth/start") {
       const verifier = crypto.randomBytes(48).toString("base64url");
@@ -74,7 +74,7 @@ const server = http.createServer(async (req, res) => {
       const tx = state && transactions.get(state);
       if (!tx || tx.expires < Date.now() || typeof input.code !== "string") {
         if (state) transactions.delete(state);
-        return send(res, 400, { error: "OAuth state check failed or login expired. Please connect again." });
+        return send(res, 400, { stage: "state_validation", code: "OAUTH_STATE_INVALID_OR_EXPIRED", error: "OAuth state was not found or expired. The backend may have restarted during login. Start a fresh connection." });
       }
       transactions.delete(state);
       const form = new URLSearchParams({
@@ -86,15 +86,17 @@ const server = http.createServer(async (req, res) => {
       });
       const tokenData = await tokenResponse.json();
       if (!tokenResponse.ok || !tokenData.access_token) {
-        console.error("Deriv token exchange rejected:", tokenResponse.status, tokenData.error || tokenData.message || "No access token");
-        return send(res, 502, { error: "Deriv token exchange failed. Please try connecting again." });
+        const providerMessage = String(tokenData.error_description || tokenData.message || tokenData.error || "Deriv did not return an access token").slice(0, 500);
+        console.error("OAuth stage=token_exchange status=" + tokenResponse.status);
+        return send(res, 502, { stage: "token_exchange", code: "DERIV_TOKEN_EXCHANGE_REJECTED", http_status: tokenResponse.status, error: providerMessage });
       }
       const sid = crypto.randomBytes(32).toString("base64url");
       const expiresIn = Math.max(60, Number(tokenData.expires_in) || 3600);
       sessions.set(sid, { accessToken: tokenData.access_token, expires: Date.now() + expiresIn * 1000 });
       // Return only an opaque, random app-session handle. The Deriv access token
       // remains server-side; the browser stores this handle in same-origin sessionStorage.
-      return send(res, 200, { connected: true, expires_in: expiresIn, session_id: sid }, {
+      console.info("OAuth stage=session_created");
+      return send(res, 200, { connected: true, stage: "session_created", expires_in: expiresIn, session_id: sid }, {
         "Set-Cookie": cookie("deriv_session", sid, expiresIn)
       });
     }
@@ -106,7 +108,7 @@ const server = http.createServer(async (req, res) => {
 
     if (req.method === "GET" && url.pathname === "/api/me") {
       const active = sid && sessions.get(sid);
-      if (!active || active.expires <= Date.now()) return send(res, 401, { connected: false });
+      if (!active || active.expires <= Date.now()) return send(res, 401, { connected: false, stage: "session_lookup", code: "APP_SESSION_NOT_FOUND", error: "The app session is missing or expired on the backend. Reconnect to create a fresh session." });
       const response = await fetch(`${API_BASE}/trading/v1/options/accounts`, {
         headers: { Authorization: `Bearer ${active.accessToken}` }
       });
@@ -122,7 +124,8 @@ const server = http.createServer(async (req, res) => {
     }
     return send(res, 404, { error: "Not found" });
   } catch (error) {
-    return send(res, 500, { error: "OAuth service error" });
+    console.error("OAuth stage=server_exception", error?.name || "Error", String(error?.message || error).slice(0, 300));
+    return send(res, 500, { stage: "server", code: "OAUTH_BACKEND_EXCEPTION", error: String(error?.message || "Unexpected backend error").slice(0, 300) });
   }
 });
 server.listen(PORT, "0.0.0.0", () => console.log(`Accumulator OAuth API listening on ${PORT}`));
