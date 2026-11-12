@@ -367,13 +367,13 @@ select option{background:#080808;color:#fff}
 /* Unified NOIR quick-action bar */
 .noir-action-bar{display:flex;align-items:center;gap:12px;width:100%;max-width:560px;margin:0 auto}
 .noir-add-action{width:54px;height:54px;flex:0 0 54px;display:grid;place-items:center;border:1px solid #dedede;border-radius:50%;background:#dedede;color:#090909;box-shadow:0 2px 12px rgba(220,220,220,.09);cursor:pointer}
-.noir-add-action svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round}
+.noir-add-action svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round}
 .noir-action-pill{min-width:0;flex:1;display:flex;align-items:center;justify-content:space-around;gap:2px;padding:7px 9px;border:1px solid rgba(220,220,220,.24);border-radius:999px;background:rgba(22,22,22,.48);backdrop-filter:blur(20px) saturate(140%);-webkit-backdrop-filter:blur(20px) saturate(140%);box-shadow:inset 0 1px 0 rgba(255,255,255,.045),0 8px 26px rgba(0,0,0,.22)}
 .noir-pill-action{min-width:0;flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;padding:4px 5px;border:0;background:transparent;color:#dedede;font:500 10px/1.2 Inter,-apple-system,BlinkMacSystemFont,"SF Pro Display",sans-serif;cursor:pointer}
-.noir-pill-action svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.55;stroke-linecap:round;stroke-linejoin:round}
+.noir-pill-action svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:2.15;stroke-linecap:round;stroke-linejoin:round}
 .noir-pill-action:hover,.noir-pill-action:focus-visible{color:#fff}
 .noir-more-action{width:46px;height:46px;flex:0 0 46px;display:grid;place-items:center;padding:0;border:1px solid rgba(220,220,220,.48);border-radius:50%;background:rgba(12,12,12,.42);color:#dedede;cursor:pointer;box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
-.noir-more-action svg{width:22px;height:22px;fill:currentColor}
+.noir-more-action svg{width:22px;height:22px;fill:currentColor}\n.noir-pill-action[data-action="swap"] svg{stroke-width:1.9}
 .noir-more-action:hover,.noir-more-action:focus-visible{color:#fff;border-color:#fff}
 @media(max-width:420px){.noir-action-bar{gap:8px}.noir-add-action{width:48px;height:48px;flex-basis:48px}.noir-more-action{width:42px;height:42px;flex-basis:42px}.noir-action-pill{padding:6px 5px}.noir-pill-action{font-size:9px;gap:3px}.noir-pill-action svg{width:21px;height:21px}}
 </style>
@@ -479,7 +479,7 @@ select option{background:#080808;color:#fff}
    <button class="noir-pill-action" type="button" data-action="send" aria-label="Send"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20V5m-6 6 6-6 6 6"/></svg><span>Send</span></button>
    <button class="noir-pill-action" type="button" data-action="swap" aria-label="Swap"><svg viewBox="0 0 24 24" aria-hidden="true"><g fill="none" stroke="currentColor" stroke-width="1.45" stroke-linecap="round" stroke-linejoin="round"><path d="M5.2 9.2C6.1 5.1 10.2 2.8 14.3 3.7c2.4.5 4.2 2.1 5.1 4.2"/><path d="m16.3 7.7 3.3.7.7-3.2"/><path d="M18.8 14.8c-.9 4.1-5 6.4-9.1 5.5-2.4-.5-4.2-2.1-5.1-4.2"/><path d="m7.7 16.3-3.3-.7-.7 3.2"/><circle cx="9.2" cy="12" r="4.05"/><circle cx="14.8" cy="12" r="4.05"/><path d="M7.8 12h2.8m2.8 0h2.8"/></g></svg><span>Swap</span></button>
   </div>
-  <button class="noir-more-action" type="button" data-action="explore" aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.5" fill="currentColor"/><circle cx="12" cy="12" r="1.5" fill="currentColor"/><circle cx="19" cy="12" r="1.5" fill="currentColor"/></svg></button>
+  <button class="noir-more-action" type="button" data-action="explore" aria-label="More"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.9" fill="currentColor"/><circle cx="12" cy="12" r="1.9" fill="currentColor"/><circle cx="19" cy="12" r="1.9" fill="currentColor"/></svg></button>
  </div>
  <div class="noir-quick-secondary">
   <button type="button" class="noir-secondary-pill" data-action="assets"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 10h18"/></svg>Assets</button>
