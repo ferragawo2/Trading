@@ -47,7 +47,7 @@ const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Er
 function connect() {
   if(ws) { try{ws.close()}catch{} }
   const appId=$("appId").value.trim();
-  if(!/^\\d+$/.test(appId)){log("Enter a valid numeric Deriv App ID.");return;}
+  if(!/^\d+$/.test(appId)){log("Enter a valid numeric Deriv App ID.");return;}
   setStatus("Connecting…");
   ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id="+encodeURIComponent(appId));
   ws.onopen=()=>{
