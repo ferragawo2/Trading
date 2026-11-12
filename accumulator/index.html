@@ -38,29 +38,29 @@
 <script>
 (() => {
 const $ = id => document.getElementById(id);
-let feed=null, ws=null, req=0, tickSubscriptionId=null, authorized=false, virtual=false, currencyCode="USD", ticks=[], prices=[], pending={}, quoteReq={}, monitors={};
+let ws=null, req=0, tickSubscriptionId=null, authorized=false, virtual=false, currencyCode="USD", ticks=[], prices=[], pending={}, quoteReq={}, monitors={};
 const rates=[0.01,0.02,0.03,0.04,0.05];
 rates.forEach(rate=>monitors[rate]={rate,high:null,low:null,barrierEpoch:null,count:0,crossings:0,lastPrice:null,status:"Waiting for quote"});
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
 const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
 const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Trading connection is not ready"); const id=++req; payload.req_id=id; ws.send(JSON.stringify(payload)); return id; };
 function connect() {
-  if(feed) { try{feed.close()}catch{} }
   if(ws) { try{ws.close()}catch{} }
   const appId=$("appId").value.trim();
-  if(!/^\d+$/.test(appId)){log("Enter a valid numeric Deriv App ID.");return;}
+  if(!/^\\d+$/.test(appId)){log("Enter a valid numeric Deriv App ID.");return;}
   setStatus("Connecting…");
-  // Public market-data socket is separate from the account/trading socket.
-  feed=new WebSocket("wss://api.derivws.com/trading/v1/options/ws/public");
-  feed.onopen=()=>{
-    setStatus("Market feed connected",true);log("Public Deriv market-data socket connected.");
-    feed.send(JSON.stringify({ticks:$("symbol").value,subscribe:1,req_id:1}));
-    feed.send(JSON.stringify({ticks_history:$("symbol").value,count:60,end:"latest",style:"ticks",req_id:2}));
+  ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id="+encodeURIComponent(appId));
+  ws.onopen=()=>{
+    setStatus("Connected to Deriv",true);log("Deriv WebSocket connected.");
+    send({ping:1});
+    send({ticks:$("symbol").value,subscribe:1});
+    send({ticks_history:$("symbol").value,count:60,end:"latest",style:"ticks"});
+    log("Requested live ticks and recent tick history for "+$("symbol").value+".");
   };
-  feed.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}
-    if(m.error){log("Market feed error: "+m.error.message);return;}
-    if(m.msg_type==="history" && m.history?.prices){const vals=m.history.prices.map(Number).filter(Number.isFinite);prices=vals.slice(-100);draw();log("Loaded "+vals.length+" historical ticks.");}
-    if(m.msg_type==="tick" && m.tick){const t=m.tick,p=Number(t.quote);if(!Number.isFinite(p))return;
+  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}
+    if(m.error){log("Deriv API error: "+m.error.message);if(m.req_id&&pending[m.req_id]){pending[m.req_id](m);delete pending[m.req_id]}return;}
+    if(m.msg_type==="history"&&m.history?.prices){const vals=m.history.prices.map(Number).filter(Number.isFinite);prices=vals.slice(-100);draw();log("Loaded "+vals.length+" historical ticks.");}
+    if(m.msg_type==="tick"&&m.tick){const t=m.tick,p=Number(t.quote);if(!Number.isFinite(p))return;
       if(t.subscription?.id)tickSubscriptionId=t.subscription.id;
       $("price").textContent=p.toFixed(Number.isInteger(t.pip_size)?t.pip_size:2);
       $("lastTick").textContent=new Date(Number(t.epoch)*1000).toLocaleTimeString();
@@ -68,29 +68,22 @@ function connect() {
       ticks.unshift({price:p,time:t.epoch});ticks=ticks.slice(0,20);prices.push(p);prices=prices.slice(-100);
       processTick(p,Number(t.epoch));renderTicks();draw();
     }
-  };
-  feed.onerror=()=>{setStatus("Market feed error");log("Public market-data WebSocket error.");};
-  feed.onclose=()=>{setStatus("Feed disconnected");log("Public market-data socket closed.");};
-  ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id="+encodeURIComponent(appId));
-  ws.onopen=()=>log("Deriv account/quote socket connected.");
-  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}
-    if(m.error){log("Deriv quote/account error: "+m.error.message);if(m.req_id&&pending[m.req_id]){pending[m.req_id](m);delete pending[m.req_id]}return;}
     if(m.msg_type==="authorize"&&m.authorize){const a=m.authorize;virtual=Boolean(a.is_virtual);if(!virtual){authorized=false;$("accountType").textContent="Live blocked";$("authNote").textContent="This account is not virtual. Live-account authorization is blocked.";log("Rejected non-demo account.");return;}
       authorized=true;currencyCode=a.currency||"USD";$("accountType").textContent="Demo";$("currency").textContent=currencyCode;$("balance").textContent=Number(a.balance).toFixed(2);$("quoteBtn").disabled=false;$("logoutBtn").disabled=false;$("authNote").textContent="Demo account verified. Token remains in memory only.";log("Demo account authorized.");
     }
     if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal,rate=quoteReq[m.req_id]??Number(m.echo_req?.growth_rate);const mon=monitors[rate];
       $("ask").textContent=p.ask_price??"—";$("payout").textContent=p.payout??"—";
-      const d=p.contract_details||{};if(mon){
-        const hi=Number(d.high_barrier),lo=Number(d.low_barrier);
+      const d=p.contract_details||{};if(mon){const hi=Number(d.high_barrier),lo=Number(d.low_barrier);
         if(Number.isFinite(hi)&&Number.isFinite(lo)){mon.high=hi;mon.low=lo;mon.barrierEpoch=Number(d.last_tick_epoch)||null;mon.status="Barrier loaded";renderMonitors();}
         else {mon.status="Quote received; barrier fields absent";renderMonitors();}
       }
-      if(p.contract_details)log((rate*100)+"% Deriv quote updated; barrier details received.");
-      else log((rate*100)+"% quote received, but Deriv did not include high/low barrier fields.");
+      $("quoteNote").textContent="Quote received. No contract has been purchased.";
+      if(p.contract_details)log((rate*100)+"% Deriv quote returned contract details.");
+      else log((rate*100)+"% quote received; no high/low barrier fields were supplied.");
     }
   };
-  ws.onerror=()=>log("Account/quote WebSocket error.");
-  ws.onclose=()=>{authorized=false;$("quoteBtn").disabled=true;$("logoutBtn").disabled=true;$("accountType").textContent="Not linked";log("Account/quote socket closed.");};
+  ws.onerror=()=>{setStatus("Connection error");log("Deriv WebSocket transport error. Check network/firewall and App ID.");};
+  ws.onclose=e=>{authorized=false;$("quoteBtn").disabled=true;$("logoutBtn").disabled=true;$("accountType").textContent="Not linked";setStatus("Disconnected");log("Deriv WebSocket closed (code "+e.code+(e.reason?": "+e.reason:"") + ").");};
 }
 function processTick(price,epoch){
   rates.forEach(rate=>{const m=monitors[rate];if(!Number.isFinite(m.high)||!Number.isFinite(m.low))return;
@@ -114,7 +107,7 @@ function requestAllQuotes(){if(!authorized||!virtual){log("A verified demo accou
 function renderTicks(){const box=$("tickHistory");box.replaceChildren();ticks.forEach(t=>{const s=document.createElement("span");s.className="tick";s.textContent=t.price.toFixed(2);box.appendChild(s)});$("feedNote").textContent=ticks.length+" recent ticks";}
 function draw(){const c=$("chart"),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=Math.max(1,Math.floor(r.width*d));c.height=Math.max(1,Math.floor(r.height*d));const x=c.getContext("2d");x.scale(d,d);const w=r.width,h=r.height;x.clearRect(0,0,w,h);x.strokeStyle="#1d2a3b";x.lineWidth=1;for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke()}if(prices.length<2)return;const min=Math.min(...prices),max=Math.max(...prices),range=max-min||1;x.beginPath();prices.forEach((p,i)=>{const px=i/(prices.length-1)*w,py=h-12-(p-min)/range*(h-24);i?x.lineTo(px,py):x.moveTo(px,py)});x.strokeStyle="#28d8a3";x.lineWidth=2;x.stroke();x.lineTo(w,h);x.lineTo(0,h);x.closePath();x.fillStyle="#20d6a015";x.fill();}
 $("connectBtn").onclick=connect;
-$("symbol").onchange=()=>{if(feed&&feed.readyState===WebSocket.OPEN){if(tickSubscriptionId){feed.send(JSON.stringify({forget:tickSubscriptionId}));tickSubscriptionId=null;}feed.send(JSON.stringify({ticks:$("symbol").value,subscribe:1,req_id:3}));feed.send(JSON.stringify({ticks_history:$("symbol").value,count:60,end:"latest",style:"ticks",req_id:4}));$("marketLabel").textContent=$("symbol").selectedOptions[0].text;ticks=[];prices=[];$("tickCount").textContent="0";rates.forEach(r=>{monitors[r].high=null;monitors[r].low=null;monitors[r].count=0;monitors[r].status="Market changed; request quotes again"});renderMonitors();log("Switched market feed; request fresh quotes for the selected market.");}};
+$("symbol").onchange=()=>{if(ws&&ws.readyState===WebSocket.OPEN){if(tickSubscriptionId){send({forget:tickSubscriptionId});tickSubscriptionId=null;}send({ticks:$("symbol").value,subscribe:1});send({ticks_history:$("symbol").value,count:60,end:"latest",style:"ticks"});$("marketLabel").textContent=$("symbol").selectedOptions[0].text;ticks=[];prices=[];$("tickCount").textContent="0";rates.forEach(r=>{monitors[r].high=null;monitors[r].low=null;monitors[r].count=0;monitors[r].status="Market changed; request quotes again"});renderMonitors();log("Switched market feed; request fresh quotes for the selected market.");}};
 $("authorizeBtn").onclick=()=>{const token=$("token").value.trim();if(!token){log("Enter a demo token first.");return}try{if(!ws||ws.readyState!==WebSocket.OPEN){log("Click Connect feed first so the account socket is ready.");return}send({authorize:token});$("token").value="";$("authNote").textContent="Authorizing…";}catch(e){log(e.message)}};
 $("logoutBtn").onclick=()=>{authorized=false;virtual=false;$("quoteBtn").disabled=true;$("accountType").textContent="Not linked";$("balance").textContent="—";$("currency").textContent="—";try{send({logout:1})}catch{}log("Demo account disconnected.");};
 $("quoteBtn").onclick=requestAllQuotes;
