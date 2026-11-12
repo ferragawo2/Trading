@@ -8,7 +8,7 @@
 :root{color-scheme:dark;--bg:#080b12;--panel:#101621;--line:#243144;--text:#edf3fb;--muted:#91a0b4;--green:#20d6a0;--red:#ff6c7a;--blue:#65a9ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a2a42 0,transparent 48%),var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
 .wrap{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#21d6a0,#438bff);display:grid;place-items:center;color:#061019;font-weight:900;font-size:20px}.brand h1{font-size:18px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.status{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#778397}.dot.on{background:var(--green);box-shadow:0 0 12px #20d6a077}
-.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chart{height:260px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}.market-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}.market-card:hover,.market-card.selected{border-color:var(--green);background:#0d1b20}.market-card strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:7px 0 2px}.market-card .name{font-size:12px;color:var(--text);min-height:34px}.market-card .meta{font-size:10px;color:var(--muted)}.log{height:150px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.note{border:1px solid #28503f;background:#0e211b;color:#a9e6cf;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chart{height:260px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}.market-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}.market-card:hover,.market-card.selected{border-color:var(--green);background:#0d1b20}.market-card strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:7px 0 2px}.market-card .name{font-size:12px;color:var(--text);min-height:34px}.market-card .meta{font-size:10px;color:var(--muted)}.log{height:150px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.note{border:1px solid #28503f;background:#0e211b;color:#a9e6cf;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.barrier-card h3{font-size:13px;margin:0 0 9px}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:10px;color:var(--muted)}.barrier-meta{font-size:10px;color:var(--muted);margin-top:9px;line-height:1.6}.barrier-status{font-size:10px;color:var(--blue);margin-top:7px}
 @media(max-width:800px){.wrap{padding:15px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr 1fr}.top{align-items:flex-start}.controls{grid-template-columns:1fr}.chart{height:220px}}
 </style>
 </head>
@@ -27,7 +27,7 @@
 <div style="margin-top:16px"><h2>CONNECTION EVENTS</h2><div class="log" id="log" aria-live="polite"><div>Ready to discover Accumulator markets.</div></div></div>
 </section>
 <section class="card full"><div class="row between"><h2 style="margin:0">ALL ACCUMULATOR-SUPPORTED SYNTHETIC INDICES</h2><span class="pill" id="listStatus">Not loaded</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Each card updates from its own live tick stream. Select any card to focus its chart above.</p><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
-</div><div class="foot">Live prices are received directly from Deriv's public WebSocket API. Public market data is unauthenticated; account access and trading will be added in a later stage.</div>
+</div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><div class="foot">Live prices are received directly from Deriv's public WebSocket API. Public market data is unauthenticated; account access and trading will be added in a later stage.</div>
 </main>
 <script>
 (() => {
@@ -35,6 +35,7 @@ const $ = id => document.getElementById(id);
 const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={};
+const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
 const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
 const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
@@ -58,6 +59,7 @@ function connect(){
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
     if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
     if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
+    if(m.msg_type==="proposal"&&m.proposal){handleAccumulatorProposal(m);return;}
     if(m.msg_type==="ping")return;
   };
   ws.onerror=()=>{setStatus("Transport error");log("WebSocket transport error. The browser could not complete or maintain the public data connection.");};
@@ -91,7 +93,7 @@ function handleSymbols(rows){
     send({ticks:symbols,subscribe:1});
     log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
   }catch(e){log("Could not subscribe to markets: "+e.message)}
-  requestHistory(selectedSymbol);updateSelectedLabel();
+  requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);
 }
 function requestHistory(symbol){
   if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
@@ -145,7 +147,62 @@ function selectMarket(symbol){
   $("tickCount").textContent=String(tickCounts[symbol]||0);
   $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
   $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
-  updateSelectedLabel();renderMarketCards();requestHistory(symbol);drawChart();
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);drawChart();
+}
+
+function clearAccumulatorQuotes(){
+  barrierSubscriptions.forEach(id=>{try{send({forget:id})}catch{}});
+  barrierSubscriptions=[];barrierRequests={};barrierData={};
+}
+function requestAccumulatorQuotes(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  clearAccumulatorQuotes();
+  $("barrierStatus").textContent="Requesting 1%–5% quotes";
+  $("barrierGrid").replaceChildren();
+  growthRates.forEach(rate=>barrierData[rate]={rate,status:"Requesting Deriv quote"});
+  renderBarrierCards();
+  growthRates.forEach(rate=>{
+    try{
+      const id=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:"USD",growth_rate:rate,underlying_symbol:symbol,subscribe:1});
+      barrierRequests[id]=rate;
+    }catch(e){barrierData[rate].status="Request failed: "+e.message;renderBarrierCards();}
+  });
+  log("Requested Deriv live Accumulator barrier streams for "+symbol+" at 1%, 2%, 3%, 4% and 5%.");
+}
+function handleAccumulatorProposal(message){
+  const proposal=message.proposal||{};
+  const rate=barrierRequests[message.req_id]??Number(message.echo_req?.growth_rate);
+  const item=barrierData[rate];if(!item)return;
+  const details=proposal.contract_details||{};
+  const numberOrNull=value=>{if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isFinite(n)?n:null;};
+  item.askPrice=numberOrNull(proposal.ask_price);item.payout=numberOrNull(proposal.payout);
+  item.spot=numberOrNull(proposal.spot);item.spotTime=numberOrNull(proposal.spot_time);
+  item.high=numberOrNull(details.high_barrier);item.low=numberOrNull(details.low_barrier);
+  item.barrierPct=numberOrNull(details.tick_size_barrier_percentage);item.barrierSize=numberOrNull(details.tick_size_barrier);
+  item.lastTickEpoch=numberOrNull(details.last_tick_epoch);item.maximumTicks=numberOrNull(details.maximum_ticks);
+  item.maximumPayout=numberOrNull(details.maximum_payout);
+  item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
+  item.subscriptionId=message.subscription?.id||null;
+  if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
+  item.status=(item.high!==null&&item.low!==null)?"Live Deriv barrier received":"Quote received; barrier fields not present";
+  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();
+}
+function renderBarrierCards(){
+  const box=$("barrierGrid");box.replaceChildren();
+  const fmt=(v,d=6)=>v===null||v===undefined?"Not supplied":Number(v).toFixed(d);
+  growthRates.forEach(rate=>{
+    const item=barrierData[rate]||{status:"Waiting"};
+    const card=document.createElement("div");card.className="barrier-card";
+    const heading=document.createElement("h3");heading.textContent=Math.round(rate*100)+"% GROWTH";
+    const pair=document.createElement("div");pair.className="barrier-pair";
+    const high=document.createElement("div");high.innerHTML='<div class="barrier-label">UPPER BARRIER</div><div class="barrier-value"></div>';high.querySelector(".barrier-value").textContent=fmt(item.high);
+    const low=document.createElement("div");low.innerHTML='<div class="barrier-label">LOWER BARRIER</div><div class="barrier-value"></div>';low.querySelector(".barrier-value").textContent=fmt(item.low);
+    pair.append(high,low);
+    const meta=document.createElement("div");meta.className="barrier-meta";
+    meta.textContent=["Reference spot: "+fmt(item.spot),"Barrier width: "+(item.barrierPct===null?"Not supplied":item.barrierPct+"%"),"Tick-size barrier: "+fmt(item.barrierSize),"Max ticks: "+(item.maximumTicks??"Not supplied"),"Max payout: "+(item.maximumPayout??"Not supplied"),"Deriv tick epoch: "+(item.lastTickEpoch??"Not supplied")].join(" · ");
+    const status=document.createElement("div");status.className="barrier-status";status.textContent=item.status||"Waiting for Deriv";
+    card.append(heading,pair,meta,status);box.append(card);
+  });
 }
 function drawChart(){
   const c=$("chart"),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=Math.max(1,Math.floor(r.width*d));c.height=Math.max(1,Math.floor(r.height*d));
