@@ -49,7 +49,19 @@ function updateNativeStats(symbol,rate,raw){
   if(!Array.isArray(raw))return;
   const values=raw.map(value=>{if(typeof value==="number")return value;if(typeof value==="string"&&value.trim()!=="")return Number(value);return NaN;}).filter(value=>Number.isInteger(value)&&value>=0);
   if(!values.length)return;
-  nativeStatsByKey[nativeStatsKey(symbol,rate)]={current:values[0],history:values.slice(1,101),updatedAt:Date.now()};
+  const key=nativeStatsKey(symbol,rate),previous=nativeStatsByKey[key]||{};
+  const current=values[0],nativeHistory=values.slice(1,101);
+  let history=Array.isArray(previous.history)?previous.history.slice(0,100):[];
+  // Some Deriv proposal updates provide only the live counter, not the
+  // completed-run array. Detect the native counter rolling over and save
+  // the last completed in-barrier count before showing the new run.
+  if(Number.isInteger(previous.current)&&previous.current>0&&current<previous.current){
+    const alreadyInNativeHistory=nativeHistory.length>0&&nativeHistory[0]===previous.current;
+    if(!alreadyInNativeHistory)history.unshift(previous.current);
+  }
+  // When Deriv includes its completed history, prefer that authoritative list.
+  if(nativeHistory.length)history=nativeHistory;
+  nativeStatsByKey[key]={current,history:history.slice(0,100),updatedAt:Date.now()};
   saveNativeStats();
   if(symbol===selectedSymbol&&Number($("statsGrowthRate")?.value||0.01)===Number(rate))renderNativeStats();
 }
