@@ -40,7 +40,7 @@ const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").clas
 const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
 function connect(){
   manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
-  if(ws){try{ws.close(1000,"Refreshing market feed")}catch{}}
+  if(ws){const previous=ws;previous.onclose=null;previous.onerror=null;previous.onmessage=null;try{previous.close(1000,"Refreshing market feed")}catch{}}
   manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};tickCounts={};latestTicks={};
   $("symbol").disabled=true;$("symbol").innerHTML="<option>Connecting to Deriv…</option>";
   $("marketGrid").innerHTML='<div class="metric"><small>MARKET DISCOVERY</small><strong>Requesting live catalogue…</strong></div>';
