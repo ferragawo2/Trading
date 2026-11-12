@@ -28,7 +28,7 @@
 <div style="margin-top:16px"><h2>CONNECTION EVENTS</h2><div class="log" id="log" aria-live="polite"><div>Ready to discover Accumulator markets.</div></div></div>
 </section>
 <section class="card full"><div class="row between"><h2 style="margin:0">ALL ACCUMULATOR-SUPPORTED SYNTHETIC INDICES</h2><span class="pill" id="listStatus">Not loaded</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Each card updates from its own live tick stream. Select any card to focus its chart above.</p><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
-</div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><section class="card full"><div class="row between"><h2 style="margin:0">LIVE SURVIVAL TRACKER</h2><span class="pill" id="survivalStatus">Waiting for aligned barriers</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Only evaluates a tick when its immediately preceding tick timestamp matches the timestamp on Deriv’s barrier quote (and, when supplied, its reference spot). Unmatched ticks are skipped rather than guessed. Completed run lengths are saved locally. This is still a market-feed replica, not an actual purchased contract history.</p><div class="survival-grid" id="survivalGrid"><div class="survival-card">Waiting for live Deriv barrier snapshots.</div></div></section><div class="foot">Live prices are received directly from Deriv's public WebSocket API. Public market data is unauthenticated; account access and trading will be added in a later stage.</div>
+</div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><section class="card full"><div class="row between"><h2 style="margin:0">LIVE SURVIVAL TRACKER</h2><span class="pill" id="survivalStatus">Waiting for aligned barriers</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Only evaluates a tick when its immediately preceding tick timestamp and (when supplied) reference spot match Deriv’s barrier quote. Missing, ambiguous, or mismatched samples are excluded; an open run is censored across data gaps or feed restarts. Completed run lengths are saved locally in a fresh v4 sample. This is a market-feed replica, not purchased-contract history.</p><div class="survival-grid" id="survivalGrid"><div class="survival-card">Waiting for live Deriv barrier snapshots.</div></div></section><div class="foot">Live prices are received directly from Deriv's public WebSocket API. Public market data is unauthenticated; account access and trading will be added in a later stage.</div>
 </main>
 <script>
 (() => {
@@ -37,14 +37,29 @@ const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={}, tickCandidates={};
-const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};const survivalBySymbol={};const SURVIVAL_STORAGE_KEY="deriv_accumulator_survival_v3";
+const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};const survivalBySymbol={};const SURVIVAL_STORAGE_KEY="deriv_accumulator_survival_v4";const MAX_PENDING_CANDIDATES=30;
 function loadSurvivalHistory(){try{const saved=JSON.parse(localStorage.getItem(SURVIVAL_STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")Object.assign(survivalBySymbol,saved);}catch(e){console.warn("Could not load saved survival history",e);}}
 function saveSurvivalHistory(){try{localStorage.setItem(SURVIVAL_STORAGE_KEY,JSON.stringify(survivalBySymbol));}catch(e){console.warn("Could not save survival history",e);}}
+function censorOpenRuns(reason){
+  let changed=false;
+  Object.values(survivalBySymbol).forEach(byRate=>Object.values(byRate||{}).forEach(stats=>{
+    if(!stats||!Number.isFinite(stats.currentRun)||stats.currentRun<=0)return;
+    stats.censoredRuns=(Number(stats.censoredRuns)||0)+1;
+    stats.censoredTicks=(Number(stats.censoredTicks)||0)+stats.currentRun;
+    stats.currentRun=0;stats.lastResult="Censored · "+reason;changed=true;
+  }));
+  if(changed)saveSurvivalHistory();
+}
+function censorRun(stats,reason){
+  if(stats.currentRun>0){stats.censoredRuns++;stats.censoredTicks+=stats.currentRun;stats.currentRun=0;}
+  stats.lastResult="Unmatched · "+reason;
+}
 loadSurvivalHistory();
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
 const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
 const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
 function connect(){
+  censorOpenRuns("market feed restarted");
   manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
   if(ws){const previous=ws;previous.onclose=null;previous.onerror=null;previous.onmessage=null;try{previous.close(1000,"Refreshing market feed")}catch{}}
   manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};tickCounts={};latestTicks={};
@@ -192,16 +207,31 @@ function handleAccumulatorProposal(message){
   item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
   item.subscriptionId=message.subscription?.id||null;
   const anchor=numberOrNull(details.last_tick_epoch)??numberOrNull(proposal.spot_time);
-  if(item.high!==null&&item.low!==null&&anchor!==null){if(!item.snapshotsByAnchor)item.snapshotsByAnchor={};const snapshot={high:item.high,low:item.low,anchorEpoch:anchor,spot:item.spot,receivedAt:Date.now(),used:false,anchorSource:details.last_tick_epoch!==undefined?"Deriv last_tick_epoch":"proposal spot_time"};item.snapshotsByAnchor[String(anchor)]=snapshot;const keys=Object.keys(item.snapshotsByAnchor).sort((a,b)=>Number(a)-Number(b));while(keys.length>120){delete item.snapshotsByAnchor[keys.shift()];}item.pendingSnapshot=snapshot;tryMatchCandidates(selectedSymbol,rate);}
+  if(item.high!==null&&item.low!==null&&item.high>item.low&&anchor!==null){if(!item.snapshotsByAnchor)item.snapshotsByAnchor={};const snapshot={high:item.high,low:item.low,anchorEpoch:anchor,spot:item.spot,receivedAt:Date.now(),used:false,anchorSource:details.last_tick_epoch!==undefined?"Deriv last_tick_epoch":"proposal spot_time"};item.snapshotsByAnchor[String(anchor)]=snapshot;const keys=Object.keys(item.snapshotsByAnchor).sort((a,b)=>Number(a)-Number(b));while(keys.length>120){delete item.snapshotsByAnchor[keys.shift()];}item.pendingSnapshot=snapshot;tryMatchCandidates(selectedSymbol,rate);}
   if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
-  item.status=(item.high!==null&&item.low!==null)?"Live Deriv barrier received":"Quote received; barrier fields not present";
+  item.status=(item.high!==null&&item.low!==null&&item.high>item.low)?"Live Deriv barrier received":(item.high!==null&&item.low!==null?"Invalid barrier range returned":"Quote received; barrier fields not present");
   item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderSurvivalCards();
 }
-function getSurvivalStats(symbol,rate){if(!survivalBySymbol[symbol])survivalBySymbol[symbol]={};if(!survivalBySymbol[symbol][rate])survivalBySymbol[symbol][rate]={observed:0,survived:0,knockouts:0,currentRun:0,longestRun:0,lastEvaluatedEpoch:0,lastResult:"Waiting for aligned tick",pending:false,completedRuns:{},completedRunsTotal:0};const stats=survivalBySymbol[symbol][rate];if(!stats.completedRuns||typeof stats.completedRuns!=="object")stats.completedRuns={};if(!Number.isFinite(stats.completedRunsTotal))stats.completedRunsTotal=Object.values(stats.completedRuns).reduce((sum,n)=>sum+(Number(n)||0),0);return stats;}
+function getSurvivalStats(symbol,rate){
+  if(!survivalBySymbol[symbol])survivalBySymbol[symbol]={};
+  if(!survivalBySymbol[symbol][rate])survivalBySymbol[symbol][rate]={observed:0,survived:0,knockouts:0,currentRun:0,longestRun:0,lastEvaluatedEpoch:0,lastResult:"Waiting for aligned tick",completedRuns:{},completedRunsTotal:0,unmatched:0,spotMismatches:0,ambiguousAnchors:0,censoredRuns:0,censoredTicks:0};
+  const stats=survivalBySymbol[symbol][rate];
+  if(!stats.completedRuns||typeof stats.completedRuns!=="object")stats.completedRuns={};
+  if(!Number.isFinite(stats.completedRunsTotal))stats.completedRunsTotal=Object.values(stats.completedRuns).reduce((sum,n)=>sum+(Number(n)||0),0);
+  ["observed","survived","knockouts","currentRun","longestRun","unmatched","spotMismatches","ambiguousAnchors","censoredRuns","censoredTicks"].forEach(k=>{if(!Number.isFinite(stats[k]))stats[k]=0;});
+  return stats;
+}
 function queueAlignedTick(symbol,candidate){
   if(!tickCandidates[symbol])tickCandidates[symbol]=[];
-  tickCandidates[symbol].push(candidate);
-  if(tickCandidates[symbol].length>120)tickCandidates[symbol].splice(0,tickCandidates[symbol].length-120);
+  const candidates=tickCandidates[symbol];candidates.push(candidate);
+  while(candidates.length>MAX_PENDING_CANDIDATES){
+    const expired=candidates.shift();
+    growthRates.forEach(rate=>{
+      if(expired.evaluatedRates[rate]||expired.expiredRates?.[rate])return;
+      if(!expired.expiredRates)expired.expiredRates={};expired.expiredRates[rate]=true;
+      const stats=getSurvivalStats(symbol,rate);stats.unmatched++;censorRun(stats,"barrier quote did not align before sample expiry");saveSurvivalHistory();
+    });
+  }
   growthRates.forEach(rate=>tryMatchCandidates(symbol,rate));
 }
 function tryMatchCandidates(symbol,rate){
@@ -209,13 +239,23 @@ function tryMatchCandidates(symbol,rate){
   const item=barrierData[rate];if(!item?.snapshotsByAnchor)return;
   const stats=getSurvivalStats(symbol,rate),candidates=tickCandidates[symbol]||[];
   for(const candidate of candidates){
-    if(candidate.evaluatedRates[rate])continue;
+    if(candidate.evaluatedRates[rate]||candidate.expiredRates?.[rate])continue;
+    const sameAnchor=candidates.filter(other=>other.previousEpoch===candidate.previousEpoch&&!other.evaluatedRates[rate]&&!other.expiredRates?.[rate]);
+    if(sameAnchor.length>1){
+      if(!candidate.ambiguousRates)candidate.ambiguousRates={};
+      if(!candidate.ambiguousRates[rate]){candidate.ambiguousRates[rate]=true;stats.ambiguousAnchors++;}
+      continue;
+    }
     const snap=item.snapshotsByAnchor[String(candidate.previousEpoch)];
     if(!snap||snap.used)continue;
     if(Number.isFinite(snap.spot)){
       const pip=Math.max(0,Math.min(8,marketBySymbol[symbol]?.pipSize??2));
       const tolerance=Math.pow(10,-pip)/2+1e-12;
-      if(Math.abs(snap.spot-candidate.previousPrice)>tolerance)continue;
+      if(Math.abs(snap.spot-candidate.previousPrice)>tolerance){
+        if(!candidate.spotMismatchRates)candidate.spotMismatchRates={};
+        if(!candidate.spotMismatchRates[rate]){candidate.spotMismatchRates[rate]=true;stats.spotMismatches++;}
+        continue;
+      }
     }
     const survived=candidate.price>snap.low&&candidate.price<snap.high;
     candidate.evaluatedRates[rate]=true;snap.used=true;
@@ -234,10 +274,10 @@ function renderSurvivalCards(){
     const heading=document.createElement("h3");heading.textContent=Math.round(rate*100)+"% GROWTH";
     const ratio=stats.observed?stats.survived/stats.observed*100:null;
     const rateEl=document.createElement("div");rateEl.className="survival-rate";rateEl.textContent=ratio===null?"—":ratio.toFixed(1)+"%";
-    const label=document.createElement("div");label.className="barrier-label";label.textContent="OBSERVED TICK SURVIVAL";
+    const label=document.createElement("div");label.className="barrier-label";label.textContent="MATCHED-TICK SURVIVAL";
     const statsEl=document.createElement("div");statsEl.className="survival-stats";
-    [["Observed",stats.observed],["Survived",stats.survived],["Knockouts",stats.knockouts],["Current run",stats.currentRun],["Longest run",stats.longestRun]].forEach(([name,value])=>{const cell=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");small.textContent=name;strong.textContent=String(value);cell.append(small,strong);statsEl.append(cell);});
-    const completed=document.createElement("div");completed.className="survival-state";const runLengths=Object.keys(stats.completedRuns).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);completed.textContent="Completed runs (ticks before knockout): "+(runLengths.length?runLengths.map(n=>n+" ticks × "+stats.completedRuns[n]).join(" · "):"No completed runs yet")+" · Total: "+stats.completedRunsTotal;
+    [["Matched",stats.observed],["Survived",stats.survived],["Knockouts",stats.knockouts],["Current run",stats.currentRun],["Longest run",stats.longestRun],["Unmatched",stats.unmatched],["Spot mismatches",stats.spotMismatches],["Ambiguous anchors",stats.ambiguousAnchors],["Censored runs",stats.censoredRuns]].forEach(([name,value])=>{const cell=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");small.textContent=name;strong.textContent=String(value);cell.append(small,strong);statsEl.append(cell);});
+    const completed=document.createElement("div");completed.className="survival-state";const runLengths=Object.keys(stats.completedRuns).map(Number).filter(Number.isFinite).sort((a,b)=>a-b);completed.textContent="Completed runs (consecutive matched ticks before barrier breach): "+(runLengths.length?runLengths.map(n=>n+" ticks × "+stats.completedRuns[n]).join(" · "):"No completed runs yet")+" · Total: "+stats.completedRunsTotal;
     const state=document.createElement("div");state.className="survival-state";state.textContent=stats.lastResult+(item.pendingSnapshot?" · Latest quote anchor: "+item.pendingSnapshot.anchorEpoch:" · Waiting for fresh aligned barrier");
     card.append(heading,rateEl,label,statsEl,completed,state);box.append(card);total+=stats.observed;if(item.pendingSnapshot)aligned++;
   });
