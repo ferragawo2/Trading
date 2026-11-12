@@ -3,114 +3,162 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080b12">
-<title>Accumulator Lab · Deriv</title>
+<title>Accumulator Market Monitor · Deriv</title>
 <style>
-:root{color-scheme:dark;--bg:#080b12;--panel:#101621;--panel2:#151e2b;--line:#243144;--text:#edf3fb;--muted:#91a0b4;--green:#20d6a0;--red:#ff6c7a;--blue:#65a9ff;--amber:#ffc66d}
+:root{color-scheme:dark;--bg:#080b12;--panel:#101621;--line:#243144;--text:#edf3fb;--muted:#91a0b4;--green:#20d6a0;--red:#ff6c7a;--blue:#65a9ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a2a42 0,transparent 48%),var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
-.wrap{max-width:1180px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#21d6a0,#438bff);display:grid;place-items:center;color:#061019;font-weight:900;font-size:20px}.brand h1{font-size:18px;margin:0;letter-spacing:.02em}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.status{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#778397}.dot.on{background:var(--green);box-shadow:0 0 12px #20d6a077}
-.grid{display:grid;grid-template-columns:1.3fr .7fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}input,select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}input:focus,select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums}.price{font-size:32px;font-weight:750;letter-spacing:-1px}.chart{height:220px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.history{display:flex;gap:7px;flex-wrap:wrap;max-height:116px;overflow:auto}.tick{background:#0a111b;border:1px solid #26354a;border-radius:8px;padding:5px 8px;font-variant-numeric:tabular-nums;font-size:12px}.log{height:130px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.warning{border:1px solid #66502d;background:#211b12;color:#e9c78f;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.danger{color:var(--red)}.good{color:var(--green)}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}
-@media(max-width:800px){.wrap{padding:15px}.grid{grid-template-columns:1fr}.controls{grid-template-columns:1fr 1fr}.metrics{grid-template-columns:1fr 1fr 1fr}.top{align-items:flex-start}.brand p{max-width:220px}}
+.wrap{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#21d6a0,#438bff);display:grid;place-items:center;color:#061019;font-weight:900;font-size:20px}.brand h1{font-size:18px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.status{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#778397}.dot.on{background:var(--green);box-shadow:0 0 12px #20d6a077}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chart{height:260px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}.market-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}.market-card:hover,.market-card.selected{border-color:var(--green);background:#0d1b20}.market-card strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:7px 0 2px}.market-card .name{font-size:12px;color:var(--text);min-height:34px}.market-card .meta{font-size:10px;color:var(--muted)}.log{height:150px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.note{border:1px solid #28503f;background:#0e211b;color:#a9e6cf;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}
+@media(max-width:800px){.wrap{padding:15px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr 1fr}.top{align-items:flex-start}.controls{grid-template-columns:1fr}.chart{height:220px}}
 </style>
 </head>
 <body><main class="wrap">
-<header class="top"><div class="brand"><div class="logo">A</div><div><h1>ACCUMULATOR LAB</h1><p>Deriv market feed · contract foundation · strategy disabled</p></div></div><div class="status"><span class="dot" id="dot"></span><span id="connection">Disconnected</span></div></header>
-<p class="warning">DEMO / OBSERVATION BUILD. This version streams market ticks and requests accumulator quotes only. It does not buy contracts or execute a strategy. Never paste a real-account token here.</p>
+<header class="top"><div class="brand"><div class="logo">A</div><div><h1>ACCUMULATOR MARKET MONITOR</h1><p>Deriv public market data · synthetic indices · live ticks</p></div></div><div class="status"><span class="dot" id="dot"></span><span id="connection">Disconnected</span></div></header>
+<p class="note">Public market-data connection. No App ID, API token, or Deriv login is needed to view live prices. This stage discovers synthetic indices that support Accumulator contracts and streams their prices. No trades are placed.</p>
 <div class="grid">
-<section class="card"><div class="row between"><h2>MARKET MONITOR</h2><span class="pill" id="marketLabel">Volatility 100 (1s)</span></div>
-<div class="controls"><div class="field"><label>Market</label><select id="symbol"><option value="1HZ100V">Volatility 100 (1s)</option><option value="1HZ75V">Volatility 75 (1s)</option><option value="1HZ50V">Volatility 50 (1s)</option><option value="1HZ25V">Volatility 25 (1s)</option><option value="R_100">Volatility 100</option><option value="R_75">Volatility 75</option><option value="R_50">Volatility 50</option><option value="R_25">Volatility 25</option></select></div><div class="field"><label>App ID</label><input id="appId" value="1089" inputmode="numeric"></div><div class="field"><label>Feed</label><button id="connectBtn">Connect feed</button></div></div>
-<div class="metrics"><div class="metric"><small>LIVE PRICE</small><strong id="price">—</strong></div><div class="metric"><small>LAST TICK</small><strong id="lastTick">—</strong></div><div class="metric"><small>RECEIVED TICKS</small><strong id="tickCount">0</strong></div></div>
+<section class="card"><div class="row between"><h2>LIVE MARKET VIEW</h2><span class="pill" id="selectedMarketLabel">Select a market</span></div>
+<div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
+<div class="metrics"><div class="metric"><small>LIVE PRICE</small><strong id="price">—</strong></div><div class="metric"><small>LAST TICK</small><strong id="lastTick">—</strong></div><div class="metric"><small>TICKS RECEIVED</small><strong id="tickCount">0</strong></div></div>
 <div class="chart"><canvas id="chart"></canvas></div>
-<div class="row between" style="margin:15px 0 9px"><h2 style="margin:0">RECENT TICKS</h2><span class="muted" id="feedNote">Waiting for feed</span></div><div class="history" id="tickHistory"><span class="muted">No ticks received yet.</span></div>
+<div class="row between" style="margin:15px 0 9px"><h2 style="margin:0">RECENT TICKS</h2><span class="muted" id="feedNote">Waiting for feed</span></div><div class="muted" id="tickHistory">No ticks received yet.</div>
 </section>
-<section class="card"><h2>DEMO ACCOUNT CONNECTION</h2><div class="field"><label>Deriv demo API token (session only)</label><input id="token" type="password" placeholder="Paste demo token" autocomplete="off"></div><div class="row" style="margin-top:10px"><button id="authorizeBtn" class="secondary">Authorize demo</button><button id="logoutBtn" class="secondary" disabled>Disconnect</button></div>
-<div class="metrics"><div class="metric"><small>ACCOUNT</small><strong id="accountType">Not linked</strong></div><div class="metric"><small>CURRENCY</small><strong id="currency">—</strong></div><div class="metric"><small>BALANCE</small><strong id="balance">—</strong></div></div>
-<p class="muted" id="authNote" style="font-size:12px;margin-top:12px">Token is held in memory only and is cleared when this page is refreshed. Only virtual/demo accounts are accepted.</p>
+<section class="card"><h2>MARKET DISCOVERY</h2><div class="metrics"><div class="metric"><small>SUPPORTED SYNTHETICS</small><strong id="marketCount">—</strong></div><div class="metric"><small>LIVE STREAMS</small><strong id="liveCount">0</strong></div><div class="metric"><small>API SOURCE</small><strong>Deriv</strong></div></div>
+<p class="muted" style="font-size:12px;margin:14px 0 0">The market list is requested from Deriv at connection time and filtered for the synthetic-index market with Accumulator (ACCU) availability. Newly supported instruments can appear automatically.</p>
+<div style="margin-top:16px"><h2>CONNECTION EVENTS</h2><div class="log" id="log" aria-live="polite"><div>Ready to discover Accumulator markets.</div></div></div>
 </section>
-<section class="card"><h2>ACCUMULATOR QUOTE PREVIEW</h2><div class="controls"><div class="field"><label>Growth rate</label><select id="growth"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03" selected>3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select></div><div class="field"><label>Stake (USD)</label><input id="stake" type="number" value="1" min="0.35" step="0.01"></div><div class="field"><label>Basis</label><select id="basis"><option value="stake">Stake</option></select></div></div>
-<div class="row" style="margin-top:12px"><button id="quoteBtn" disabled>Request demo quote</button><span class="pill">No purchase</span></div>
-<div class="metrics"><div class="metric"><small>ASK PRICE</small><strong id="ask">—</strong></div><div class="metric"><small>PAYOUT</small><strong id="payout">—</strong></div><div class="metric"><small>CONTRACT</small><strong id="contractType">ACCU</strong></div></div>
-<p class="muted" id="quoteNote" style="font-size:12px;margin-top:12px">Authorize a demo account to request a quote. Quote availability and contract parameters are confirmed by Deriv's response.</p>
-</section>
-<section class="card full"><div class="row between"><h2 style="margin:0">DERIV BARRIER MONITORS</h2><span class="pill">Live quote-derived bands · 1%–5%</span></div><p class="muted" style="font-size:12px">Bounds below are read from Deriv's accumulator quote response. Tick counts are observational only; a touch or breach of either edge ends the current run.</p><div id="barrierGrid" class="metrics" style="grid-template-columns:repeat(auto-fit,minmax(180px,1fr))"><div class="metric"><small>STATUS</small><strong>Waiting for demo quote</strong></div></div></section>\n<section class="card"><h2>ENGINE EVENT LOG</h2><div class="log" id="log" aria-live="polite"><div>Accumulator Lab initialized. Strategy engine is not loaded.</div></div></section>
-<section class="card full"><div class="row between"><h2 style="margin:0">BUILD STATUS</h2><span class="pill">Stage 1 · Foundation</span></div><div class="row" style="gap:18px;margin-top:14px;flex-wrap:wrap"><span class="good">● Live tick stream</span><span class="good">● Demo authorization gate</span><span class="good">● Accumulator quote preview</span><span class="muted">○ Contract purchase</span><span class="muted">○ Count-matching strategy</span><span class="muted">○ Persistent statistics store</span></div></section>
-</div><div class="foot">Market data and quote requests are sent directly from your browser to Deriv. This app does not store API tokens or place trades.</div>
+<section class="card full"><div class="row between"><h2 style="margin:0">ALL ACCUMULATOR-SUPPORTED SYNTHETIC INDICES</h2><span class="pill" id="listStatus">Not loaded</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Each card updates from its own live tick stream. Select any card to focus its chart above.</p><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
+</div><div class="foot">Live prices are received directly from Deriv's public WebSocket API. Public market data is unauthenticated; account access and trading will be added in a later stage.</div>
 </main>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
-let ws=null, req=0, tickSubscriptionId=null, authorized=false, virtual=false, currencyCode="USD", ticks=[], prices=[], pending={}, quoteReq={}, monitors={};
-const rates=[0.01,0.02,0.03,0.04,0.05];
-rates.forEach(rate=>monitors[rate]={rate,high:null,low:null,barrierEpoch:null,count:0,crossings:0,lastPrice:null,status:"Waiting for quote"});
+const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
+let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
+let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={};
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
 const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
-const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Trading connection is not ready"); const id=++req; payload.req_id=id; ws.send(JSON.stringify(payload)); return id; };
-function connect() {
-  if(ws) { try{ws.close()}catch{} }
-  const appId=$("appId").value.trim();
-  if(!/^\d+$/.test(appId)){log("Enter a valid numeric Deriv App ID.");return;}
-  setStatus("Connecting…");
-  ws=new WebSocket("wss://ws.derivws.com/websockets/v3?app_id="+encodeURIComponent(appId));
+const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
+function connect(){
+  manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
+  if(ws){try{ws.close(1000,"Refreshing market feed")}catch{}}
+  manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};tickCounts={};latestTicks={};
+  $("symbol").disabled=true;$("symbol").innerHTML="<option>Connecting to Deriv…</option>";
+  $("marketGrid").innerHTML='<div class="metric"><small>MARKET DISCOVERY</small><strong>Requesting live catalogue…</strong></div>';
+  $("marketCount").textContent="—";$("liveCount").textContent="0";$("price").textContent="—";$("lastTick").textContent="—";$("tickCount").textContent="0";
+  setStatus("Connecting…"); log("Opening Deriv public market-data WebSocket.");
+  try{ws=new WebSocket(PUBLIC_WS);}catch(e){setStatus("Connection failed");log("Could not create WebSocket: "+e.message);scheduleReconnect();return;}
   ws.onopen=()=>{
-    setStatus("Connected to Deriv",true);log("Deriv WebSocket connected.");
-    send({ping:1});
-    send({ticks:$("symbol").value,subscribe:1});
-    send({ticks_history:$("symbol").value,count:60,end:"latest",style:"ticks"});
-    log("Requested live ticks and recent tick history for "+$("symbol").value+".");
+    reconnectDelay=1500;setStatus("Connected · loading markets",true);log("Connected to Deriv public endpoint.");
+    try{send({active_symbols:"brief",contract_type:["ACCU"]});}catch(e){log(e.message)}
+    pingTimer=setInterval(()=>{try{send({ping:1})}catch{}},25000);
   };
-  ws.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch{return}
-    if(m.error){log("Deriv API error: "+m.error.message);if(m.req_id&&pending[m.req_id]){pending[m.req_id](m);delete pending[m.req_id]}return;}
-    if(m.msg_type==="history"&&m.history?.prices){const vals=m.history.prices.map(Number).filter(Number.isFinite);prices=vals.slice(-100);draw();log("Loaded "+vals.length+" historical ticks.");}
-    if(m.msg_type==="tick"&&m.tick){const t=m.tick,p=Number(t.quote);if(!Number.isFinite(p))return;
-      if(t.subscription?.id)tickSubscriptionId=t.subscription.id;
-      $("price").textContent=p.toFixed(Number.isInteger(t.pip_size)?t.pip_size:2);
-      $("lastTick").textContent=new Date(Number(t.epoch)*1000).toLocaleTimeString();
-      $("tickCount").textContent=String(Number($("tickCount").textContent)+1);
-      ticks.unshift({price:p,time:t.epoch});ticks=ticks.slice(0,20);prices.push(p);prices=prices.slice(-100);
-      processTick(p,Number(t.epoch));renderTicks();draw();
-    }
-    if(m.msg_type==="authorize"&&m.authorize){const a=m.authorize;virtual=Boolean(a.is_virtual);if(!virtual){authorized=false;$("accountType").textContent="Live blocked";$("authNote").textContent="This account is not virtual. Live-account authorization is blocked.";log("Rejected non-demo account.");return;}
-      authorized=true;currencyCode=a.currency||"USD";$("accountType").textContent="Demo";$("currency").textContent=currencyCode;$("balance").textContent=Number(a.balance).toFixed(2);$("quoteBtn").disabled=false;$("logoutBtn").disabled=false;$("authNote").textContent="Demo account verified. Token remains in memory only.";log("Demo account authorized.");
-    }
-    if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal,rate=quoteReq[m.req_id]??Number(m.echo_req?.growth_rate);const mon=monitors[rate];
-      $("ask").textContent=p.ask_price??"—";$("payout").textContent=p.payout??"—";
-      const d=p.contract_details||{};if(mon){const hi=Number(d.high_barrier),lo=Number(d.low_barrier);
-        if(Number.isFinite(hi)&&Number.isFinite(lo)){mon.high=hi;mon.low=lo;mon.barrierEpoch=Number(d.last_tick_epoch)||null;mon.status="Barrier loaded";renderMonitors();}
-        else {mon.status="Quote received; barrier fields absent";renderMonitors();}
-      }
-      $("quoteNote").textContent="Quote received. No contract has been purchased.";
-      if(p.contract_details)log((rate*100)+"% Deriv quote returned contract details.");
-      else log((rate*100)+"% quote received; no high/low barrier fields were supplied.");
-    }
+  ws.onmessage=event=>{
+    let m;try{m=JSON.parse(event.data)}catch{log("Received an unreadable message from Deriv.");return;}
+    if(m.error){log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
+    if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
+    if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
+    if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
+    if(m.msg_type==="ping")return;
   };
-  ws.onerror=()=>{setStatus("Connection error");log("Deriv WebSocket transport error. Check network/firewall and App ID.");};
-  ws.onclose=e=>{authorized=false;$("quoteBtn").disabled=true;$("logoutBtn").disabled=true;$("accountType").textContent="Not linked";setStatus("Disconnected");log("Deriv WebSocket closed (code "+e.code+(e.reason?": "+e.reason:"") + ").");};
+  ws.onerror=()=>{setStatus("Transport error");log("WebSocket transport error. The browser could not complete or maintain the public data connection.");};
+  ws.onclose=e=>{
+    clearInterval(pingTimer);setStatus("Disconnected");
+    log("WebSocket closed (code "+e.code+(e.reason?"; "+e.reason:"")+").");
+    if(!manualClose)scheduleReconnect();
+  };
 }
-function processTick(price,epoch){
-  rates.forEach(rate=>{const m=monitors[rate];if(!Number.isFinite(m.high)||!Number.isFinite(m.low))return;
-    // Only count against a barrier snapshot that Deriv timestamps before this incoming tick.
-    if(!Number.isFinite(m.barrierEpoch)||epoch<=m.barrierEpoch){m.status="Waiting for synchronized barrier tick";return;}
-    // Compare the incoming market tick against the most recently received Deriv-calculated band.
-    if(price>=m.high||price<=m.low){m.crossings++;log((rate*100)+"% band touched/breached at "+price+" (upper "+m.high+", lower "+m.low+"); run ended at "+m.count+" ticks.");m.count=0;m.lastPrice=price;m.status="Barrier crossed";renderMonitors();}
-    else {m.count++;m.lastPrice=price;m.status="Inside band";renderMonitors();}
+function scheduleReconnect(){
+  if(manualClose||reconnectTimer)return;
+  const delay=reconnectDelay;reconnectDelay=Math.min(reconnectDelay*2,20000);
+  setStatus("Reconnecting…");log("Retrying public market connection in "+Math.round(delay/1000)+"s.");
+  reconnectTimer=setTimeout(()=>{reconnectTimer=null;connect();},delay);
+}
+function handleSymbols(rows){
+  const found=rows.filter(s=>(s.market==="synthetic_index")&&(s.underlying_symbol||s.symbol))
+    .map(s=>({symbol:s.underlying_symbol||s.symbol,name:s.underlying_symbol_name||s.display_name||s.underlying_symbol||s.symbol,pipSize:Number(s.pip_size??s.pip??2),submarket:s.submarket||"synthetics",suspended:Boolean(s.is_trading_suspended)}))
+    .filter(s=>!s.suspended);
+  const unique=[...new Map(found.map(s=>[s.symbol,s])).values()].sort((a,b)=>a.name.localeCompare(b.name));
+  markets=unique;marketBySymbol=Object.fromEntries(unique.map(m=>[m.symbol,m]));
+  $("marketCount").textContent=String(markets.length);
+  if(!markets.length){$("symbol").innerHTML="<option>No Accumulator synthetic markets returned</option>";$("listStatus").textContent="No markets returned";$("marketGrid").innerHTML='<div class="metric"><small>NO MATCHES</small><strong>Deriv returned no active synthetic indices for ACCU.</strong></div>';log("No synthetic indices matched the ACCU availability filter.");return;}
+  $("symbol").innerHTML="";
+  markets.forEach(m=>{const o=document.createElement("option");o.value=m.symbol;o.textContent=m.name+" ("+m.symbol+")";$("symbol").append(o);});
+  $("symbol").disabled=false;selectedSymbol=markets[0].symbol;$("symbol").value=selectedSymbol;
+  $("listStatus").textContent=markets.length+" markets found";
+  renderMarketCards();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
+  const symbols=markets.map(m=>m.symbol);
+  try{
+    send({ticks:symbols,subscribe:1});
+    log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
+  }catch(e){log("Could not subscribe to markets: "+e.message)}
+  requestHistory(selectedSymbol);updateSelectedLabel();
+}
+function requestHistory(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  try{send({ticks_history:symbol,count:80,end:"latest",style:"ticks"});}catch(e){log(e.message)}
+}
+function handleHistory(m){
+  const symbol=m.echo_req?.ticks_history||m.echo_req?.symbol||selectedSymbol;
+  if(symbol!==selectedSymbol||!m.history?.prices)return;
+  priceHistory[symbol]=m.history.prices.map(Number).filter(Number.isFinite).slice(-120);
+  drawChart();
+}
+function handleTick(t,m){
+  const symbol=t.underlying_symbol||t.symbol||m.echo_req?.ticks;
+  const price=Number(t.quote),epoch=Number(t.epoch);
+  if(!Number.isFinite(price))return;
+  // When the API responds to an array subscription, the tick payload identifies its own symbol.
+  const key=Array.isArray(symbol)?null:symbol;
+  if(!key||!marketBySymbol[key])return;
+  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  if(!priceHistory[key])priceHistory[key]=[];
+  priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
+  $("liveCount").textContent=String(Object.keys(latestTicks).length);
+  renderMarketCards();
+  if(key===selectedSymbol){
+    $("price").textContent=price.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)));
+    $("lastTick").textContent=Number.isFinite(epoch)?new Date(epoch*1000).toLocaleTimeString():"—";
+    $("tickCount").textContent=String(tickCounts[key]);
+    $("tickHistory").textContent=priceHistory[key].slice(-12).reverse().map(v=>v.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)))).join("  ·  ");
+    $("feedNote").textContent="Live · "+(tickCounts[key]||0)+" ticks";
+    drawChart();
+  }
+}
+function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";}
+function renderMarketCards(){
+  const box=$("marketGrid");box.replaceChildren();
+  markets.forEach(m=>{
+    const card=document.createElement("div");card.className="market-card"+(m.symbol===selectedSymbol?" selected":"");
+    const tick=latestTicks[m.symbol],dp=Math.max(0,Math.min(8,m.pipSize));
+    const name=document.createElement("div");name.className="name";name.textContent=m.name;
+    const sym=document.createElement("div");sym.className="meta";sym.textContent=m.symbol+" · ACCU";
+    const price=document.createElement("strong");price.textContent=tick?tick.price.toFixed(dp):"Waiting for first tick…";
+    const status=document.createElement("div");status.className="meta";status.textContent=tick?"Live · "+(tickCounts[m.symbol]||0)+" ticks":"Subscribing…";
+    card.append(name,sym,price,status);card.onclick=()=>selectMarket(m.symbol);box.append(card);
   });
 }
-function renderMonitors(){const box=$("barrierGrid");box.replaceChildren();rates.forEach(rate=>{const m=monitors[rate],card=document.createElement("div");card.className="metric";
-  const fmt=n=>Number.isFinite(n)?n.toFixed(4):"—";
-  card.innerHTML='<small>'+Math.round(rate*100)+'% GROWTH · SURVIVAL TICKS</small><strong>'+m.count+'</strong><div class="muted" style="font-size:11px;margin-top:5px">Upper: '+fmt(m.high)+'<br>Lower: '+fmt(m.low)+'<br>Crossings: '+m.crossings+'<br>'+m.status+'</div>';box.appendChild(card);
-});}
-function requestAllQuotes(){if(!authorized||!virtual){log("A verified demo account is required for quote-derived barriers.");return}
-  const amount=Number($("stake").value);if(!Number.isFinite(amount)||amount<=0){log("Enter a valid stake.");return}
-  rates.forEach(rate=>{const m=monitors[rate];m.high=null;m.low=null;m.count=0;m.status="Requesting Deriv barrier";});
-  renderMonitors();$("quoteNote").textContent="Requesting five Deriv accumulator quotes (1%–5%)…";
-  rates.forEach(rate=>{try{const id=send({proposal:1,amount,basis:$("basis").value,contract_type:"ACCU",currency:currencyCode,symbol:$("symbol").value,growth_rate:rate,subscribe:1});quoteReq[id]=rate;log("Requested "+(rate*100)+"% ACCU quote and live barrier stream.");}catch(e){log(e.message)}});
+function selectMarket(symbol){
+  if(!marketBySymbol[symbol])return;selectedSymbol=symbol;$("symbol").value=symbol;
+  const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
+  $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
+  $("lastTick").textContent=t?new Date(t.epoch*1000).toLocaleTimeString():"—";
+  $("tickCount").textContent=String(tickCounts[symbol]||0);
+  $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
+  $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);drawChart();
 }
-function renderTicks(){const box=$("tickHistory");box.replaceChildren();ticks.forEach(t=>{const s=document.createElement("span");s.className="tick";s.textContent=t.price.toFixed(2);box.appendChild(s)});$("feedNote").textContent=ticks.length+" recent ticks";}
-function draw(){const c=$("chart"),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=Math.max(1,Math.floor(r.width*d));c.height=Math.max(1,Math.floor(r.height*d));const x=c.getContext("2d");x.scale(d,d);const w=r.width,h=r.height;x.clearRect(0,0,w,h);x.strokeStyle="#1d2a3b";x.lineWidth=1;for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke()}if(prices.length<2)return;const min=Math.min(...prices),max=Math.max(...prices),range=max-min||1;x.beginPath();prices.forEach((p,i)=>{const px=i/(prices.length-1)*w,py=h-12-(p-min)/range*(h-24);i?x.lineTo(px,py):x.moveTo(px,py)});x.strokeStyle="#28d8a3";x.lineWidth=2;x.stroke();x.lineTo(w,h);x.lineTo(0,h);x.closePath();x.fillStyle="#20d6a015";x.fill();}
+function drawChart(){
+  const c=$("chart"),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=Math.max(1,Math.floor(r.width*d));c.height=Math.max(1,Math.floor(r.height*d));
+  const x=c.getContext("2d");x.scale(d,d);const w=r.width,h=r.height;x.clearRect(0,0,w,h);x.strokeStyle="#1d2a3b";x.lineWidth=1;
+  for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke();}
+  const vals=priceHistory[selectedSymbol]||[];if(vals.length<2)return;
+  const min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;x.beginPath();
+  vals.forEach((p,i)=>{const px=i/(vals.length-1)*w,py=h-12-(p-min)/range*(h-24);i?x.lineTo(px,py):x.moveTo(px,py)});
+  x.strokeStyle="#28d8a3";x.lineWidth=2;x.stroke();x.lineTo(w,h);x.lineTo(0,h);x.closePath();x.fillStyle="#20d6a015";x.fill();
+}
 $("connectBtn").onclick=connect;
-$("symbol").onchange=()=>{if(ws&&ws.readyState===WebSocket.OPEN){if(tickSubscriptionId){send({forget:tickSubscriptionId});tickSubscriptionId=null;}send({ticks:$("symbol").value,subscribe:1});send({ticks_history:$("symbol").value,count:60,end:"latest",style:"ticks"});$("marketLabel").textContent=$("symbol").selectedOptions[0].text;ticks=[];prices=[];$("tickCount").textContent="0";rates.forEach(r=>{monitors[r].high=null;monitors[r].low=null;monitors[r].count=0;monitors[r].status="Market changed; request quotes again"});renderMonitors();log("Switched market feed; request fresh quotes for the selected market.");}};
-$("authorizeBtn").onclick=()=>{const token=$("token").value.trim();if(!token){log("Enter a demo token first.");return}try{if(!ws||ws.readyState!==WebSocket.OPEN){log("Click Connect feed first so the account socket is ready.");return}send({authorize:token});$("token").value="";$("authNote").textContent="Authorizing…";}catch(e){log(e.message)}};
-$("logoutBtn").onclick=()=>{authorized=false;virtual=false;$("quoteBtn").disabled=true;$("accountType").textContent="Not linked";$("balance").textContent="—";$("currency").textContent="—";try{send({logout:1})}catch{}log("Demo account disconnected.");};
-$("quoteBtn").onclick=requestAllQuotes;
-$("marketLabel").textContent=$("symbol").selectedOptions[0].text;renderMonitors();window.addEventListener("resize",draw);
+$("symbol").onchange=()=>selectMarket($("symbol").value);
+window.addEventListener("resize",drawChart);
+connect();
 })();
 </script></body></html>
