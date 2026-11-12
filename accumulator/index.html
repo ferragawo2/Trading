@@ -333,7 +333,7 @@ function renderSurvivalCards(){
   // Stats records completed consecutive in-barrier tick runs.
   // recentRuns is stored oldest-first; show the newest completed run first.
   const stats=getSurvivalStats(selectedSymbol,rate);
-  const sourceRuns=Array.isArray(stats.derivRuns)?stats.derivRuns:stats.recentRuns;
+  const sourceRuns=Array.isArray(stats.derivRuns)&&stats.derivRuns.length?stats.derivRuns:stats.recentRuns;
   const runs=(Array.isArray(sourceRuns)?sourceRuns:[])
     .map(Number).filter(n=>Number.isInteger(n)&&n>0).slice(0,100);
   const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" consecutive price ticks inside the barrier before breakout";return el;};
