@@ -22,7 +22,9 @@
  try{
    const response=await fetch(API+"/oauth/exchange",{method:"POST",credentials:"include",headers:{"Content-Type":"application/json"},body:JSON.stringify({code,state})});
    const data=await response.json();
-   if(!response.ok||!data.connected)throw new Error(data.error||"The secure exchange could not be completed.");
+   if(!response.ok||!data.connected||!data.session_id)throw new Error(data.error||"The secure exchange could not be completed.");
+   // The API returns an opaque app-session handle, never the Deriv access token.
+   sessionStorage.setItem("deriv_app_session",data.session_id);
    heading.textContent="Deriv connected";
    status.textContent="Your authorization is complete. Returning to the Accumulator monitor…";
    setTimeout(()=>location.replace("/?connected=1"),700);
