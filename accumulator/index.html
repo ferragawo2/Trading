@@ -8,7 +8,7 @@
 :root{color-scheme:dark;--bg:#080b12;--panel:#101621;--line:#243144;--text:#edf3fb;--muted:#91a0b4;--green:#20d6a0;--red:#ff6c7a;--blue:#65a9ff}
 *{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 50% -20%,#1a2a42 0,transparent 48%),var(--bg);color:var(--text);font:14px/1.5 Inter,system-ui,-apple-system,Segoe UI,sans-serif}
 .wrap{max-width:1240px;margin:auto;padding:24px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}.brand{display:flex;align-items:center;gap:12px}.logo{width:42px;height:42px;border-radius:13px;background:linear-gradient(135deg,#21d6a0,#438bff);display:grid;place-items:center;color:#061019;font-weight:900;font-size:20px}.brand h1{font-size:18px;margin:0}.brand p{margin:2px 0 0;color:var(--muted);font-size:12px}.status{display:flex;align-items:center;gap:8px;border:1px solid var(--line);border-radius:999px;padding:8px 12px;color:var(--muted)}.dot{width:8px;height:8px;border-radius:50%;background:#778397}.dot.on{background:var(--green);box-shadow:0 0 12px #20d6a077}
-.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chart{height:260px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}.market-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}.market-card:hover,.market-card.selected{border-color:var(--green);background:#0d1b20}.market-card strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:7px 0 2px}.market-card .name{font-size:12px;color:var(--text);min-height:34px}.market-card .meta{font-size:10px;color:var(--muted)}.log{height:150px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.note{border:1px solid #28503f;background:#0e211b;color:#a9e6cf;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.barrier-card h3{font-size:13px;margin:0 0 9px}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:10px;color:var(--muted)}.barrier-meta{font-size:10px;color:var(--muted);margin-top:9px;line-height:1.6}.barrier-status{font-size:10px;color:var(--blue);margin-top:7px}
+.grid{display:grid;grid-template-columns:1.25fr .75fr;gap:16px}.card{background:linear-gradient(180deg,#121b28,#0e1520);border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 12px 40px #0002}.card h2{font-size:14px;margin:0 0 14px;letter-spacing:.03em}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:6px;min-width:0;flex:1}.field label{font-size:11px;color:var(--muted)}select{width:100%;background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text);outline:none}select:focus{border-color:var(--blue)}button{border:0;border-radius:10px;padding:11px 15px;font-weight:700;background:var(--green);color:#061a16;cursor:pointer}button.secondary{background:#202d40;color:var(--text);border:1px solid #34465f}button:disabled{opacity:.45;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:14px}.metric{background:#0a111b;border:1px solid #1f2d40;border-radius:12px;padding:12px;min-width:0}.metric small{display:block;color:var(--muted);font-size:11px}.metric strong{font-size:19px;display:block;margin-top:4px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.chart{height:260px;margin-top:12px;background:#0a111b;border:1px solid #1e2b3e;border-radius:12px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:11px;padding:5px 9px;border-radius:999px;background:#182638;color:#a9c8ef}.market-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(190px,1fr));gap:10px;margin-top:14px}.market-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;cursor:pointer;transition:border-color .15s,background .15s}.market-card:hover,.market-card.selected{border-color:var(--green);background:#0d1b20}.market-card strong{display:block;font-size:19px;font-variant-numeric:tabular-nums;margin:7px 0 2px}.market-card .name{font-size:12px;color:var(--text);min-height:34px}.market-card .meta{font-size:10px;color:var(--muted)}.log{height:150px;overflow:auto;background:#080e17;border:1px solid #1e2b3e;border-radius:10px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#a9b8cb}.log div{border-bottom:1px solid #172334;padding:2px 0}.note{border:1px solid #28503f;background:#0e211b;color:#a9e6cf;padding:11px 13px;border-radius:12px;font-size:12px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#718096;font-size:11px;text-align:center;padding:20px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.barrier-card h3{font-size:13px;margin:0 0 9px}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:10px;color:var(--muted)}.barrier-meta{font-size:10px;color:var(--muted);margin-top:9px;line-height:1.6}.barrier-status{font-size:10px;color:var(--blue);margin-top:7px}.survival-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.survival-card{background:#0a111b;border:1px solid #26354a;border-radius:12px;padding:13px;min-width:0}.survival-card h3{font-size:13px;margin:0 0 10px}.survival-rate{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.survival-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.survival-stats strong{display:block;font-size:14px;font-variant-numeric:tabular-nums}.survival-stats small{color:var(--muted);font-size:10px}.survival-state{font-size:10px;color:var(--blue);margin-top:9px;line-height:1.5}
 @media(max-width:800px){.wrap{padding:15px}.grid{grid-template-columns:1fr}.metrics{grid-template-columns:1fr 1fr 1fr}.top{align-items:flex-start}.controls{grid-template-columns:1fr}.chart{height:220px}}
 </style>
 </head>
@@ -27,7 +27,7 @@
 <div style="margin-top:16px"><h2>CONNECTION EVENTS</h2><div class="log" id="log" aria-live="polite"><div>Ready to discover Accumulator markets.</div></div></div>
 </section>
 <section class="card full"><div class="row between"><h2 style="margin:0">ALL ACCUMULATOR-SUPPORTED SYNTHETIC INDICES</h2><span class="pill" id="listStatus">Not loaded</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Each card updates from its own live tick stream. Select any card to focus its chart above.</p><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
-</div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><div class="foot">Live prices are received directly from Deriv's public WebSocket API. Public market data is unauthenticated; account access and trading will be added in a later stage.</div>
+</div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><section class="card full"><div class="row between"><h2 style="margin:0">LIVE SURVIVAL TRACKER</h2><span class="pill" id="survivalStatus">Waiting for aligned barriers</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Counts one observed tick against each fresh Deriv barrier snapshot. A tick strictly inside both limits survives; touching or crossing either limit is a knockout. This is a rolling market-observation statistic, not the history of a purchased contract. Counters reset when the page is refreshed.</p><div class="survival-grid" id="survivalGrid"><div class="survival-card">Waiting for live Deriv barrier snapshots.</div></div></section><div class="foot">Live prices are received directly from Deriv's public WebSocket API. Public market data is unauthenticated; account access and trading will be added in a later stage.</div>
 </main>
 <script>
 (() => {
@@ -35,7 +35,7 @@ const $ = id => document.getElementById(id);
 const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={};
-const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
+const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};const survivalBySymbol={};
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
 const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
 const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
@@ -93,7 +93,7 @@ function handleSymbols(rows){
     send({ticks:symbols,subscribe:1});
     log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
   }catch(e){log("Could not subscribe to markets: "+e.message)}
-  requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);
+  requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);renderSurvivalCards();
 }
 function requestHistory(symbol){
   if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
@@ -112,7 +112,7 @@ function handleTick(t,m){
   // When the API responds to an array subscription, the tick payload identifies its own symbol.
   const key=Array.isArray(symbol)?null:symbol;
   if(!key||!marketBySymbol[key])return;
-  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;if(key===selectedSymbol)trackSurvivalTick(key,price,epoch);
   if(!priceHistory[key])priceHistory[key]=[];
   priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
   $("liveCount").textContent=String(Object.keys(latestTicks).length);
@@ -147,7 +147,7 @@ function selectMarket(symbol){
   $("tickCount").textContent=String(tickCounts[symbol]||0);
   $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
   $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
-  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);drawChart();
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderSurvivalCards();drawChart();
 }
 
 function clearAccumulatorQuotes(){
@@ -183,9 +183,41 @@ function handleAccumulatorProposal(message){
   item.maximumPayout=numberOrNull(details.maximum_payout);
   item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
   item.subscriptionId=message.subscription?.id||null;
+  const anchor=numberOrNull(details.last_tick_epoch)??numberOrNull(proposal.spot_time);
+  if(item.high!==null&&item.low!==null&&anchor!==null){item.pendingSnapshot={high:item.high,low:item.low,anchorEpoch:anchor,anchorSource:details.last_tick_epoch!==undefined?"Deriv last_tick_epoch":"proposal spot_time"};}
   if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
   item.status=(item.high!==null&&item.low!==null)?"Live Deriv barrier received":"Quote received; barrier fields not present";
-  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();
+  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderSurvivalCards();
+}
+function getSurvivalStats(symbol,rate){if(!survivalBySymbol[symbol])survivalBySymbol[symbol]={};if(!survivalBySymbol[symbol][rate])survivalBySymbol[symbol][rate]={observed:0,survived:0,knockouts:0,currentRun:0,longestRun:0,lastEvaluatedEpoch:0,lastResult:"Waiting for aligned tick",pending:false};return survivalBySymbol[symbol][rate];}
+function trackSurvivalTick(symbol,price,epoch){
+  if(!Number.isFinite(epoch))return;
+  let evaluated=0,waiting=0;
+  growthRates.forEach(rate=>{
+    const item=barrierData[rate],stats=getSurvivalStats(symbol,rate),snap=item?.pendingSnapshot;
+    if(!snap||epoch<=snap.anchorEpoch||epoch<=stats.lastEvaluatedEpoch){waiting++;return;}
+    const survived=price>snap.low&&price<snap.high;
+    stats.observed++;stats.lastEvaluatedEpoch=epoch;stats.pending=false;
+    if(survived){stats.survived++;stats.currentRun++;stats.longestRun=Math.max(stats.longestRun,stats.currentRun);stats.lastResult="Survived";}else{stats.knockouts++;stats.currentRun=0;stats.lastResult=price===snap.low||price===snap.high?"Knockout · touched barrier":"Knockout · crossed barrier";}
+    item.pendingSnapshot=null;evaluated++;
+  });
+  if(evaluated||waiting)renderSurvivalCards();
+}
+function renderSurvivalCards(){
+  const box=$("survivalGrid");box.replaceChildren();let total=0,aligned=0;
+  growthRates.forEach(rate=>{
+    const stats=getSurvivalStats(selectedSymbol,rate),item=barrierData[rate]||{};
+    const card=document.createElement("div");card.className="survival-card";
+    const heading=document.createElement("h3");heading.textContent=Math.round(rate*100)+"% GROWTH";
+    const ratio=stats.observed?stats.survived/stats.observed*100:null;
+    const rateEl=document.createElement("div");rateEl.className="survival-rate";rateEl.textContent=ratio===null?"—":ratio.toFixed(1)+"%";
+    const label=document.createElement("div");label.className="barrier-label";label.textContent="OBSERVED TICK SURVIVAL";
+    const statsEl=document.createElement("div");statsEl.className="survival-stats";
+    [["Observed",stats.observed],["Survived",stats.survived],["Knockouts",stats.knockouts],["Current run",stats.currentRun],["Longest run",stats.longestRun]].forEach(([name,value])=>{const cell=document.createElement("div"),small=document.createElement("small"),strong=document.createElement("strong");small.textContent=name;strong.textContent=String(value);cell.append(small,strong);statsEl.append(cell);});
+    const state=document.createElement("div");state.className="survival-state";state.textContent=stats.lastResult+(item.pendingSnapshot?" · Barrier armed for next tick":" · Waiting for fresh aligned barrier");
+    card.append(heading,rateEl,label,statsEl,state);box.append(card);total+=stats.observed;if(item.pendingSnapshot)aligned++;
+  });
+  $("survivalStatus").textContent=total+" observations · "+aligned+" armed barriers";
 }
 function renderBarrierCards(){
   const box=$("barrierGrid");box.replaceChildren();
@@ -215,7 +247,7 @@ function drawChart(){
 }
 $("connectBtn").onclick=connect;
 $("symbol").onchange=()=>selectMarket($("symbol").value);
-window.addEventListener("resize",drawChart);
+window.addEventListener("resize",drawChart);renderSurvivalCards();
 connect();
 })();
 </script></body></html>
