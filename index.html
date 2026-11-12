@@ -1030,7 +1030,7 @@ requestAnimationFrame(()=>{
 });
 }
 renderNoirNetworkMarquee();
-document.querySelectorAll(".noir-quick-action,.noir-secondary-pill").forEach(button=>{
+document.querySelectorAll(".noir-pill-action,.noir-add-action,.noir-more-action,.noir-secondary-pill").forEach(button=>{
  button.addEventListener("click",()=>{
   const action=button.dataset.action;
   if(action==="send")$("sendBtn").click();
