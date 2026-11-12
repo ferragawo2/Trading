@@ -108,6 +108,20 @@ select option{background:#080808;color:#fff}
 .home-art{position:relative;min-height:540px;border-radius:22px;overflow:hidden;background:radial-gradient(ellipse at 55% 25%,#18202a 0%,#080b10 50%,#020304 100%);border:1px solid #20242b;box-shadow:inset 0 0 70px #000}
 .home-art:after{content:"";position:absolute;inset:45% 0 0;background:linear-gradient(180deg,transparent,#0009 68%,#000)}
 .home-art svg{width:100%;height:100%;display:block;object-fit:cover}
+.noir-network-marquee{grid-column:1/-1;position:relative;overflow:hidden;width:100%;margin:2px 0 8px;mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 7%,#000 93%,transparent)}
+.noir-network-track{display:flex;width:max-content;animation:noir-network-scroll 34s linear infinite}
+.noir-network-group{display:flex;align-items:center;gap:10px;padding-right:10px}
+.noir-network-pill{height:42px;display:inline-flex;align-items:center;gap:9px;padding:0 16px;border:1px solid #292929;border-radius:999px;background:linear-gradient(180deg,#111,#080808);color:#e8e8e8;font-size:12px;font-weight:500;letter-spacing:.1px;white-space:nowrap;box-shadow:inset 0 1px 0 #ffffff08}
+.noir-network-pill svg{width:19px;height:19px;flex:0 0 19px;color:#b7a4ff}
+.noir-network-group:nth-child(1) .noir-network-pill:nth-child(2) svg{color:#ff0420}
+.noir-network-group:nth-child(1) .noir-network-pill:nth-child(3) svg{color:#9b6cff}
+.noir-network-group:nth-child(1) .noir-network-pill:nth-child(4) svg{color:#4d8dff}
+.noir-network-group:nth-child(1) .noir-network-pill:nth-child(5) svg{color:#4b9bff}
+.noir-network-group:nth-child(1) .noir-network-pill:nth-child(6) svg{color:#e84142}
+.noir-network-group:nth-child(1) .noir-network-pill:nth-child(7) svg{color:#ff8a32}
+@keyframes noir-network-scroll{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(hover:hover){.noir-network-marquee:hover .noir-network-track{animation-play-state:paused}}
+@media(prefers-reduced-motion:reduce){.noir-network-track{animation:none}}
 .home-tagline{grid-column:1/-1;display:flex;align-items:center;gap:14px;justify-content:center;color:#929292;letter-spacing:3px;font-size:11px;margin:0 0 2px}
 .home-tagline span{height:1px;background:#292929;flex:1}
 .home-features{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
@@ -358,7 +372,28 @@ select option{background:#080808;color:#fff}
     <p>Premium virtual payment cards designed around your digital assets — bringing a more elegant way to put crypto to work in everyday life.</p>
   </div>
 </section>
-<div class="home-tagline"><span></span> BUILT FOR FREEDOM <span></span></div>
+<section class="noir-network-marquee" aria-label="Supported blockchain networks">
+  <div class="noir-network-track">
+    <div class="noir-network-group">
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 5.5 12 12 15.8 18.5 12 12 2Zm0 20-6.5-9 6.5 3.8 6.5-3.8L12 22Z" fill="currentColor"/></svg>Ethereum</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor"/><path d="M7 7h6.2a4 4 0 0 1 0 8H11v3H7V7Zm4 4v1h2a.5.5 0 0 0 0-1h-2Z" fill="#080808"/></svg>OP Mainnet</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 4.2L6.8 9v6l5.2 2.8 5.2-2.8V9L12 6.2Z" fill="currentColor"/></svg>Polygon</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M6 10h12v4H6z" fill="#080808"/></svg>Base</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 7.5v9L12 22 2 16.5v-9L12 2Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7 14 5-7 5 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Arbitrum One</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 22 20H2L12 2Z" fill="currentColor"/><path d="m12 8-5.8 10h11.6L12 8Z" fill="#080808"/></svg>Avalanche C-Chain</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7 15.5 12 6l5 9.5h-3l-2-4-2 4H7Z" fill="#080808"/></svg>Flare</span>
+    </div>
+    <div class="noir-network-group" aria-hidden="true">
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24"><path d="M12 2 5.5 12 12 15.8 18.5 12 12 2Zm0 20-6.5-9 6.5 3.8 6.5-3.8L12 22Z" fill="currentColor"/></svg>Ethereum</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24"><rect x="2" y="2" width="20" height="20" rx="6" fill="currentColor"/><path d="M7 7h6.2a4 4 0 0 1 0 8H11v3H7V7Zm4 4v1h2a.5.5 0 0 0 0-1h-2Z" fill="#080808"/></svg>OP Mainnet</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24"><path d="m12 2 9 5v10l-9 5-9-5V7l9-5Zm0 4.2L6.8 9v6l5.2 2.8 5.2-2.8V9L12 6.2Z" fill="currentColor"/></svg>Polygon</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M6 10h12v4H6z" fill="#080808"/></svg>Base</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24"><path d="M12 2 22 7.5v9L12 22 2 16.5v-9L12 2Z" fill="none" stroke="currentColor" stroke-width="2"/><path d="m7 14 5-7 5 7" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>Arbitrum One</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24"><path d="M12 2 22 20H2L12 2Z" fill="currentColor"/><path d="m12 8-5.8 10h11.6L12 8Z" fill="#080808"/></svg>Avalanche C-Chain</span>
+      <span class="noir-network-pill"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="currentColor"/><path d="M7 15.5 12 6l5 9.5h-3l-2-4-2 4H7Z" fill="#080808"/></svg>Flare</span>
+    </div>
+  </div>
+</section>
 <section class="home-features" id="homeFeatures">
   <article class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><path d="M12 3 20 6v6c0 5-3.5 8-8 10-4.5-2-8-5-8-10V6z"/><path d="M9.5 11v-1a2.5 2.5 0 0 1 5 0v1m-5 0h5v4h-5z"/></svg></div><h3>Your keys, your control</h3><p>Self-custody by design. You own what’s yours.</p></article>
   <article class="feature-card"><div class="feature-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></svg></div><h3>Multi-chain access</h3><p>Explore and manage assets across supported networks.</p></article>
