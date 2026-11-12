@@ -367,6 +367,38 @@ select option{background:#080808;color:#fff}
 <link rel="preload" as="image" href="/43138-removebg-preview.png" fetchpriority="high">
 <link rel="preload" as="image" href="/file_00000000b6d88210822d4b19f6ac9459.png" media="(max-width: 760px)" fetchpriority="high">
 <link rel="preload" as="image" href="/file_00000000f9f482438a8dd06d03ad9552.png" media="(min-width: 761px)" fetchpriority="high">
+<style id="noir-soft-white-controls">
+/* Softer white finish for every quick control except the intentionally black More button */
+.noir-quick-actions .noir-deposit-pill,
+.noir-quick-actions .noir-secondary-pill{
+ background:#dedede!important;
+ color:#111!important;
+ border-color:#dedede!important;
+ box-shadow:0 2px 10px rgba(220,220,220,.07),inset 0 1px 0 rgba(255,255,255,.45)!important;
+}
+.noir-quick-actions .noir-quick-circle{
+ background:#dedede!important;
+ border-color:#dedede!important;
+ box-shadow:0 2px 10px rgba(220,220,220,.08),inset 0 1px 0 rgba(255,255,255,.45)!important;
+}
+.noir-quick-actions .noir-quick-circle svg,
+.noir-quick-actions .noir-secondary-pill svg{
+ color:#111!important;
+ stroke:#111!important;
+}
+.noir-quick-actions .noir-quick-pill{
+ color:#dedede!important;
+}
+.noir-quick-actions .noir-more-action .noir-quick-circle{
+ background:#000!important;
+ border-color:#fff!important;
+}
+.noir-quick-actions .noir-more-action .noir-quick-circle svg{
+ color:#fff!important;
+ fill:#fff!important;
+ stroke:#fff!important;
+}
+</style>
 </head>
 <body>
 <div class="noir-entrance" id="noirEntrance" role="dialog" aria-modal="true" aria-label="Welcome to NOIR">
