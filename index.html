@@ -1015,3 +1015,28 @@ loadLifiChains().then(()=>{updateLifiNetworkLabels();renderSwapChainOptions();re
  border-color:#fff!important;
  box-shadow:0 0 18px rgba(255,255,255,.2)!important;
 }
+
+/* Force the More control itself and its icon surface to stay black */
+.noir-quick-grid > button.noir-more-action,
+.noir-quick-grid > button.noir-more-action:hover,
+.noir-quick-grid > button.noir-more-action:focus,
+.noir-quick-grid > button.noir-more-action:active{
+ background:#000!important;
+ background-image:none!important;
+ border:0!important;
+ border-radius:50%!important;
+ box-shadow:none!important;
+}
+.noir-quick-grid > button.noir-more-action > .noir-quick-circle,
+.noir-quick-grid > button.noir-more-action:hover > .noir-quick-circle,
+.noir-quick-grid > button.noir-more-action:focus > .noir-quick-circle{
+ background:#000!important;
+ background-image:none!important;
+ border:1px solid #fff!important;
+ box-shadow:none!important;
+}
+.noir-quick-grid > button.noir-more-action svg{
+ color:#fff!important;
+ fill:#fff!important;
+ stroke:#fff!important;
+}
