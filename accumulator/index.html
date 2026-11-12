@@ -176,7 +176,8 @@ function requestAccumulatorQuotes(symbol){
 }
 function handleAccumulatorProposal(message){
   const proposal=message.proposal||{};
-  const rate=barrierRequests[message.req_id]??Number(message.echo_req?.growth_rate);
+  if(!Object.prototype.hasOwnProperty.call(barrierRequests,message.req_id))return;
+  const rate=barrierRequests[message.req_id];
   const item=barrierData[rate];if(!item)return;
   const details=proposal.contract_details||{};
   const numberOrNull=value=>{if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isFinite(n)?n:null;};
