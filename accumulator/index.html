@@ -14,7 +14,8 @@
 </head>
 <body><main class="wrap">
 <header class="top"><div class="brand"><div class="logo">A</div><div><h1>ACCUMULATOR MARKET MONITOR</h1><p>Deriv public market data · synthetic indices · live ticks</p></div></div><div class="status"><span class="dot" id="dot"></span><span id="connection">Disconnected</span></div></header>
-<p class="note">Public market-data connection. No Deriv login is needed to view live prices or barriers. Connect your own Deriv account below when you are ready for private demo-contract verification. No trades are placed.</p>\n<section class="account-panel"><div class="account-copy"><strong id="accountTitle">Deriv account · Not connected</strong><span id="accountDetail">OAuth connection is optional for public prices. Demo verification requires your account authorization.</span><div class="account-message" id="accountMessage" aria-live="polite"></div></div><div class="account-actions"><button id="derivLogin" type="button">Connect Deriv account</button><button id="derivLogout" class="secondary" type="button" hidden>Disconnect</button></div></section>
+<p class="note">Public market-data connection. No Deriv login is needed to view live prices or barriers. Connect your own Deriv account below when you are ready for private demo-contract verification. No trades are placed.</p>
+<section class="account-panel"><div class="account-copy"><strong id="accountTitle">Deriv account · Not connected</strong><span id="accountDetail">OAuth connection is optional for public prices. Demo verification requires your account authorization.</span><div class="account-message" id="accountMessage" aria-live="polite"></div></div><div class="account-actions"><button id="derivLogin" type="button">Connect Deriv account</button><button id="derivLogout" class="secondary" type="button" hidden>Disconnect</button></div></section>
 <div class="grid">
 <section class="card"><div class="row between"><h2>LIVE MARKET VIEW</h2><span class="pill" id="selectedMarketLabel">Select a market</span></div>
 <div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
@@ -32,7 +33,8 @@
 <script>
 (() => {
 const $ = id => document.getElementById(id);
-const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";\nconst OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
+const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
+const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={}, tickCandidates={};
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};const survivalBySymbol={};const SURVIVAL_STORAGE_KEY="deriv_accumulator_survival_v3";
