@@ -272,7 +272,9 @@ function drawChart(){
 async function refreshDerivAccount(){
   const title=$("accountTitle"),detail=$("accountDetail"),message=$("accountMessage"),login=$("derivLogin"),logout=$("derivLogout");
   try{
-    const response=await fetch(OAUTH_API+"/api/me",{credentials:"include"});
+    const appSession=sessionStorage.getItem("deriv_app_session");
+    const headers=appSession?{Authorization:"Bearer "+appSession}:{};
+    const response=await fetch(OAUTH_API+"/api/me",{credentials:"include",headers});
     if(!response.ok)throw new Error(response.status===401?"Not connected":"Could not verify account");
     const data=await response.json();
     title.textContent="Deriv account · Connected";
@@ -296,7 +298,10 @@ async function startDerivLogin(){
   }catch(e){message.textContent=e.message;button.disabled=false;}
 }
 async function disconnectDeriv(){
-  await fetch(OAUTH_API+"/api/disconnect",{method:"POST",credentials:"include"}).catch(()=>{});
+  const appSession=sessionStorage.getItem("deriv_app_session");
+  const headers=appSession?{Authorization:"Bearer "+appSession}:{};
+  await fetch(OAUTH_API+"/api/disconnect",{method:"POST",credentials:"include",headers}).catch(()=>{});
+  sessionStorage.removeItem("deriv_app_session");
   refreshDerivAccount();
 }
 $("derivLogin").onclick=startDerivLogin;
