@@ -31,12 +31,21 @@ async function bodyJson(req) {
   if (raw.length > 20000) throw new Error("Request too large");
   return raw ? JSON.parse(raw) : {};
 }
+function extractAccounts(data) {
+  // Deriv Options GET /accounts returns the account array in data.data.
+  // Accept the older accounts property as a compatibility fallback.
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data?.accounts)) return data.accounts;
+  return [];
+}
 function cleanAccount(a) {
+  const accountType = String(a.account_type || a.account_type_name || "Deriv account").toLowerCase();
   return {
-    account_type: a.account_type || a.account_type_name || "Deriv account",
+    account_type: accountType,
     currency: a.currency || "",
-    is_virtual: Boolean(a.is_virtual ?? a.account_type === "demo"),
-    account_id: typeof a.account_id === "string" ? a.account_id : ""
+    is_virtual: a.is_virtual !== undefined ? Boolean(a.is_virtual) : accountType === "demo",
+    account_id: typeof a.account_id === "string" ? a.account_id : "",
+    status: a.status || ""
   };
 }
 const server = http.createServer(async (req, res) => {
@@ -114,7 +123,7 @@ const server = http.createServer(async (req, res) => {
       });
       const data = await response.json();
       if (!response.ok) return send(res, response.status, { error: "Could not read Deriv account details. Reconnect and check the app's granted permissions." });
-      const accounts = Array.isArray(data.accounts) ? data.accounts.map(cleanAccount) : [];
+      const accounts = extractAccounts(data).map(cleanAccount).filter(a => a.account_id);
       return send(res, 200, { connected: true, accounts });
     }
 
@@ -132,7 +141,7 @@ const server = http.createServer(async (req, res) => {
       });
       const accountsData = await accountsResponse.json();
       if (!accountsResponse.ok) return send(res, accountsResponse.status, { error: "Could not verify account ownership with Deriv." });
-      const owned = Array.isArray(accountsData.accounts) && accountsData.accounts.some(a => String(a.account_id || "") === accountId);
+      const owned = extractAccounts(accountsData).some(a => String(a.account_id || "") === accountId);
       if (!owned) return send(res, 403, { error: "That account is not available under this Deriv authorization." });
       const otpResponse = await fetch(`${API_BASE}/trading/v1/options/accounts/${encodeURIComponent(accountId)}/otp`, {
         method: "POST",
