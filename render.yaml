@@ -4,6 +4,6 @@ services:
     runtime: static
     branch: Trading
     rootDir: accumulator
-    buildCommand: 'echo "Static Accumulator Lab: no build step required"'
+    buildCommand: "npm install && npm run build"
     staticPublishPath: .
     autoDeployTrigger: commit
