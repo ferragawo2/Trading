@@ -95,6 +95,8 @@
 .index-ticker-track{display:flex;width:max-content;animation:indexTickerMove 48s linear infinite;will-change:transform}
 .index-ticker-window:hover .index-ticker-track{animation-play-state:paused}
 .index-ticker-group{display:flex;flex:0 0 auto;align-items:center;gap:9px;padding:2px 9px 8px 0}
+/* Keep the seamless duplicate group beyond the initial viewport so it doesn't show as extra pills at the right edge. */
+#indexTickerPrimary{min-width:100vw;box-sizing:border-box}
 .index-market-pill{display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:7px 15px 7px 9px;border:1px solid #303030;border-radius:999px;background:#080808;color:#fff;white-space:nowrap;cursor:pointer;box-shadow:0 5px 16px #0008;transition:border-color .18s,background .18s,transform .18s}
 .index-market-pill:hover,.index-market-pill:focus-visible{border-color:#888;background:#111;outline:none;transform:translateY(-1px)}
 .index-market-pill img,.index-market-fallback{width:31px;height:31px;flex:0 0 31px;border-radius:50%;object-fit:contain;display:grid;place-items:center}.index-kind-icon{display:inline-grid;place-items:center;flex:0 0 auto;width:31px;height:31px;border-radius:50%;overflow:hidden}.index-kind-icon.card{width:38px;height:38px}.index-kind-icon{background-position:center;background-repeat:no-repeat;background-size:100% 100%}
