@@ -31,6 +31,7 @@
     <button class="toolbar-circle" id="toolbarSearch" type="button" aria-label="Search markets" title="Search markets"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.8" cy="10.8" r="6.8"/><path d="m16 16 5 5"/></svg></button>
     <a class="toolbar-circle" href="#accountPanel" aria-label="Notifications and account alerts" title="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a>
   </div>
+  <span hidden id="dot" class="dot"></span><span hidden id="connection">Disconnected</span>
 </header>
 <p class="note">Live Deriv market data is public. Connect your Deriv account to view your balance and place manual demo or real Accumulator trades. Every purchase requires your confirmation.</p>
 <section class="account-panel" id="accountPanel"><div class="account-copy"><strong id="accountTitle">Deriv account · Not connected</strong><span id="accountDetail">Account authorization is active when connected. Private demo-contract verification is not yet implemented.</span><div class="account-message" id="accountMessage" aria-live="polite"></div></div><div class="account-actions"><button id="derivLogin" type="button">Connect Deriv account</button><button id="derivLogout" class="secondary" type="button" hidden>Disconnect</button></div></section>
