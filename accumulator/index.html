@@ -116,6 +116,11 @@
 .trade-tabs{display:flex;gap:9px;padding:5px;margin:0 0 17px;border:1px solid #292929;border-radius:999px;background:#080808}.trade-tab{flex:1;min-height:43px;padding:10px 18px;border:1px solid transparent;border-radius:999px;background:transparent;color:#aaa;font-size:11px;font-weight:900;letter-spacing:.12em;box-shadow:none}.trade-tab:hover:not(:disabled){background:#151515;color:#fff;transform:none}.trade-tab.is-active{background:#fff;color:#000;border-color:#fff;box-shadow:0 0 16px rgba(255,255,255,.12)}.trade-tab.is-active:hover:not(:disabled){background:#eee}
 .algo-placeholder{min-height:260px;padding:30px 22px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px solid #292929;border-radius:20px;background:linear-gradient(145deg,#090909,#000 65%)}.algo-mark{width:54px;height:54px;display:grid;place-items:center;border:1px solid #555;border-radius:50%;font-size:32px;color:#fff;margin-bottom:16px;box-shadow:0 0 22px rgba(255,255,255,.07)}.algo-placeholder h2{margin:0 0 8px;font-size:12px;letter-spacing:.15em}.algo-placeholder p{max-width:330px;margin:0;color:#999;font-size:12px;line-height:1.7}.algo-status{margin-top:18px;padding:7px 13px;border:1px solid #444;border-radius:999px;color:#ddd;font-size:9px;font-weight:850;letter-spacing:.13em}#tradePage #executionPanel{margin:0}
 @media(max-width:800px){.trade-page-heading{margin:7px 2px 16px}.trade-page-caption{font-size:8px}.trade-tabs{margin-bottom:14px}.trade-tab{min-height:42px}}
+
+/* Tighten Trade mode selector */
+#tradePage .trade-tabs{margin-top:0;margin-bottom:14px}
+#tradePage .trade-tab:not(.is-active){background:#000000;color:#aaa;border-color:#292929}
+#tradePage .trade-tab:not(.is-active):hover{background:#000000;color:#fff}
 </style>
 </head>
 <body><main class="wrap">
@@ -184,7 +189,6 @@
 
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
-<div class="trade-page-heading"><span>TRADE</span><span class="trade-page-caption">ACCUMULATOR CONTRACTS</span></div>
 <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
 <div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full" id="executionPanel">
   <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><span class="pill" id="tradeConnectionState">Account not selected</span></div>
