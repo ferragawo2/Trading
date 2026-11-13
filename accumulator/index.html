@@ -286,7 +286,7 @@ function handleMarketHistory24h(m){
   const symbol=marketHistoryReqs[m.req_id]||m.echo_req?.ticks_history;
   const candles=m.candles||m.history?.candles;
   if(!symbol||!marketBySymbol[symbol]||!Array.isArray(candles))return false;
-  marketHistory24h[symbol]=candles.map(c=>({epoch:Number(c.epoch),open:Number(c.open),close:Number(c.close)})).filter(c=>Number.isFinite(c.epoch)&&Number.isFinite(c.open)&&Number.isFinite(c.close)).slice(-24);
+  marketHistory24h[symbol]=candles.map(c=>({epoch:Number(c.epoch),open:Number(c.open),close:Number(c.close)})).filter(c=>Number.isFinite(c.epoch)&&Number.isFinite(c.open)&&Number.isFinite(c.close)).slice(-25);
   delete marketHistoryReqs[m.req_id];
   updateMarketCard(symbol);
   return true;
