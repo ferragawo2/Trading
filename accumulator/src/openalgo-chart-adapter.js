@@ -1,15 +1,22 @@
-/* OpenAlgo Charts adapter for the Accumulator screen.
- * Deriv remains the market-data and contract source; this file only adapts ticks
- * into OHLC bars and renders contract-specific reference levels.
+/* Full OpenAlgo Charts widget for the Accumulator trade screen.
+ * Deriv remains the source of live ticks and contract data. OpenAlgo owns the
+ * chart UI, studies, drawings, transforms, settings and local chart workspace.
  */
 (async () => {
   "use strict";
   const VERSION = "2.7.2";
-  const CDN = "https://cdn.jsdelivr.net/npm/openalgo-charts@" + VERSION + "/dist/openalgo-charts.mjs";
+  const CDN = "https://cdn.jsdelivr.net/npm/openalgo-charts@" + VERSION + "/dist/";
   const root = document.getElementById("nativeChartHost");
   if (!root) return;
 
-  const intervalSeconds = value => Math.max(60, Number(value) * 60 || 3600);
+  function intervalSeconds(value) {
+    const code = String(value || "1h").trim().toLowerCase();
+    const match = code.match(/^(\\d+)(s|m|h|d|w)$/);
+    if (!match) return 3600;
+    const amount = Math.max(1, Number(match[1]));
+    return amount * ({ s: 1, m: 60, h: 3600, d: 86400, w: 604800 }[match[2]]);
+  }
+
   function toCandles(ticks, seconds) {
     const candles = [];
     for (const tick of ticks || []) {
@@ -30,67 +37,131 @@
   }
 
   try {
-    const lib = await import(CDN);
-    const { createChart, darkTheme, PriceLine } = lib;
-    if (typeof createChart !== "function" || typeof PriceLine !== "function") {
-      throw new Error("OpenAlgo Charts did not expose its chart and price-line APIs.");
+    const base = await import(CDN + "openalgo-charts.mjs");
+    const indicators = await import(CDN + "openalgo-charts.indicators.mjs");
+    const drawings = await import(CDN + "openalgo-charts.draw.mjs");
+    // Optional tiers register their chart types, profile tools and GPU renderer.
+    await import(CDN + "openalgo-charts.transform.mjs");
+    await import(CDN + "openalgo-charts.profile.mjs");
+    await import(CDN + "openalgo-charts.webgl.mjs");
+    const widgetModule = await import(CDN + "openalgo-charts.widget.mjs");
+
+    if (typeof widgetModule.createWidget !== "function") {
+      throw new Error("OpenAlgo Charts widget tier is unavailable.");
+    }
+    if (typeof indicators.registerBuiltinIndicators === "function") {
+      indicators.registerBuiltinIndicators();
+    }
+    if (typeof drawings.registerBuiltinDrawingTools === "function") {
+      drawings.registerBuiltinDrawingTools();
     }
 
-    const chart = createChart(root, {
+    const widget = widgetModule.createWidget(root, {
+      symbol: "R_10",
+      exchange: "DERIV",
+      interval: "1h",
+      intervals: ["1m", "5m", "15m", "30m", "1h", "4h", "1d"],
       theme: {
-        ...darkTheme,
+        ...base.darkTheme,
         background: "#080d14",
         text: "#aab7c8",
         gridColor: "#1d2a3b",
         upColor: "#20bd88",
         downColor: "#ee5969"
       },
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos"
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos",
+      mobile: "auto",
+      rail: true,
+      topbar: true,
+      indicators: true,
+      statusline: true,
+      bottombar: true,
+      persist: "deriv-accumulator-trade",
+      drawingScope: "instrument",
+      navigation: { mousePan: "both", defaultVisibleBars: 120 },
+      renderer: "auto"
     });
-    const series = chart.addSeries("candlestick");
+
+    const chart = widget.chart;
     const lines = Object.create(null);
     let lastKey = "";
+    let lastSignature = "";
     let lastCount = 0;
-    let lastDataSignature = "";
+    let ready = false;
+    let pending = null;
+    let activeSymbol = "R_10";
 
     function removeLine(name) {
       if (!lines[name]) return;
       chart.removePrimitive(lines[name]);
       delete lines[name];
     }
+
     function syncLine(name, price, options) {
       if (!Number.isFinite(price)) {
         removeLine(name);
         return;
       }
       if (!lines[name]) {
-        lines[name] = new PriceLine({ id: "accumulator-" + name, price, ...options });
+        lines[name] = new base.PriceLine({ id: "accumulator-" + name, price, ...options });
         chart.addPrimitive(lines[name]);
       } else {
         lines[name].setPrice(price);
-        const patch = { ...options }; delete patch.id; lines[name].setOptions(patch);
+        const patch = { ...options };
+        delete patch.id;
+        lines[name].setOptions(patch);
       }
+    }
+
+    function applyData(ticks, meta = {}) {
+      const interval = widget.interval();
+      const seconds = intervalSeconds(interval);
+      const candles = toCandles(ticks, seconds);
+      const key = String(meta.symbol || activeSymbol) + "|" + interval;
+      const tail = candles[candles.length - 1];
+      const signature = key + "|" + candles.length + "|" +
+        (tail ? [tail.time, tail.open, tail.high, tail.low, tail.close].join(":") : "");
+      if (signature !== lastSignature) {
+        if (key !== lastKey || candles.length !== lastCount || !lastCount) {
+          widget.series.setData(candles);
+        } else if (tail) {
+          widget.series.update(tail);
+        }
+        lastSignature = signature;
+        lastCount = candles.length;
+      }
+      if (key !== lastKey) {
+        if (candles.length) chart.timeScale.fitContent(Math.min(candles.length, 240));
+        lastKey = key;
+      }
+      return { candleCount: lastCount, interval };
+    }
+
+    function applyPending() {
+      if (!pending || !ready) return;
+      const next = pending;
+      pending = null;
+      applyData(next.ticks, next.meta);
     }
 
     const api = {
       ready: true,
-      setData(ticks, intervalMinutes, meta = {}) {
-        const seconds = intervalSeconds(intervalMinutes);
-        const candles = toCandles(ticks, seconds);
-        const key = String(meta.symbol || "") + "|" + seconds;
-        // Avoid re-submitting identical history on the one-second UI refresh.
-        const tail = candles[candles.length - 1];
-        const signature = key + "|" + candles.length + "|" + (tail ? [tail.time, tail.open, tail.high, tail.low, tail.close].join(":") : "");
-        if (signature !== lastDataSignature) {
-          series.setData(candles);
-          lastDataSignature = signature;
-          lastCount = candles.length;
+      widget,
+      setData(ticks, _intervalMinutes, meta = {}) {
+        if (meta.symbol && meta.symbol !== activeSymbol) {
+          activeSymbol = meta.symbol;
+          try { widget.setSymbol(activeSymbol, "DERIV"); } catch (error) {
+            console.warn("OpenAlgo symbol sync:", error);
+          }
+          lastKey = "";
+          lastSignature = "";
+          lastCount = 0;
         }
-        if (key !== lastKey) {
-          if (candles.length) chart.timeScale.fitContent(Math.min(candles.length, 240));
-          lastKey = key;
+        if (!ready) {
+          pending = { ticks, meta };
+          return { candleCount: lastCount };
         }
-        return { candleCount: lastCount };
+        return applyData(ticks, meta);
       },
       setOverlay(overlay, meta = {}) {
         if (!overlay) {
@@ -104,39 +175,46 @@
         const entry = priceValue(overlay.entrySpot);
         const barrier = priceValue(overlay.barrier);
         const live = priceValue(overlay.currentSpot);
-        syncLine("entry", Number.isFinite(entry) ? entry : NaN, {
+        syncLine("entry", entry, {
           color: "#48a9ff", lineWidth: 2, lineStyle: "dashed",
-          badge: "ENTRY", leftLabel: Number.isFinite(entry) ? entry.toFixed(precision) : "",
-          id: "accumulator-entry"
+          badge: "ENTRY", leftLabel: Number.isFinite(entry) ? entry.toFixed(precision) : ""
         });
-        syncLine("barrier", Number.isFinite(barrier) ? barrier : NaN, {
+        syncLine("barrier", barrier, {
           color: "#f0a44b", lineWidth: 2, lineStyle: "solid",
-          badge: "BARRIER", leftLabel: Number.isFinite(barrier) ? barrier.toFixed(precision) : "",
-          id: "accumulator-barrier"
+          badge: "BARRIER", leftLabel: Number.isFinite(barrier) ? barrier.toFixed(precision) : ""
         });
-        syncLine("live", Number.isFinite(live) ? live : NaN, {
+        syncLine("live", live, {
           color: "#f2f5fa", lineWidth: 1, lineStyle: "dotted",
-          badge: "LIVE", leftLabel: Number.isFinite(live) ? live.toFixed(precision) : "",
-          id: "accumulator-live"
+          badge: "LIVE", leftLabel: Number.isFinite(live) ? live.toFixed(precision) : ""
         });
       },
       state() {
-        return { candleCount: lastCount };
+        return { candleCount: lastCount, interval: widget.interval(), symbol: widget.symbol() };
       },
       reset() {
         chart.timeScale.fitContent(Math.max(1, lastCount));
       },
       resize() {
-        // OpenAlgo observes its container and handles responsive layout itself.
+        chart.applySize?.();
       },
       destroy() {
-        chart.destroy();
+        widget.destroy();
         lastCount = 0;
-        lastDataSignature = "";
+        lastSignature = "";
       }
     };
+
     window.__openAlgoAccumulatorChart = api;
     window.dispatchEvent(new CustomEvent("openalgo-accumulator-chart-ready"));
+    Promise.resolve(widget.ready).then(() => {
+      ready = true;
+      applyPending();
+      window.dispatchEvent(new CustomEvent("openalgo-accumulator-chart-restored"));
+    }).catch(error => {
+      console.warn("OpenAlgo saved chart state could not be restored:", error);
+      ready = true;
+      applyPending();
+    });
   } catch (error) {
     console.error("OpenAlgo chart initialization failed:", error);
     window.__openAlgoChartError = error;
