@@ -1,0 +1,18 @@
+{
+  "name": "accumulator-deriv-smartcharts",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "vite build && node copy-smartcharts-assets.mjs"
+  },
+  "dependencies": {
+    "@deriv-com/smartcharts-champion": "1.13.0",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "4.3.4",
+    "vite": "5.4.14"
+  }
+}
