@@ -150,8 +150,10 @@
       setData(ticks, _intervalMinutes, meta = {}) {
         if (meta.symbol && meta.symbol !== activeSymbol) {
           activeSymbol = meta.symbol;
-          try { widget.setSymbol(activeSymbol, "DERIV"); } catch (error) {
-            console.warn("OpenAlgo symbol sync:", error);
+          if (ready) {
+            try { widget.setSymbol(activeSymbol, "DERIV"); } catch (error) {
+              console.warn("OpenAlgo symbol sync:", error);
+            }
           }
           lastKey = "";
           lastSignature = "";
@@ -208,6 +210,11 @@
     window.dispatchEvent(new CustomEvent("openalgo-accumulator-chart-ready"));
     Promise.resolve(widget.ready).then(() => {
       ready = true;
+      if (activeSymbol && widget.symbol() !== activeSymbol) {
+        try { widget.setSymbol(activeSymbol, "DERIV"); } catch (error) {
+          console.warn("OpenAlgo restored symbol sync:", error);
+        }
+      }
       applyPending();
       window.dispatchEvent(new CustomEvent("openalgo-accumulator-chart-restored"));
     }).catch(error => {
