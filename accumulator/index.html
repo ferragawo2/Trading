@@ -385,7 +385,7 @@ function updateMarketCard(symbol){
     area.setAttribute("d",areaD);
   }
   if(spark)spark.classList.toggle("down",Number.isFinite(pct)?pct<0:(history.length>1&&history[history.length-1]<history[0]));
-  if(status)status.textContent=history.length>1?"24H · HOURLY CHART": "LOADING 24H HISTORY";
+  if(status)status.textContent="";
 }
 function renderMarketCards(){
   const box=$("marketGrid");box.replaceChildren();
