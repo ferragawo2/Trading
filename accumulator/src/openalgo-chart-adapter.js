@@ -114,6 +114,11 @@
     }
 
     function applyData(ticks, meta = {}) {
+      if (activeSymbol && widget.symbol() !== activeSymbol) {
+        try { widget.setSymbol(activeSymbol, "DERIV"); } catch (error) {
+          console.warn("OpenAlgo active market sync:", error);
+        }
+      }
       const interval = widget.interval();
       const seconds = intervalSeconds(interval);
       const candles = toCandles(ticks, seconds);
