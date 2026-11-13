@@ -39,42 +39,186 @@ const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={};
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
-const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v2";
+const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
 ["deriv_accumulator_survival_v2","deriv_accumulator_survival_v3","deriv_accumulator_survival_v4","deriv_accumulator_survival_v5"].forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
 const nativeStatsByKey={};
 function loadNativeStats(){try{const saved=JSON.parse(localStorage.getItem(DERIV_STATS_STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")Object.assign(nativeStatsByKey,saved);}catch(e){console.warn("Could not load saved Deriv Stats history",e);}}
 function saveNativeStats(){try{localStorage.setItem(DERIV_STATS_STORAGE_KEY,JSON.stringify(nativeStatsByKey));}catch(e){console.warn("Could not save Deriv Stats history",e);}}
 function nativeStatsKey(symbol,rate){return symbol+"|"+Number(rate).toFixed(2);}
-function updateNativeStats(symbol,rate,raw,anchorEpoch){
-  if(!Array.isArray(raw)||!raw.length)return;
-  const currentValue=raw[0];
-  const current=typeof currentValue==="number"?currentValue:(typeof currentValue==="string"&&currentValue.trim()!==""?Number(currentValue):NaN);
-  if(!Number.isInteger(current)||current<0)return;
+function updateNativeStats(symbol,rate,raw){
+  if(!Array.isArray(raw))return;
+  const values=raw.map(value=>{if(typeof value==="number")return value;if(typeof value==="string"&&value.trim()!=="")return Number(value);return NaN;}).filter(value=>Number.isInteger(value)&&value>=0);
+  if(!values.length)return;
   const key=nativeStatsKey(symbol,rate),previous=nativeStatsByKey[key]||{};
-  const epoch=Number.isFinite(Number(anchorEpoch))?Number(anchorEpoch):Date.now()/1000;
-  // Ignore older proposal snapshots so a delayed response cannot move the
-  // counter backwards or insert a completed run out of sequence.
-  if(Number.isFinite(previous.lastEpoch)&&epoch<=previous.lastEpoch)return;
-  const history=Array.isArray(previous.history)?previous.history.slice():[];
-  // A completed run is created only by a live-counter rollover. Store a
-  // unique completion timestamp and never replace history from proposal
-  // snapshots, whose included history can vary between updates.
+  const current=values[0],nativeHistory=values.slice(1,101);
+  let history=Array.isArray(previous.history)?previous.history.slice(0,100):[];
+  // Some Deriv proposal updates provide only the live counter, not the
+  // completed-run array. Detect the native counter rolling over and save
+  // the last completed in-barrier count before showing the new run.
   if(Number.isInteger(previous.current)&&previous.current>0&&current<previous.current){
-    const completedAt=epoch;
-    const duplicate=history.some(entry=>entry&&entry.completedAt===completedAt&&entry.ticks===previous.current);
-    if(!duplicate){
-      history.push({ticks:previous.current,completedAt});
-    }
+    const alreadyInNativeHistory=nativeHistory.length>0&&nativeHistory[0]===previous.current;
+    if(!alreadyInNativeHistory)history.unshift(previous.current);
   }
-  history.sort((a,b)=>(Number(b?.completedAt)||0)-(Number(a?.completedAt)||0));
-  nativeStatsByKey[key]={
-    current,
-    history:history.slice(0,100),
-    lastEpoch:Math.max(Number(previous.lastEpoch)||0,epoch),
-    updatedAt:Date.now()
-  };
+  // When Deriv includes its completed history, prefer that authoritative list.
+  if(nativeHistory.length)history=nativeHistory;
+  nativeStatsByKey[key]={current,history:history.slice(0,100),updatedAt:Date.now()};
   saveNativeStats();
   if(symbol===selectedSymbol&&Number($("statsGrowthRate")?.value||0.01)===Number(rate))renderNativeStats();
+}
+loadNativeStats();
+const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
+const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
+const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
+function connect(){
+  manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
+  if(ws){const previous=ws;previous.onclose=null;previous.onerror=null;previous.onmessage=null;try{previous.close(1000,"Refreshing market feed")}catch{}}
+  manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};tickCounts={};latestTicks={};
+  $("symbol").disabled=true;$("symbol").innerHTML="<option>Connecting to Deriv…</option>";
+  $("marketGrid").innerHTML='<div class="metric"><small>MARKET DISCOVERY</small><strong>Requesting live catalogue…</strong></div>';
+  $("marketCount").textContent="—";$("liveCount").textContent="0";$("price").textContent="—";$("lastTick").textContent="—";$("tickCount").textContent="0";
+  setStatus("Connecting…"); log("Opening Deriv public market-data WebSocket.");
+  try{ws=new WebSocket(PUBLIC_WS);}catch(e){setStatus("Connection failed");log("Could not create WebSocket: "+e.message);scheduleReconnect();return;}
+  ws.onopen=()=>{
+    reconnectDelay=1500;setStatus("Connected · loading markets",true);log("Connected to Deriv public endpoint.");
+    try{send({active_symbols:"brief",contract_type:["ACCU"]});}catch(e){log(e.message)}
+    pingTimer=setInterval(()=>{try{send({ping:1})}catch{}},25000);
+  };
+  ws.onmessage=event=>{
+    let m;try{m=JSON.parse(event.data)}catch{log("Received an unreadable message from Deriv.");return;}
+    if(m.error){const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
+    if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
+    if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
+    if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
+    if(m.msg_type==="proposal"&&m.proposal){handleAccumulatorProposal(m);return;}
+    if(m.msg_type==="ping")return;
+  };
+  ws.onerror=()=>{setStatus("Transport error");log("WebSocket transport error. The browser could not complete or maintain the public data connection.");};
+  ws.onclose=e=>{
+    clearInterval(pingTimer);setStatus("Disconnected");
+    log("WebSocket closed (code "+e.code+(e.reason?"; "+e.reason:"")+").");
+    if(!manualClose)scheduleReconnect();
+  };
+}
+function scheduleReconnect(){
+  if(manualClose||reconnectTimer)return;
+  const delay=reconnectDelay;reconnectDelay=Math.min(reconnectDelay*2,20000);
+  setStatus("Reconnecting…");log("Retrying public market connection in "+Math.round(delay/1000)+"s.");
+  reconnectTimer=setTimeout(()=>{reconnectTimer=null;connect();},delay);
+}
+function handleSymbols(rows){
+  const found=rows.filter(s=>(s.market==="synthetic_index")&&(s.underlying_symbol||s.symbol))
+    .map(s=>({symbol:s.underlying_symbol||s.symbol,name:s.underlying_symbol_name||s.display_name||s.underlying_symbol||s.symbol,pipSize:Number(s.pip_size??s.pip??2),submarket:s.submarket||"synthetics",suspended:Boolean(s.is_trading_suspended)}))
+    .filter(s=>!s.suspended);
+  const unique=[...new Map(found.map(s=>[s.symbol,s])).values()].sort((a,b)=>a.name.localeCompare(b.name));
+  markets=unique;marketBySymbol=Object.fromEntries(unique.map(m=>[m.symbol,m]));
+  $("marketCount").textContent=String(markets.length);
+  if(!markets.length){$("symbol").innerHTML="<option>No Accumulator synthetic markets returned</option>";$("listStatus").textContent="No markets returned";$("marketGrid").innerHTML='<div class="metric"><small>NO MATCHES</small><strong>Deriv returned no active synthetic indices for ACCU.</strong></div>';log("No synthetic indices matched the ACCU availability filter.");return;}
+  $("symbol").innerHTML="";
+  markets.forEach(m=>{const o=document.createElement("option");o.value=m.symbol;o.textContent=m.name+" ("+m.symbol+")";$("symbol").append(o);});
+  $("symbol").disabled=false;selectedSymbol=markets[0].symbol;$("symbol").value=selectedSymbol;
+  $("listStatus").textContent=markets.length+" markets found";
+  renderMarketCards();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
+  const symbols=markets.map(m=>m.symbol);
+  try{
+    send({ticks:symbols,subscribe:1});
+    log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
+  }catch(e){log("Could not subscribe to markets: "+e.message)}
+  requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);renderNativeStats();
+}
+function requestHistory(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  try{send({ticks_history:symbol,count:80,end:"latest",style:"ticks"});}catch(e){log(e.message)}
+}
+function handleHistory(m){
+  const symbol=m.echo_req?.ticks_history||m.echo_req?.symbol||selectedSymbol;
+  if(symbol!==selectedSymbol||!m.history?.prices)return;
+  priceHistory[symbol]=m.history.prices.map(Number).filter(Number.isFinite).slice(-120);
+  drawChart();
+}
+function handleTick(t,m){
+  const symbol=t.underlying_symbol||t.symbol||m.echo_req?.ticks;
+  const price=Number(t.quote),epoch=Number(t.epoch);
+  if(!Number.isFinite(price))return;
+  // When the API responds to an array subscription, the tick payload identifies its own symbol.
+  const key=Array.isArray(symbol)?null:symbol;
+  if(!key||!marketBySymbol[key])return;
+  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  if(!priceHistory[key])priceHistory[key]=[];
+  priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
+  $("liveCount").textContent=String(Object.keys(latestTicks).length);
+  renderMarketCards();
+  if(key===selectedSymbol){
+    $("price").textContent=price.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)));
+    $("lastTick").textContent=Number.isFinite(epoch)?new Date(epoch*1000).toLocaleTimeString():"—";
+    $("tickCount").textContent=String(tickCounts[key]);
+    $("tickHistory").textContent=priceHistory[key].slice(-12).reverse().map(v=>v.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)))).join("  ·  ");
+    $("feedNote").textContent="Live · "+(tickCounts[key]||0)+" ticks";
+    drawChart();
+  }
+}
+function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";}
+function renderMarketCards(){
+  const box=$("marketGrid");box.replaceChildren();
+  markets.forEach(m=>{
+    const card=document.createElement("div");card.className="market-card"+(m.symbol===selectedSymbol?" selected":"");
+    const tick=latestTicks[m.symbol],dp=Math.max(0,Math.min(8,m.pipSize));
+    const name=document.createElement("div");name.className="name";name.textContent=m.name;
+    const sym=document.createElement("div");sym.className="meta";sym.textContent=m.symbol+" · ACCU";
+    const price=document.createElement("strong");price.textContent=tick?tick.price.toFixed(dp):"Waiting for first tick…";
+    const status=document.createElement("div");status.className="meta";status.textContent=tick?"Live · "+(tickCounts[m.symbol]||0)+" ticks":"Subscribing…";
+    card.append(name,sym,price,status);card.onclick=()=>selectMarket(m.symbol);box.append(card);
+  });
+}
+function selectMarket(symbol){
+  if(!marketBySymbol[symbol])return;
+  selectedSymbol=symbol;$("symbol").value=symbol;
+  const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
+  $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
+  $("lastTick").textContent=t?new Date(t.epoch*1000).toLocaleTimeString():"—";
+  $("tickCount").textContent=String(tickCounts[symbol]||0);
+  $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
+  $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();
+}
+
+function clearAccumulatorQuotes(){
+  barrierSubscriptions.forEach(id=>{try{send({forget:id})}catch{}});
+  barrierSubscriptions=[];barrierRequests={};barrierData={};
+}
+function requestAccumulatorQuotes(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  clearAccumulatorQuotes();
+  $("barrierStatus").textContent="Requesting 1%–5% quotes";
+  $("barrierGrid").replaceChildren();
+  growthRates.forEach(rate=>barrierData[rate]={rate,status:"Requesting Deriv quote"});
+  renderBarrierCards();
+  growthRates.forEach(rate=>{
+    try{
+      const id=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:"USD",growth_rate:rate,underlying_symbol:symbol,subscribe:1});
+      barrierRequests[id]=rate;
+    }catch(e){barrierData[rate].status="Request failed: "+e.message;renderBarrierCards();}
+  });
+  log("Requested Deriv live Accumulator barrier streams for "+symbol+" at 1%, 2%, 3%, 4% and 5%.");
+}
+function handleAccumulatorProposal(message){
+  const proposal=message.proposal||{};
+  if(!Object.prototype.hasOwnProperty.call(barrierRequests,message.req_id))return;
+  const rate=barrierRequests[message.req_id];
+  const item=barrierData[rate];if(!item)return;
+  const details=proposal.contract_details||{};
+  const numberOrNull=value=>{if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isFinite(n)?n:null;};
+  item.askPrice=numberOrNull(proposal.ask_price);item.payout=numberOrNull(proposal.payout);
+  item.spot=numberOrNull(proposal.spot);item.spotTime=numberOrNull(proposal.spot_time);
+  item.high=numberOrNull(details.high_barrier);item.low=numberOrNull(details.low_barrier);
+  item.barrierPct=numberOrNull(details.tick_size_barrier_percentage);item.barrierSize=numberOrNull(details.tick_size_barrier);
+  item.lastTickEpoch=numberOrNull(details.last_tick_epoch);item.maximumTicks=numberOrNull(details.maximum_ticks);
+  item.maximumPayout=numberOrNull(details.maximum_payout);
+  item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
+  updateNativeStats(selectedSymbol,rate,details.ticks_stayed_in);
+  item.subscriptionId=message.subscription?.id||null;
+  if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
+  item.status=(item.high!==null&&item.low!==null&&item.high>item.low)?"Live Deriv barrier received":(item.high!==null&&item.low!==null?"Invalid barrier range returned":"Quote received; barrier fields not present");
+  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderNativeStats();
 }
 function renderNativeStats(){
   const rate=Number($("statsGrowthRate")?.value||0.01);
@@ -90,7 +234,7 @@ function renderNativeStats(){
   }
   current.textContent=String(data.current);
   caption.textContent=data.current===0?"Deriv reports zero ticks in the current run.":"Consecutive ticks currently inside Deriv’s live barrier.";
-  const runs=Array.isArray(data.history)?data.history.slice(0,100).map(entry=>Number.isInteger(entry)?entry:Number(entry?.ticks)).filter(Number.isInteger):[];
+  const runs=Array.isArray(data.history)?data.history.slice(0,100):[];
   if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="No previous completed runs returned yet.";values.append(empty);history.append(empty.cloneNode(true));}
   else{runs.slice(0,10).forEach(n=>values.append(makeValue(n)));runs.forEach(n=>history.append(makeValue(n)));}
 }
