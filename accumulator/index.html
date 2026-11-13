@@ -29,6 +29,24 @@
 .balance-cta{position:absolute;z-index:3;left:50%;transform:translateX(-50%);bottom:20px;min-width:154px;padding:11px 22px;border:1px solid #fff;border-radius:999px;background:#fff;color:#000;font-size:10px;font-weight:900;letter-spacing:.1em;box-shadow:0 4px 16px #fff1}
 .balance-cta:hover:not(:disabled){background:#e9e9e9;transform:translateX(-50%) translateY(-1px)}
 @media(max-width:800px){.balance-hero{height:210px;margin-top:0;margin-bottom:18px;padding:22px 20px 20px;border-radius:0 0 54px 54px}.balance-hero:after{height:54px;border-radius:0 0 54px 54px;box-shadow:0 14px 19px -13px rgba(255,255,255,.78)}.balance-content{width:61%}.balance-chart{top:25px;right:18px;width:39%;height:106px;opacity:.62}.balance-value-row{gap:10px;margin-top:8px}.balance-amount{font-size:31px}.balance-visibility{width:32px;height:32px;flex-basis:32px}.balance-foot{font-size:8px;letter-spacing:.06em;max-width:100%}.balance-cta{left:50%;bottom:19px;min-width:150px;padding:11px 20px}}
+
+/* Moving synthetic-index pills below the balance card */
+.index-ticker{width:100%;margin:0 0 22px;overflow:hidden}
+.index-ticker-heading{display:flex;align-items:center;justify-content:space-between;margin:0 3px 9px;color:#a9a9a9;font-size:9px;font-weight:850;letter-spacing:.16em}
+.index-ticker-heading span:last-child{color:#777;font-size:8px;letter-spacing:.1em}
+.index-ticker-window{width:100%;overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.index-ticker-track{display:flex;width:max-content;animation:indexTickerMove 48s linear infinite;will-change:transform}
+.index-ticker-window:hover .index-ticker-track{animation-play-state:paused}
+.index-ticker-group{display:flex;flex:0 0 auto;align-items:center;gap:9px;padding:2px 9px 8px 0}
+.index-market-pill{display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:7px 15px 7px 9px;border:1px solid #303030;border-radius:999px;background:#080808;color:#fff;white-space:nowrap;cursor:pointer;box-shadow:0 5px 16px #0008;transition:border-color .18s,background .18s,transform .18s}
+.index-market-pill:hover,.index-market-pill:focus-visible{border-color:#888;background:#111;outline:none;transform:translateY(-1px)}
+.index-market-pill img,.index-market-fallback{width:31px;height:31px;flex:0 0 31px;border-radius:50%;object-fit:contain;display:grid;place-items:center}
+.index-market-fallback{background:#191919;border:1px solid #444;color:#fff;font-size:10px;font-weight:900;letter-spacing:-.04em}
+.index-market-pill span:last-child{font-size:11px;font-weight:750;letter-spacing:.01em}
+@keyframes indexTickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.index-ticker-track{animation:none}}
+@media(max-width:800px){.index-ticker{margin:0 0 17px}.index-ticker-heading{margin-bottom:7px}.index-market-pill{min-height:44px;padding:6px 12px 6px 7px;gap:8px}.index-market-pill img,.index-market-fallback{width:29px;height:29px;flex-basis:29px}.index-market-pill span:last-child{font-size:10px}}
+
 </style>
 </head>
 <body><main class="wrap">
@@ -64,6 +82,15 @@
     <circle cx="396" cy="16" r="3.5"/>
   </svg>
   <button class="balance-cta" id="balanceCta" type="button">LOGIN / SIGN UP</button>
+</section>
+<section class="index-ticker" aria-label="Accumulator synthetic indices">
+  <div class="index-ticker-heading"><span>ACCUMULATOR MARKETS</span><span id="tickerMarketCount">LIVE INDICES</span></div>
+  <div class="index-ticker-window">
+    <div class="index-ticker-track" id="indexTickerTrack">
+      <div class="index-ticker-group" id="indexTickerPrimary"></div>
+      <div class="index-ticker-group" id="indexTickerClone" aria-hidden="true"></div>
+    </div>
+  </div>
 </section>
 
 <section class="card full" id="executionPanel">
@@ -183,7 +210,7 @@ function handleSymbols(rows){
   markets.forEach(m=>{const o=document.createElement("option");o.value=m.symbol;o.textContent=m.name+" ("+m.symbol+")";$("symbol").append(o);});
   $("symbol").disabled=false;selectedSymbol=markets[0].symbol;$("symbol").value=selectedSymbol;
   $("listStatus").textContent=markets.length+" markets found";
-  renderMarketCards();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
+  renderMarketCards();renderTickerMarkets();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
   const symbols=markets.map(m=>m.symbol);
   try{
     send({ticks:symbols,subscribe:1});
@@ -223,6 +250,34 @@ function handleTick(t,m){
   }
 }
 function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";}
+function renderTickerMarkets(){
+  const primary=$("indexTickerPrimary"),clone=$("indexTickerClone"),track=$("indexTickerTrack");
+  if(!primary||!clone||!track)return;
+  primary.replaceChildren();clone.replaceChildren();
+  const makePill=m=>{
+    const button=document.createElement("button");button.type="button";button.className="index-market-pill";button.title="Open "+m.name+" Accumulator market";button.setAttribute("aria-label","Select "+m.name);
+    const family=m.symbol.startsWith("BOOM_")?"boom":m.symbol.startsWith("CRASH_")?"crash":m.symbol.startsWith("VOLATILITY_")?"volatility":"";
+    if(family){
+      const logo=document.createElement("img");logo.alt="";logo.loading="lazy";
+      const asset=family==="boom"?"boom-1000-index.svg":family==="crash"?"crash-1000-index.svg":"volatility-75-index.svg";
+      logo.src="https://s3-symbol-logo.tradingview.com/indices/"+asset;
+      logo.onerror=()=>{const fallback=document.createElement("span");fallback.className="index-market-fallback";fallback.textContent=family==="boom"?"B":family==="crash"?"C":"V";if(logo.parentNode)logo.replaceWith(fallback);};
+      button.append(logo);
+    }else{
+      const fallback=document.createElement("span");fallback.className="index-market-fallback";
+      const words=(m.name||m.symbol).replace(/[^A-Za-z0-9 ]/g," ").trim().split(/\s+/);
+      fallback.textContent=(words.length>1?words.slice(0,2).map(w=>w[0]).join(""):words[0]?.slice(0,2)||"IX").toUpperCase();button.append(fallback);
+    }
+    const label=document.createElement("span");label.textContent=m.name;button.append(label);
+    button.addEventListener("click",()=>{selectMarket(m.symbol);$("marketView").scrollIntoView({behavior:"smooth",block:"start"});});
+    return button;
+  };
+  markets.forEach(m=>primary.append(makePill(m)));
+  markets.forEach(m=>{const pill=makePill(m);pill.tabIndex=-1;clone.append(pill);});
+  const count=$("tickerMarketCount");if(count)count.textContent=markets.length+" INDICES";
+  track.style.animationDuration=Math.max(28,markets.length*3.2)+"s";
+  track.style.animationPlayState=markets.length>1?"running":"paused";
+}
 function renderMarketCards(){
   const box=$("marketGrid");box.replaceChildren();
   markets.forEach(m=>{
