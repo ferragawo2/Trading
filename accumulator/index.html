@@ -109,6 +109,13 @@
 .accu-promo-cta{position:absolute;right:clamp(12px,3vw,28px);bottom:clamp(12px,3vw,26px);display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 25px;border:1px solid rgba(255,255,255,.95);border-radius:999px;background:rgba(0,0,0,.88);color:#fff;text-decoration:none;font-size:13px;font-weight:800;letter-spacing:.06em;box-shadow:0 0 18px rgba(255,255,255,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background .18s,box-shadow .18s,transform .18s}
 .accu-promo-cta:hover{background:#111;box-shadow:0 0 22px rgba(255,255,255,.2);transform:translateY(-1px)}
 @media(max-width:520px){.accu-promo{margin:16px 0 22px;border-radius:17px}.accu-promo-cta{min-height:38px;padding:0 17px;font-size:11px;right:11px;bottom:11px}}
+
+/* Dedicated Trade page */
+.app-page[hidden],[hidden]{display:none!important}
+.trade-page-heading{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 18px}.trade-page-heading>span:first-child{font-size:15px;font-weight:900;letter-spacing:.16em}.trade-page-caption{font-size:9px;color:#888;font-weight:750;letter-spacing:.12em}
+.trade-tabs{display:flex;gap:9px;padding:5px;margin:0 0 17px;border:1px solid #292929;border-radius:999px;background:#080808}.trade-tab{flex:1;min-height:43px;padding:10px 18px;border:1px solid transparent;border-radius:999px;background:transparent;color:#aaa;font-size:11px;font-weight:900;letter-spacing:.12em;box-shadow:none}.trade-tab:hover:not(:disabled){background:#151515;color:#fff;transform:none}.trade-tab.is-active{background:#fff;color:#000;border-color:#fff;box-shadow:0 0 16px rgba(255,255,255,.12)}.trade-tab.is-active:hover:not(:disabled){background:#eee}
+.algo-placeholder{min-height:260px;padding:30px 22px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;border:1px solid #292929;border-radius:20px;background:linear-gradient(145deg,#090909,#000 65%)}.algo-mark{width:54px;height:54px;display:grid;place-items:center;border:1px solid #555;border-radius:50%;font-size:32px;color:#fff;margin-bottom:16px;box-shadow:0 0 22px rgba(255,255,255,.07)}.algo-placeholder h2{margin:0 0 8px;font-size:12px;letter-spacing:.15em}.algo-placeholder p{max-width:330px;margin:0;color:#999;font-size:12px;line-height:1.7}.algo-status{margin-top:18px;padding:7px 13px;border:1px solid #444;border-radius:999px;color:#ddd;font-size:9px;font-weight:850;letter-spacing:.13em}#tradePage #executionPanel{margin:0}
+@media(max-width:800px){.trade-page-heading{margin:7px 2px 16px}.trade-page-caption{font-size:8px}.trade-tabs{margin-bottom:14px}.trade-tab{min-height:42px}}
 </style>
 </head>
 <body><main class="wrap">
@@ -117,7 +124,7 @@
     <summary class="toolbar-circle" aria-label="Open menu" title="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></summary>
     <div class="toolbar-dropdown">
       <a href="#accountPanel">Deriv account</a>
-      <a href="#executionPanel">Trade execution</a>
+      <a href="#tradePage" data-page="trade">Trade execution</a>
       <a href="#marketView">Markets</a>
       <a href="https://deriv.com/help-centre/" target="_blank" rel="noopener noreferrer">Help center</a>
     <section class="toolbar-account" id="accountPanel"><strong id="accountTitle">ACCOUNT</strong><span id="accountDetail" hidden></span><div class="account-message" id="accountMessage" aria-live="polite"></div><div class="account-actions"><button id="derivLogin" type="button">Connect</button><button id="derivLogout" class="secondary" type="button" hidden>Disconnect</button></div></section>
@@ -130,6 +137,7 @@
   </div>
   <span hidden id="dot" class="dot"></span><span hidden id="connection">Disconnected</span>
 </header>
+<div id="homePage" class="app-page">
 <div class="mode-switch" role="group" aria-label="Trading account mode"><button type="button" class="mode-pill" data-mode="real" aria-pressed="false">REAL</button><button type="button" class="mode-pill" data-mode="demo" aria-pressed="true">DEMO</button></div>
 <section class="balance-hero" aria-label="Total account balance">
   <div class="balance-content">
@@ -155,19 +163,10 @@
   </div>
 </section>
 <section class="market-showcase"><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
-<section class="accu-promo" aria-label="Accumulator introduction"><img src="../file_00000000209c820a84bade880d8fefc1.png" alt="Accumulators — grow your potential payout exponentially while the spot price stays within the trade barriers"><a class="accu-promo-cta" href="#executionPanel">TRADE NOW</a></section>
+<section class="accu-promo" aria-label="Accumulator introduction"><img src="../file_00000000209c820a84bade880d8fefc1.png" alt="Accumulators — grow your potential payout exponentially while the spot price stays within the trade barriers"><a class="accu-promo-cta" href="#tradePage" data-page="trade">TRADE NOW</a></section>
 
 
-<section class="card full" id="executionPanel">
-  <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><span class="pill" id="tradeConnectionState">Account not selected</span></div>
-  <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
-  <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
-  <div class="row" style="margin-top:12px"><div class="field"><label>STAKE</label><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div><div class="field"><label>GROWTH RATE</label><select id="tradeGrowth"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select></div><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
-  <div class="row" style="margin-top:12px;align-items:center"><button id="getTradeQuote" type="button" disabled>Get trade quote</button><button id="confirmTradeBuy" type="button" disabled>Buy contract</button><span class="muted" id="tradeMessage" aria-live="polite" style="font-size:11px">Connect Deriv and select a trading account.</span></div>
-  <div class="metrics" style="margin-top:12px"><div class="metric"><small>QUOTED PRICE / STAKE</small><strong id="quoteAsk">—</strong></div><div class="metric"><small>QUOTED PAYOUT</small><strong id="quotePayout">—</strong></div><div class="metric"><small>DERIV CONTRACT ID</small><strong id="tradeContractId">—</strong></div></div>
-  <div class="metric" style="margin-top:10px"><small>CONTRACT STATUS</small><strong id="tradeContractStatus" style="font-size:14px">No contract purchased</strong><small id="tradeContractDetail">A quote does not place a trade. Buying requires the separate Buy contract action.</small></div>
-  <div class="note" style="margin:12px 0 0">Real-account purchases risk real funds. Check the account type, stake, growth rate and Deriv quote before every purchase. The bot is not enabled by this manual panel.</div>
-</section>
+
 <div class="grid">
 <section class="card" id="marketView"><div class="row between"><h2>LIVE MARKET VIEW</h2><span class="pill" id="selectedMarketLabel">Select a market</span></div>
 <div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
@@ -182,10 +181,27 @@
 </section>
 
 </div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><div class="foot">Market data, quotes, account balances and contract status are supplied by Deriv. Trading involves risk; review every quote and account before confirming a purchase.</div>
+
+</div>
+<section id="tradePage" class="app-page" hidden aria-label="Trade">
+<div class="trade-page-heading"><span>TRADE</span><span class="trade-page-caption">ACCUMULATOR CONTRACTS</span></div>
+<div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full" id="executionPanel">
+  <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><span class="pill" id="tradeConnectionState">Account not selected</span></div>
+  <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
+  <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
+  <div class="row" style="margin-top:12px"><div class="field"><label>STAKE</label><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div><div class="field"><label>GROWTH RATE</label><select id="tradeGrowth"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select></div><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
+  <div class="row" style="margin-top:12px;align-items:center"><button id="getTradeQuote" type="button" disabled>Get trade quote</button><button id="confirmTradeBuy" type="button" disabled>Buy contract</button><span class="muted" id="tradeMessage" aria-live="polite" style="font-size:11px">Connect Deriv and select a trading account.</span></div>
+  <div class="metrics" style="margin-top:12px"><div class="metric"><small>QUOTED PRICE / STAKE</small><strong id="quoteAsk">—</strong></div><div class="metric"><small>QUOTED PAYOUT</small><strong id="quotePayout">—</strong></div><div class="metric"><small>DERIV CONTRACT ID</small><strong id="tradeContractId">—</strong></div></div>
+  <div class="metric" style="margin-top:10px"><small>CONTRACT STATUS</small><strong id="tradeContractStatus" style="font-size:14px">No contract purchased</strong><small id="tradeContractDetail">A quote does not place a trade. Buying requires the separate Buy contract action.</small></div>
+  <div class="note" style="margin:12px 0 0">Real-account purchases risk real funds. Check the account type, stake, growth rate and Deriv quote before every purchase. The bot is not enabled by this manual panel.</div>
+</section></div>
+<section id="algoTradeView" class="algo-placeholder" role="tabpanel" aria-labelledby="algoTab" hidden><div class="algo-mark" aria-hidden="true">⌁</div><h2>ALGO TRADING</h2><p>Automated strategies will be configured here. Algo execution is not enabled yet; no trades will be placed automatically.</p><span class="algo-status">COMING SOON</span></section>
+</section>
 <nav class="mobile-nav" aria-label="Main navigation">
-<a href="#home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
-<a href="#executionPanel" aria-label="Trade"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/><path d="M5 4h5M4 9v10a1 1 0 0 0 1 1h10"/></svg><span>Trade</span></a>
-<a href="#marketView" aria-label="Markets"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/></svg><span>Markets</span></a>
+<a href="#homePage" data-page="home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
+<a href="#tradePage" data-page="trade" aria-label="Trade"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/><path d="M5 4h5M4 9v10a1 1 0 0 0 1 1h10"/></svg><span>Trade</span></a>
+<a href="#marketView" data-page="markets" aria-label="Markets"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/></svg><span>Markets</span></a>
 </nav>
 </main>
 <script>
@@ -610,6 +626,11 @@ $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;pa
 $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",drawChart);renderNativeStats();
 connect();
+
+function setTradeTab(mode){const manual=mode==="manual";$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));}
+$("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
+function showAppPage(page){const trade=page==="trade";$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
+document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("click",event=>{event.preventDefault();const page=link.dataset.page;showAppPage(page);history.replaceState(null,"",page==="trade"?"#tradePage":page==="markets"?"#marketView":"#homePage");const menu=link.closest("details");if(menu)menu.open=false;}));
 })();
 
  document.getElementById("toolbarSearch")?.addEventListener("click",()=>{document.getElementById("symbol")?.focus();document.getElementById("marketView")?.scrollIntoView({behavior:"smooth",block:"start"});});
