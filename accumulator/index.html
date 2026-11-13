@@ -22,8 +22,19 @@
 .market-card .market-live{font-size:9px;color:#999;margin-top:4px}
 @media(min-width:760px){.market-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.market-card{min-height:205px;padding:18px}}
 .market-showcase{width:100%;margin:0;padding:0;background:#000}
-.market-card{background:#000!important;border:1px solid #171717!important;border-radius:18px;box-shadow:none}
-.market-card:hover,.market-card.selected{background:#000!important;border-color:#555!important}
+.market-card{position:relative;background:
+  radial-gradient(ellipse 42% 38% at 0% 0%,rgba(255,255,255,.15),transparent 100%),
+  radial-gradient(ellipse 42% 38% at 100% 0%,rgba(255,255,255,.13),transparent 100%),
+  radial-gradient(ellipse 42% 38% at 0% 100%,rgba(255,255,255,.13),transparent 100%),
+  radial-gradient(ellipse 42% 38% at 100% 100%,rgba(255,255,255,.15),transparent 100%),
+  #000!important;
+  border:1px solid transparent!important;border-radius:18px;box-shadow:none;isolation:isolate}
+.market-card:hover,.market-card.selected{background:
+  radial-gradient(ellipse 45% 40% at 0% 0%,rgba(255,255,255,.2),transparent 100%),
+  radial-gradient(ellipse 45% 40% at 100% 0%,rgba(255,255,255,.18),transparent 100%),
+  radial-gradient(ellipse 45% 40% at 0% 100%,rgba(255,255,255,.18),transparent 100%),
+  radial-gradient(ellipse 45% 40% at 100% 100%,rgba(255,255,255,.2),transparent 100%),
+  #000!important;border-color:transparent!important}
 .market-card .name{width:100%;font-size:13px;font-weight:750;letter-spacing:.015em;text-transform:uppercase;min-height:40px;gap:10px}
 .market-card .name .index-kind-icon{width:36px;height:36px;flex:0 0 36px;border-radius:50%;overflow:hidden}
 .market-card strong{color:#fff!important;font-size:21px;font-weight:750}
@@ -226,10 +237,13 @@ function connect(){
   };
   ws.onmessage=event=>{
     let m;try{m=JSON.parse(event.data)}catch{log("Received an unreadable message from Deriv.");return;}
-    if(m.error){const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
+    if(m.error){
+      const failedHistorySymbol=marketHistoryReqs[m.req_id];
+      if(failedHistorySymbol){delete marketHistoryReqs[m.req_id];const card=document.querySelector('.market-card[data-market="'+failedHistorySymbol+'"]');const status=card?.querySelector(".market-live");if(status)status.textContent="24H HISTORY UNAVAILABLE";log("24h chart unavailable for "+failedHistorySymbol+": "+(m.error.message||m.error.code||"Unknown error"));}
+      const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
     if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
-    if(m.msg_type==="history"&&m.candles){handleMarketHistory24h(m);return;}
+    if(m.msg_type==="history"&&(m.candles||m.history?.candles)){handleMarketHistory24h(m);return;}
     if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
     if(m.msg_type==="proposal"&&m.proposal){handleAccumulatorProposal(m);return;}
     if(m.msg_type==="ping")return;
@@ -274,8 +288,9 @@ function requestMarketHistory24h(symbol){
 }
 function handleMarketHistory24h(m){
   const symbol=marketHistoryReqs[m.req_id]||m.echo_req?.ticks_history;
-  if(!symbol||!marketBySymbol[symbol]||!Array.isArray(m.candles))return false;
-  marketHistory24h[symbol]=m.candles.map(c=>({epoch:Number(c.epoch),close:Number(c.close)})).filter(c=>Number.isFinite(c.epoch)&&Number.isFinite(c.close)).slice(-24);
+  const candles=m.history?.candles||m.candles;
+  if(!symbol||!marketBySymbol[symbol]||!Array.isArray(candles))return false;
+  marketHistory24h[symbol]=candles.map(c=>({epoch:Number(c.epoch),close:Number(c.close)})).filter(c=>Number.isFinite(c.epoch)&&Number.isFinite(c.close)).slice(-24);
   delete marketHistoryReqs[m.req_id];
   updateMarketCard(symbol);
   return true;
