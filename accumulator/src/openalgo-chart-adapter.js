@@ -79,8 +79,11 @@
         background: "#000000",
         text: "#aab7c8",
         gridColor: "#1d2a3b",
-        upColor: "#20bd88",
-        downColor: "#ee5969"
+        upColor: "#ffffff",
+        downColor: "#ffffff",
+        lineColor: "#ffffff",
+        areaTopColor: "rgba(255,255,255,0.18)",
+        areaBottomColor: "rgba(255,255,255,0.015)"
       },
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos",
       mobile: "auto",
@@ -89,7 +92,7 @@
       indicators: true,
       statusline: true,
       bottombar: true,
-      persist: "deriv-accumulator-openalgo-full-terminal-v2",
+      persist: "deriv-accumulator-openalgo-area-white-v3",
       drawingScope: "instrument",
       drawingToolbar: true,
       navigation: { mousePan: "both", defaultVisibleBars: 120 },
