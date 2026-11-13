@@ -123,7 +123,43 @@
 #tradePage .trade-tabs{display:flex;width:max-content;max-width:100%;margin-left:auto;margin-right:auto;padding:4px;gap:5px;background:#000000!important;border-color:#000000!important;box-shadow:none!important;}
 #tradePage .trade-tab{flex:0 0 auto;min-width:104px;padding-left:18px;padding-right:18px;}
 
-#tradePage .trade-tabs{position:sticky;top:0;z-index:40;margin-top:0;margin-bottom:14px;padding-top:8px;padding-bottom:8px;background:#000!important;}\nbody.trade-active #home{display:none!important;}\nbody.trade-active #tradePage{padding-top:0;}
+#tradePage .trade-tabs{
+ position:sticky;top:0;z-index:50;margin:0 auto 8px;padding:8px 4px;
+ background:#000!important;
+}
+body.trade-active #home{display:none!important}
+body.trade-active #tradePage{padding-top:0}
+body.trade-active .wrap{max-width:none;width:100%;padding:0 12px 28px}
+body.trade-active #tradePage .trade-tabs{width:max-content;max-width:100%;margin-left:auto;margin-right:auto}
+body.trade-active #tradePage .deriv-chart-card{
+ position:relative;height:80vh;height:80dvh;min-height:440px;max-height:1000px;
+ margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:hidden
+}
+body.trade-active #tradePage .deriv-chart-card> .row:first-child{display:none}
+body.trade-active #tradePage #nativeChartWrap{
+ position:absolute!important;inset:0;width:100%!important;height:100%!important;min-height:0!important;
+ border:0!important;border-radius:0!important
+}
+body.trade-active #tradePage #nativeChartHost{position:absolute;inset:0}
+body.trade-active #tradePage .deriv-chart-card>.row:nth-of-type(2){
+ position:absolute;z-index:3;top:10px;left:10px;right:10px;margin:0!important;
+ gap:6px;padding:7px;border:1px solid #292929;border-radius:12px;
+ background:rgba(0,0,0,.78);backdrop-filter:blur(10px)
+}
+body.trade-active #tradePage #nativeChartTradeReadout{
+ position:absolute;z-index:3;left:10px;right:10px;bottom:10px;margin:0!important;
+ gap:6px;padding:7px;border:1px solid #292929;border-radius:12px;
+ background:rgba(0,0,0,.78);backdrop-filter:blur(10px)
+}
+body.trade-active #tradePage .deriv-chart-card>p{display:none}
+body.trade-active #tradePage #executionPanel{margin-top:18px}
+@media(max-width:600px){
+ body.trade-active .wrap{padding-left:0;padding-right:0}
+ body.trade-active #tradePage .trade-tabs{margin-bottom:6px}
+ body.trade-active #tradePage .deriv-chart-card{height:80vh;height:80dvh;min-height:420px}
+ body.trade-active #tradePage .deriv-chart-card>.row:nth-of-type(2){left:6px;right:6px;top:6px}
+ body.trade-active #tradePage #nativeChartTradeReadout{left:6px;right:6px;bottom:6px}
+}
 #tradePage .trade-tab:not(.is-active){background:#000000;color:#aaa;border-color:#292929}
 #tradePage .trade-tab:not(.is-active):hover{background:#000000;color:#fff}
 </style>
