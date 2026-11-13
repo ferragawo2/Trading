@@ -26,13 +26,13 @@
   border:0!important;border-radius:20px;box-shadow:none!important;
   isolation:isolate;overflow:visible;transition:transform .18s}
 .market-card:before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
-  border:1px solid rgba(255,255,255,.72);border-radius:20px;
+  border:1px solid rgba(255,255,255,.34);border-radius:20px;
   mask:
     linear-gradient(#000 0 0) top left/26px 26px no-repeat,
     linear-gradient(#000 0 0) top right/26px 26px no-repeat,
     linear-gradient(#000 0 0) bottom left/26px 26px no-repeat,
     linear-gradient(#000 0 0) bottom right/26px 26px no-repeat;
-  filter:drop-shadow(0 0 2px rgba(255,255,255,.22))}
+  filter:blur(.35px) drop-shadow(0 0 3px rgba(255,255,255,.13)) drop-shadow(0 0 7px rgba(255,255,255,.055))}
 .market-card>*{position:relative;z-index:1}
 .market-card:hover,.market-card.selected{background:#000!important;box-shadow:none!important;transform:translateY(-1px)}
 .market-card .name{width:100%;font-size:13px;font-weight:750;letter-spacing:.015em;text-transform:uppercase;min-height:40px;gap:10px}
