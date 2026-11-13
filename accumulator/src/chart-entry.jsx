@@ -5,7 +5,7 @@ import { SmartChart, setSmartChartsPublicPath } from "@deriv-com/smartcharts-cha
 setSmartChartsPublicPath("/chart-dist/");
 
 // DTrader's market-data adapter uses the standard Deriv WebSocket API v3.
-const DERIV_APP_ID = String(window.DERIV_APP_ID || "34WUzndWzIgTQi9kOGmsz").trim();
+const DERIV_APP_ID = String(window.DERIV_APP_ID || "34WX87fDeFNQ59aiYs4N9").trim();
 const WS_URL = `wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(DERIV_APP_ID)}`;
 
 function createDerivTransport() {
@@ -24,10 +24,13 @@ function createDerivTransport() {
       socket = ws;
       const timeout = setTimeout(() => reject(new Error("Deriv chart connection timed out")), 12000);
       ws.onopen = () => { clearTimeout(timeout); opening = null; resolve(ws); };
-      ws.onerror = () => { clearTimeout(timeout); opening = null; reject(new Error("Could not connect to Deriv chart feed")); };
-      ws.onclose = () => {
+      ws.onerror = event => { clearTimeout(timeout); opening = null; console.error("[Deriv SmartChart] WebSocket transport error", event); reject(new Error("Deriv WebSocket transport error; check the browser console for details")); };
+      ws.onclose = event => {
+        clearTimeout(timeout);
         opening = null;
-        for (const [id, item] of pending) { item.reject(new Error("Deriv chart connection closed")); pending.delete(id); }
+        const detail = `Deriv WebSocket closed (code ${event.code}${event.reason ? `: ${event.reason}` : ""}${event.wasClean ? ", clean" : ""})`;
+        console.error("[Deriv SmartChart]", detail);
+        for (const [id, item] of pending) { item.reject(new Error(detail)); pending.delete(id); }
       };
       ws.onmessage = event => {
         let message;
