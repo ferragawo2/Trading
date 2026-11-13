@@ -609,7 +609,7 @@ function requestTradeQuote(){
   if(!selectedSymbol||!marketBySymbol[selectedSymbol]){$("tradeMessage").textContent="Select a supported market first.";return}
   if(!activeTradeAccount.currency){$("tradeMessage").textContent="Deriv did not provide this account's currency.";return}
   currentTradeProposal=null;$("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Requesting an account-specific Deriv quote…";
-  try{tradeSend({proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:activeTradeAccount.currency,growth_rate:rate,underlying_symbol:selectedSymbol},"proposal")}catch(e){$("tradeMessage").textContent=e.message}
+  try{tradeSend({proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:activeTradeAccount.currency,growth_rate:rate,underlying_symbol:selectedSymbol,subscribe:1},"proposal")}catch(e){$("tradeMessage").textContent=e.message}
 }
 function buyTradeProposal(){
   if(!currentTradeProposal||!activeTradeAccount)return;
