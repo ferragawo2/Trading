@@ -362,7 +362,7 @@ function marketSparkPath(values){
 function updateMarketCard(symbol){
   const m=marketBySymbol[symbol],card=document.querySelector('.market-card[data-market="'+symbol+'"]');
   if(!m||!card)return;
-  const tick=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize)),price=card.querySelector("strong"),spark=card.querySelector(".market-sparkline"),path=spark?.querySelector("path"),status=card.querySelector(".market-live"),changeEl=card.querySelector(".market-change");
+  const tick=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize)),price=card.querySelector("strong"),spark=card.querySelector(".market-sparkline"),path=spark?.querySelector(".line"),status=card.querySelector(".market-live"),changeEl=card.querySelector(".market-change");
   if(price)price.textContent=tick?tick.price.toFixed(dp):"Waiting for tick…";
   const candles=marketHistory24h[symbol]||[];
   const history=candles.map(c=>c.close);
