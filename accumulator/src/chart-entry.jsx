@@ -54,8 +54,21 @@ function createDerivTransport() {
     const ws = await connect();
     const req_id = nextId++;
     return new Promise((resolve, reject) => {
-      pending.set(req_id, { resolve, reject });
-      ws.send(JSON.stringify({ ...payload, req_id }));
+      const timeout = setTimeout(() => {
+        pending.delete(req_id);
+        reject(new Error(`Deriv request timed out: ${Object.keys(payload)[0] || "unknown"}`));
+      }, 15000);
+      pending.set(req_id, {
+        resolve: value => { clearTimeout(timeout); resolve(value); },
+        reject: error => { clearTimeout(timeout); reject(error); }
+      });
+      try {
+        ws.send(JSON.stringify({ ...payload, req_id }));
+      } catch (error) {
+        pending.delete(req_id);
+        clearTimeout(timeout);
+        reject(error);
+      }
     });
   };
 
@@ -139,7 +152,19 @@ function ChartApp() {
     if (start) request.start = start; else request.count = count || 1000;
     if (style === "candles" || granularity) { request.style = "candles"; request.granularity = Number(granularity) || 60; }
     else request.style = "ticks";
-    const response = await transport.send(request);
+    const statusNode = document.getElementById("derivChartStatus");
+    if (statusNode) { statusNode.hidden = true; statusNode.textContent = ""; }
+    let response;
+    try {
+      response = await transport.send(request);
+    } catch (error) {
+      console.error("[Deriv SmartChart] Historical data request failed", { symbol: requestedSymbol, request, error });
+      if (statusNode) {
+        statusNode.textContent = error?.message || "Could not retrieve chart data from Deriv.";
+        statusNode.hidden = false;
+      }
+      throw error;
+    }
     const quotes = [];
     if (Number(granularity) === 0 && response.history) {
       const times = response.history.times || [];
@@ -213,7 +238,7 @@ function ChartApp() {
   }), [symbols]);
 
   return <div className="deriv-smartchart-shell">
-    {!ready && <div id="derivChartStatus" className="deriv-chart-status">Connecting to Deriv chart feed…</div>}
+    <div id="derivChartStatus" className="deriv-chart-status" hidden={ready}>Connecting to Deriv chart feed…</div>
     {ready && symbols.length > 0 && <SmartChart
       id="accumulator-deriv-smartchart"
       symbol={symbol}
