@@ -118,6 +118,35 @@ const server = http.createServer(async (req, res) => {
       return send(res, 200, { connected: true, accounts });
     }
 
+    if (req.method === "POST" && url.pathname === "/api/account/otp") {
+      const active = sid && sessions.get(sid);
+      if (!active || active.expires <= Date.now()) return send(res, 401, { error: "Deriv session missing or expired. Reconnect your account." });
+      const input = await bodyJson(req);
+      const accountId = typeof input.account_id === "string" ? input.account_id.trim() : "";
+      if (!accountId || accountId.length > 80 || !/^[A-Za-z0-9_-]+$/.test(accountId)) {
+        return send(res, 400, { error: "A valid Deriv account ID is required." });
+      }
+      // Never mint a trading socket for an account that is not owned by this OAuth session.
+      const accountsResponse = await fetch(`${API_BASE}/trading/v1/options/accounts`, {
+        headers: { Authorization: `Bearer ${active.accessToken}` }
+      });
+      const accountsData = await accountsResponse.json();
+      if (!accountsResponse.ok) return send(res, accountsResponse.status, { error: "Could not verify account ownership with Deriv." });
+      const owned = Array.isArray(accountsData.accounts) && accountsData.accounts.some(a => String(a.account_id || "") === accountId);
+      if (!owned) return send(res, 403, { error: "That account is not available under this Deriv authorization." });
+      const otpResponse = await fetch(`${API_BASE}/trading/v1/options/accounts/${encodeURIComponent(accountId)}/otp`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${active.accessToken}` }
+      });
+      const otpData = await otpResponse.json();
+      const wsUrl = otpData?.data?.url || otpData?.url;
+      if (!otpResponse.ok || typeof wsUrl !== "string" || !wsUrl.startsWith("wss://api.derivws.com/trading/v1/options/ws/")) {
+        console.error("Deriv OTP request failed", otpResponse.status);
+        return send(res, otpResponse.status || 502, { error: "Deriv could not create an authenticated trading connection for this account." });
+      }
+      return send(res, 200, { ws_url: wsUrl, account_id: accountId });
+    }
+
     if (req.method === "POST" && url.pathname === "/api/disconnect") {
       if (sid) sessions.delete(sid);
       return send(res, 200, { connected: false }, { "Set-Cookie": clearCookie("deriv_session") });
