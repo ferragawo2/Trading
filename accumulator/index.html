@@ -16,6 +16,16 @@
 <header class="top"><div class="brand"><div class="logo">A</div><div><h1>ACCUMULATOR MARKET MONITOR</h1><p>Deriv public market data · synthetic indices · live ticks</p></div></div><div class="status"><span class="dot" id="dot"></span><span id="connection">Disconnected</span></div></header>
 <p class="note">Public market-data connection. No Deriv login is needed to view live prices or barriers. Connect your own Deriv account below when you are ready for private demo-contract verification. No trades are placed.</p>
 <section class="account-panel"><div class="account-copy"><strong id="accountTitle">Deriv account · Not connected</strong><span id="accountDetail">Account authorization is active when connected. Private demo-contract verification is not yet implemented.</span><div class="account-message" id="accountMessage" aria-live="polite"></div></div><div class="account-actions"><button id="derivLogin" type="button">Connect Deriv account</button><button id="derivLogout" class="secondary" type="button" hidden>Disconnect</button></div></section>
+<section class="card full" id="executionPanel">
+  <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><span class="pill" id="tradeConnectionState">Account not selected</span></div>
+  <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
+  <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
+  <div class="row" style="margin-top:12px"><div class="field"><label>STAKE</label><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div><div class="field"><label>GROWTH RATE</label><select id="tradeGrowth"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select></div><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
+  <div class="row" style="margin-top:12px;align-items:center"><button id="getTradeQuote" type="button" disabled>Get trade quote</button><button id="confirmTradeBuy" type="button" disabled>Buy contract</button><span class="muted" id="tradeMessage" aria-live="polite" style="font-size:11px">Connect Deriv and select a trading account.</span></div>
+  <div class="metrics" style="margin-top:12px"><div class="metric"><small>QUOTED PRICE / STAKE</small><strong id="quoteAsk">—</strong></div><div class="metric"><small>QUOTED PAYOUT</small><strong id="quotePayout">—</strong></div><div class="metric"><small>DERIV CONTRACT ID</small><strong id="tradeContractId">—</strong></div></div>
+  <div class="metric" style="margin-top:10px"><small>CONTRACT STATUS</small><strong id="tradeContractStatus" style="font-size:14px">No contract purchased</strong><small id="tradeContractDetail">A quote does not place a trade. Buying requires the separate Buy contract action.</small></div>
+  <div class="note" style="margin:12px 0 0">Real-account purchases risk real funds. Check the account type, stake, growth rate and Deriv quote before every purchase. The bot is not enabled by this manual panel.</div>
+</section>
 <div class="grid">
 <section class="card"><div class="row between"><h2>LIVE MARKET VIEW</h2><span class="pill" id="selectedMarketLabel">Select a market</span></div>
 <div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
@@ -37,6 +47,7 @@ const $ = id => document.getElementById(id);
 const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
+let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={};
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
 const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
@@ -157,6 +168,7 @@ function handleTick(t,m){
   }
 }
 function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";}
+  if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";
 function renderMarketCards(){
   const box=$("marketGrid");box.replaceChildren();
   markets.forEach(m=>{
@@ -274,6 +286,7 @@ async function refreshDerivAccount(){
     const data=await response.json();
     title.textContent="Deriv account · Connected";
     const accounts=(data.accounts||[]).map(a=>(a.account_type||"Account")+" · "+(a.currency||"currency unknown")+(a.is_virtual?" · Demo":"")).join("  |  ");
+    derivAccounts=Array.isArray(data.accounts)?data.accounts:[];renderTradeAccounts();
     detail.textContent=accounts||"Authorization active. No account summary was returned.";
     message.textContent="Connected securely. Account tokens remain on the OAuth service.";
     login.hidden=true;logout.hidden=false;
@@ -292,6 +305,64 @@ async function startDerivLogin(){
     window.location.assign(data.authorization_url);
   }catch(e){message.textContent=e.message;button.disabled=false;}
 }
+function renderTradeAccounts(){
+  const select=$("tradeAccount");select.replaceChildren();
+  if(!derivAccounts.length){const o=document.createElement("option");o.textContent="No trading accounts returned";select.append(o);select.disabled=true;return;}
+  derivAccounts.forEach(a=>{const o=document.createElement("option");o.value=a.account_id;o.textContent=(a.is_virtual?"DEMO":"REAL")+" · "+(a.account_type||"Options")+" · "+(a.currency||"")+" · "+a.account_id;select.append(o);});
+  select.disabled=false;
+  const preferred=derivAccounts.find(a=>a.is_virtual)||derivAccounts[0];
+  select.value=preferred.account_id;connectTradeAccount(preferred.account_id);
+}
+function tradeSend(payload,kind){
+  if(!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)throw new Error("Selected Deriv account is not connected.");
+  const id=++tradingReqId;tradingPending[id]=kind||"other";tradingSocket.send(JSON.stringify({...payload,req_id:id}));return id;
+}
+async function connectTradeAccount(accountId){
+  const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
+  if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
+  activeTradeAccount=account;currentTradeProposal=null;activeContractId=null;
+  $("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
+  $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
+  $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
+  $("tradeMarket").value=selectedSymbol||"Select a market above";
+  $("quoteAsk").textContent="—";$("quotePayout").textContent="—";$("tradeContractId").textContent="—";
+  $("tradeContractStatus").textContent="No contract purchased";
+  try{
+    const sid=sessionStorage.getItem("deriv_app_session");if(!sid)throw new Error("Reconnect your Deriv account first.");
+    const response=await fetch(OAUTH_API+"/api/account/otp",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+sid},body:JSON.stringify({account_id:accountId})});
+    const data=await response.json();if(!response.ok||!data.ws_url)throw new Error(data.error||"Could not authorize this Deriv account.");
+    const socket=new WebSocket(data.ws_url);tradingSocket=socket;
+    socket.onopen=()=>{if(tradingSocket!==socket)return;$("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connected";$("tradeMessage").textContent="Authenticated to "+(account.is_virtual?"demo":"real")+" account.";$("getTradeQuote").disabled=false;try{tradeSend({balance:1,subscribe:1},"balance")}catch(e){$("tradeMessage").textContent=e.message}};
+    socket.onmessage=event=>{
+      let m;try{m=JSON.parse(event.data)}catch{return}
+      const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
+      if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=true}return}
+      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString()}
+      if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received. Review it, then choose Buy contract.";$("confirmTradeBuy").disabled=!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
+      if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").disabled=true;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
+      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");if(c.is_sold){try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}}
+    };
+    socket.onerror=()=>{$("tradeConnectionState").textContent="Trading connection error";$("tradeMessage").textContent="Could not maintain authenticated Deriv connection."};
+    socket.onclose=()=>{if(tradingSocket===socket){tradingSocket=null;$("tradeConnectionState").textContent="Account disconnected";$("getTradeQuote").disabled=true;$("confirmTradeBuy").disabled=true}};
+  }catch(e){$("tradeConnectionState").textContent="Not connected";$("tradeMessage").textContent=e.message}
+}
+function requestTradeQuote(){
+  if(!activeTradeAccount||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN){$("tradeMessage").textContent="Connect a Deriv account first.";return}
+  const stake=Number($("tradeStake").value),rate=Number($("tradeGrowth").value);
+  if(!Number.isFinite(stake)||stake<=0){$("tradeMessage").textContent="Enter a valid positive stake.";return}
+  if(!selectedSymbol||!marketBySymbol[selectedSymbol]){$("tradeMessage").textContent="Select a supported market first.";return}
+  if(!activeTradeAccount.currency){$("tradeMessage").textContent="Deriv did not provide this account's currency.";return}
+  currentTradeProposal=null;$("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Requesting an account-specific Deriv quote…";
+  try{tradeSend({proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:activeTradeAccount.currency,growth_rate:rate,underlying_symbol:selectedSymbol},"proposal")}catch(e){$("tradeMessage").textContent=e.message}
+}
+function buyTradeProposal(){
+  if(!currentTradeProposal||!activeTradeAccount)return;
+  const stake=Number($("tradeStake").value),rate=Number($("tradeGrowth").value);
+  const summary="Buy ACCU on "+(activeTradeAccount.is_virtual?"DEMO":"REAL")+" account?\nMarket: "+selectedSymbol+"\nGrowth: "+Math.round(rate*100)+"%\nQuoted price: "+currentTradeProposal.askPrice+" "+(activeTradeAccount.currency||"")+"\nPotential payout: "+(currentTradeProposal.payout??"not supplied")+"\nStake entered: "+stake;
+  if(!window.confirm((activeTradeAccount.is_virtual?"DEMO TRADE":"REAL-MONEY TRADE")+"\n\n"+summary+"\n\n"+(activeTradeAccount.is_virtual?"Place this demo trade?":"This purchase can lose the full stake. Continue?")))return;
+  $("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Sending Buy request to Deriv…";
+  try{tradeSend({buy:currentTradeProposal.id,price:currentTradeProposal.askPrice,subscribe:1},"buy")}catch(e){$("confirmTradeBuy").disabled=false;$("tradeMessage").textContent=e.message}
+}
 async function disconnectDeriv(){
   const appSession=sessionStorage.getItem("deriv_app_session");
   const headers=appSession?{Authorization:"Bearer "+appSession}:{};
@@ -300,6 +371,9 @@ async function disconnectDeriv(){
   refreshDerivAccount();
 }
 $("derivLogin").onclick=startDerivLogin;
+$("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);
+$("getTradeQuote").onclick=requestTradeQuote;
+$("confirmTradeBuy").onclick=buyTradeProposal;
 $("derivLogout").onclick=disconnectDeriv;
 if(new URLSearchParams(location.search).get("connected")==="1"){history.replaceState(null,"",location.pathname);$("accountMessage").textContent="Deriv account authorization completed."; }
 refreshDerivAccount();
