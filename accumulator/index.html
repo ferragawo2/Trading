@@ -393,6 +393,7 @@ function handleTick(t,m){
     $("tickHistory").textContent=priceHistory[key].slice(-12).reverse().map(v=>v.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)))).join("  ·  ");
     $("feedNote").textContent="Live · "+(tickCounts[key]||0)+" ticks";
     drawChart();
+    drawNativeTradeChart();
   }
 }
 function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";}
