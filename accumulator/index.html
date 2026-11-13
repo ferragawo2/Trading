@@ -4,8 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080b12">
 <title>Accumulator Market Monitor · Deriv</title>
-<link rel="stylesheet" href="./chart-dist/smartcharts.css">
-<style>.deriv-chart-card{margin-bottom:14px}.deriv-smartchart-shell{height:430px;min-height:340px;overflow:hidden;background:#050505;border:1px solid #242424;border-radius:12px;margin-top:12px}.deriv-chart-status{padding:24px;color:#aaa;font-size:12px}.deriv-smartchart-shell>div{height:100%}@media(max-width:800px){.deriv-smartchart-shell{height:360px;min-height:320px}}</style>
+<script src="./src/chart-engine.js"></script>
+
 <style>
 :root{color-scheme:dark;--bg:#000000;--panel:#000000;--panel2:#000000;--line:#000000;--line2:#000000;--text:#f7f7f7;--muted:#929292;--green:#d8f5e7;--red:#ff8585;--blue:#dedede;--radius:18px}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:18px;overflow-y:auto!important;min-height:100%;touch-action:pan-y}body{margin:0;min-height:100%;overflow-x:hidden;overflow-y:auto!important;overscroll-behavior-y:auto;touch-action:pan-y;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}.wrap{min-height:100vh;overflow:visible;touch-action:pan-y}
@@ -638,35 +638,19 @@ $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;pa
 $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",()=>{drawChart();drawNativeTradeChart();});renderNativeStats();
 function drawNativeTradeChart(){
- const canvas=$("nativeTradeCanvas");if(!canvas)return;const ctx=canvas.getContext("2d");const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;
- const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
- const w=rect.width,h=rect.height,left=12,right=76,top=16,bottom=28,plotW=w-left-right,plotH=h-top-bottom;
- ctx.clearRect(0,0,w,h);ctx.fillStyle="#080d14";ctx.fillRect(0,0,w,h);
- const raw=nativeChartTicks[selectedSymbol]||[];const mins=Number($("nativeChartInterval")?.value||60),step=mins*60;
- const candles=[];for(const p of raw){const bucket=Math.floor(p.time/step)*step;let c=candles[candles.length-1];if(!c||c.time!==bucket){c={time:bucket,open:p.price,high:p.price,low:p.price,close:p.price};candles.push(c);}else{c.high=Math.max(c.high,p.price);c.low=Math.min(c.low,p.price);c.close=p.price;}}
- const visible=Math.max(8,Math.floor(plotW/(nativeChartScale*9)));const end=Math.max(0,candles.length-nativeChartOffset);const start=Math.max(0,end-visible);const data=candles.slice(start,end);
- $("nativeChartEmpty").style.display=data.length?"none":"grid";
+ const canvas=$("nativeTradeCanvas");if(!canvas||!window.AccumulatorChart)return;
+ if(!window.__accumulatorChart)window.__accumulatorChart=window.AccumulatorChart.create(canvas);
+ const interval=Number($("nativeChartInterval")?.value||60);
+ const raw=nativeChartTicks[selectedSymbol]||[];
+ window.__accumulatorChart.setData(raw,interval,{symbol:selectedSymbol,precision:Math.min(8,marketBySymbol[selectedSymbol]?.pipSize||2),name:marketBySymbol[selectedSymbol]?.name||selectedSymbol});
+ const state=window.__accumulatorChart.state();
+ $("nativeChartEmpty").style.display=state.candleCount?"none":"grid";
  $("nativeChartConnection").textContent=ws&&ws.readyState===WebSocket.OPEN?(latestTicks[selectedSymbol]?"LIVE TICKS":"CONNECTED · WAITING FOR TICKS"):"DISCONNECTED";
- $("nativeChartDetail").textContent=data.length?data.length+" candles · "+(marketBySymbol[selectedSymbol]?.name||selectedSymbol):"Waiting for tick history";
- if(!data.length)return;
- let lo=Math.min(...data.map(c=>c.low)),hi=Math.max(...data.map(c=>c.high));if(lo===hi){lo-=Math.abs(lo*.001)||1;hi+=Math.abs(hi*.001)||1;}const pad=(hi-lo)*.08;lo-=pad;hi+=pad;
- const y=v=>top+(hi-v)/(hi-lo)*plotH;const x=i=>left+(i+.5)*plotW/data.length;
- ctx.font="10px system-ui";ctx.textAlign="right";ctx.textBaseline="middle";
- for(let i=0;i<=5;i++){const val=hi-(hi-lo)*i/5,yy=top+plotH*i/5;ctx.strokeStyle="#202d3d";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(left+plotW,yy);ctx.stroke();ctx.fillStyle="#9aa8ba";ctx.fillText(val.toFixed(Math.min(8,marketBySymbol[selectedSymbol]?.pipSize||2)),w-7,yy);}
- const cw=Math.max(2,Math.min(14,plotW/data.length*.65));
- data.forEach((c,i)=>{const xx=x(i),up=c.close>=c.open,col=up?"#24c78a":"#f05b68";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,y(c.high));ctx.lineTo(xx,y(c.low));ctx.stroke();const yy=Math.min(y(c.open),y(c.close)),bh=Math.max(1,Math.abs(y(c.open)-y(c.close)));ctx.fillRect(xx-cw/2,yy,cw,bh);});
- const last=data[data.length-1],py=y(last.close);ctx.strokeStyle="#e7b84b";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(left,py);ctx.lineTo(left+plotW,py);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#e7b84b";ctx.fillRect(left+plotW+3,py-9,right-9,18);ctx.fillStyle="#111";ctx.textAlign="center";ctx.fillText(last.close.toFixed(Math.min(8,marketBySymbol[selectedSymbol]?.pipSize||2)),left+plotW+(right-9)/2,py);
- ctx.textAlign="center";ctx.fillStyle="#9aa8ba";for(let i=0;i<5;i++){const index=Math.min(data.length-1,Math.floor(i*(data.length-1)/4));if(data[index])ctx.fillText(new Date(data[index].time*1000).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),x(index),h-11);}
- if(nativeChartPointer){const px=nativeChartPointer.x,py2=nativeChartPointer.y;if(px>=left&&px<=left+plotW&&py2>=top&&py2<=top+plotH){ctx.strokeStyle="#8da2bb";ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(px,top);ctx.lineTo(px,top+plotH);ctx.moveTo(left,py2);ctx.lineTo(left+plotW,py2);ctx.stroke();ctx.setLineDash([]);}}
+ $("nativeChartDetail").textContent=state.candleCount?state.visibleCount+" candles · "+(marketBySymbol[selectedSymbol]?.name||selectedSymbol):"Waiting for tick history";
 }
-function resetNativeChart(){nativeChartOffset=0;nativeChartScale=1;drawNativeTradeChart();}
+function resetNativeChart(){window.__accumulatorChart?.reset();drawNativeTradeChart();}
 $("nativeChartInterval")?.addEventListener("change",resetNativeChart);$("nativeChartReset")?.addEventListener("click",resetNativeChart);
-const nativeCanvas=$("nativeTradeCanvas");
-nativeCanvas?.addEventListener("pointerdown",e=>{nativeCanvas.setPointerCapture(e.pointerId);nativeChartPointer={x:e.offsetX,y:e.offsetY};nativeCanvas.dataset.dragX=String(e.clientX);nativeCanvas.dataset.dragOffset=String(nativeChartOffset);});
-nativeCanvas?.addEventListener("pointermove",e=>{nativeChartPointer={x:e.offsetX,y:e.offsetY};if(e.buttons&&nativeCanvas.dataset.dragX){const dx=e.clientX-Number(nativeCanvas.dataset.dragX);const width=nativeCanvas.clientWidth;const step=Math.max(1,Math.floor((nativeChartTicks[selectedSymbol]||[]).length/Math.max(8,width/(nativeChartScale*9))));nativeChartOffset=Math.max(0,Number(nativeCanvas.dataset.dragOffset)-Math.round(dx/9)*step);}drawNativeTradeChart();});
-nativeCanvas?.addEventListener("pointerup",()=>{nativeCanvas.dataset.dragX="";});nativeCanvas?.addEventListener("pointerleave",()=>{nativeChartPointer=null;drawNativeTradeChart();});
-nativeCanvas?.addEventListener("wheel",e=>{e.preventDefault();nativeChartScale=Math.max(.5,Math.min(5,nativeChartScale*(e.deltaY<0?1.15:.87)));drawNativeTradeChart();},{passive:false});
-const nativeChartObserver=new ResizeObserver(drawNativeTradeChart);if($("nativeChartWrap"))nativeChartObserver.observe($("nativeChartWrap"));
+const nativeChartObserver=new ResizeObserver(()=>window.__accumulatorChart?.resize());if($("nativeChartWrap"))nativeChartObserver.observe($("nativeChartWrap"));
 setInterval(drawNativeTradeChart,1000);
 connect();
 
