@@ -141,16 +141,14 @@ body.trade-active #tradePage #nativeChartWrap{
  border:0!important;border-radius:0!important
 }
 body.trade-active #tradePage #nativeChartHost{position:absolute;inset:0}
-body.trade-active #tradePage .deriv-chart-card>.row:nth-of-type(2){
- position:absolute;z-index:3;top:10px;left:10px;right:10px;margin:0!important;
- gap:6px;padding:7px;border:1px solid #292929;border-radius:12px;
- background:rgba(0,0,0,.78);backdrop-filter:blur(10px)
-}
 body.trade-active #tradePage #nativeChartTradeReadout{
- position:absolute;z-index:3;left:10px;right:10px;bottom:10px;margin:0!important;
+ position:absolute;z-index:20;left:10px;right:10px;bottom:10px;margin:0!important;
  gap:6px;padding:7px;border:1px solid #292929;border-radius:12px;
  background:rgba(0,0,0,.78);backdrop-filter:blur(10px)
 }
+body.trade-active #tradePage #nativeChartHost{width:100%;height:100%;min-height:0}
+body.trade-active #tradePage #nativeChartHost>.oac-widget{width:100%;height:100%;min-height:0;border:0;border-radius:0}
+body.trade-active #tradePage #nativeChartReset{padding:7px 10px;font-size:9px}
 body.trade-active #tradePage .deriv-chart-card>p{display:none}
 body.trade-active #tradePage #executionPanel{margin-top:18px}
 @media(max-width:600px){
@@ -231,7 +229,7 @@ body.trade-active #tradePage #executionPanel{margin-top:18px}
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
 <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
-<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><div class="row" style="gap:7px;flex-wrap:wrap;margin:12px 0"><label class="muted" for="nativeChartInterval">CANDLE</label><select id="nativeChartInterval" aria-label="Chart candle interval"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="60" selected>1 hour</option></select><button type="button" class="secondary" id="nativeChartReset">Reset view</button><span class="muted" id="nativeChartDetail" style="font-size:11px">Waiting for market ticks</span></div><div class="row" id="nativeChartTradeReadout" style="gap:7px;flex-wrap:wrap;margin:0 0 10px"><span class="pill" id="nativeChartEntrySpot">ENTRY —</span><span class="pill" id="nativeChartBarrier">BARRIER —</span><span class="pill" id="nativeChartCurrentSpot">LIVE SPOT —</span><span class="pill" id="nativeChartContractState">NO ACTIVE CONTRACT</span></div><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#080d14;border:1px solid #253246;border-radius:12px;overflow:hidden"><div id="nativeChartHost" style="position:absolute;inset:0"></div><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">Drag to pan · scroll or pinch to zoom · move over the chart to inspect price and time. Prices are streamed directly from Deriv.</p></section><section class="card full" id="executionPanel">
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><span id="nativeChartDetail" hidden>Waiting for market ticks</span><div class="row" id="nativeChartTradeReadout" style="gap:7px;flex-wrap:wrap;margin:0 0 10px"><span class="pill" id="nativeChartEntrySpot">ENTRY —</span><span class="pill" id="nativeChartBarrier">BARRIER —</span><span class="pill" id="nativeChartCurrentSpot">LIVE SPOT —</span><span class="pill" id="nativeChartContractState">NO ACTIVE CONTRACT</span><button type="button" class="secondary" id="nativeChartReset">RESET VIEW</button></div><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#080d14;border:1px solid #253246;border-radius:12px;overflow:hidden"><div id="nativeChartHost" style="position:absolute;inset:0"></div><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">OpenAlgo chart tools are powered by the live Deriv price stream. Chart studies and drawings are visual analysis tools, not trade signals.</p></section><section class="card full" id="executionPanel">
   <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><div class="row"><span class="pill" id="tradeConnectionState">Account not selected</span><button class="secondary" id="issueFinderOpen" type="button">Run issue finder</button></div></div>
   <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
   <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
