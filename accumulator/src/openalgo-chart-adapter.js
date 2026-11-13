@@ -68,7 +68,7 @@
         chart.addPrimitive(lines[name]);
       } else {
         lines[name].setPrice(price);
-        lines[name].setOptions(options);
+        const patch = { ...options }; delete patch.id; lines[name].setOptions(patch);
       }
     }
 
