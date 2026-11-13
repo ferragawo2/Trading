@@ -196,7 +196,7 @@
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
 <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
 <div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">DERIV LIVE CHART</h2><span class="pill">SmartCharts · live ticks</span></div><div id="derivSmartChartRoot"><div id="derivChartStatus" class="deriv-chart-status">Loading Deriv chart…</div></div></section><section class="card full" id="executionPanel">
-  <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><span class="pill" id="tradeConnectionState">Account not selected</span></div>
+  <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><div class="row"><span class="pill" id="tradeConnectionState">Account not selected</span><button class="secondary" id="issueFinderOpen" type="button">Run issue finder</button></div></div>
   <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
   <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
   <div class="row" style="margin-top:12px"><div class="field"><label>STAKE</label><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div><div class="field"><label>GROWTH RATE</label><select id="tradeGrowth"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select></div><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
@@ -651,4 +651,67 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
  const syncHeroBalance=()=>{const value=(balanceSource?.textContent||"—").trim();if(value&&value!=="—"&&value!=="Connecting…")lastHeroBalance=value;heroBalance.textContent=balanceHidden?"••••••":lastHeroBalance;document.getElementById("heroBalanceCaption").textContent=value==="—"||value==="Connecting…"?"Connect your Deriv account to see your live balance":"Live balance · selected Deriv account";};
  balanceEye.addEventListener("click",()=>{balanceHidden=!balanceHidden;balanceEye.setAttribute("aria-pressed",String(balanceHidden));balanceEye.setAttribute("aria-label",balanceHidden?"Show balance":"Hide balance");balanceEye.title=balanceHidden?"Show balance":"Hide balance";balanceEye.innerHTML=balanceHidden?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.5-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';syncHeroBalance();});
  new MutationObserver(syncHeroBalance).observe(balanceSource,{childList:true,characterData:true,subtree:true});syncHeroBalance();
-</script><script type="module" src="./chart-dist/app.js"></script></body></html>
+</script><script type="module" src="./chart-dist/app.js"></script><div id="issueFinderModal" hidden role="dialog" aria-modal="true" aria-labelledby="issueFinderTitle" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);padding:18px;display:grid;place-items:center"><section style="width:min(720px,100%);max-height:88vh;overflow:auto;background:#080808;border:1px solid #444;border-radius:18px;padding:18px;box-shadow:0 20px 80px #000"><div class="row between"><h2 id="issueFinderTitle" style="margin:0">LIVE ISSUE FINDER</h2><button class="secondary" id="issueFinderClose" type="button">Close</button></div><p class="muted" style="font-size:11px">Checks the live Deriv public feed, market catalogue, tick stream, chart bundle, chart status and account connection. Errors are timestamped with the failing check and source location when the browser provides it.</p><div class="row" style="margin:12px 0"><button id="issueFinderRun" type="button">Run full check</button><span class="pill" id="issueFinderState">Not checked</span></div><div id="issueFinderSummary" class="note" aria-live="polite">Run the check to identify the first failing component.</div><div id="issueFinderLog" class="log" style="height:min(46vh,390px);white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"><div>Issue finder ready.</div></div></section></div><script>
+(() => {
+ const $=id=>document.getElementById(id), entries=[], max=120;
+ const stamp=()=>new Date().toLocaleTimeString();
+ function record(level,area,message,extra=""){
+   const item={time:new Date().toISOString(),level,area,message:String(message||"").slice(0,900),extra:String(extra||"").slice(0,900)};
+   entries.unshift(item);if(entries.length>max)entries.pop();render();
+ }
+ function render(){
+   const box=$("issueFinderLog");if(!box)return;
+   box.replaceChildren();
+   entries.forEach(e=>{const row=document.createElement("div");row.style.borderBottom="1px solid #292929";row.style.padding="5px 0";row.textContent="["+e.time+"] ["+e.level+"] ["+e.area+"] "+e.message+(e.extra?" · "+e.extra:"");box.append(row);});
+ }
+ window.addEventListener("error",e=>record("ERROR","browser",e.message||"Resource/script error",(e.filename||"")+" : "+(e.lineno||"?")+":"+(e.colno||"?")));
+ window.addEventListener("unhandledrejection",e=>record("ERROR","promise",e.reason?.stack||e.reason?.message||String(e.reason)));
+ window.addEventListener("deriv-chart-connection",e=>record(e.detail?.connected?"OK":"ERROR","chart websocket",e.detail?.connected?"WebSocket opened":"WebSocket closed or errored"));
+ const nativeConsoleError=console.error.bind(console);
+ console.error=(...args)=>{record("ERROR","console",args.map(a=>a?.stack||a?.message||String(a)).join(" "));nativeConsoleError(...args);};
+ function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+ async function probePublicFeed(){
+   return new Promise((resolve,reject)=>{
+     let socket,done=false;
+     const finish=(err,value)=>{if(done)return;done=true;clearTimeout(timer);try{socket?.close()}catch{};err?reject(err):resolve(value);};
+     const timer=setTimeout(()=>finish(new Error("WebSocket opened but active_symbols response timed out after 10 seconds")),10000);
+     try{socket=new WebSocket("wss://api.derivws.com/trading/v1/options/ws/public");}
+     catch(e){finish(new Error("WebSocket constructor failed: "+e.message));return;}
+     socket.onerror=()=>finish(new Error("Browser WebSocket transport error while connecting to Deriv public endpoint"));
+     socket.onclose=e=>{if(!done)finish(new Error("Socket closed before catalogue response (code "+e.code+", "+(e.reason||"no reason")+")"));};
+     socket.onopen=()=>{record("OK","public websocket","Handshake completed");try{socket.send(JSON.stringify({active_symbols:"brief",contract_type:["ACCU"],req_id:87001}));}catch(e){finish(e);}};
+     socket.onmessage=event=>{
+       let data;try{data=JSON.parse(event.data)}catch{finish(new Error("Deriv returned non-JSON data"));return;}
+       if(data.req_id!==87001&&!data.active_symbols&&!data.error)return;
+       if(data.error){finish(new Error("Deriv API "+(data.error.code||"error")+": "+(data.error.message||"unknown response")));return;}
+       if(Array.isArray(data.active_symbols)){finish(null,{count:data.active_symbols.length,synthetic:data.active_symbols.filter(x=>x.market==="synthetic_index").length,msg_type:data.msg_type||"active_symbols"});}
+     };
+   });
+ }
+ async function run(){
+   const state=$("issueFinderState"),summary=$("issueFinderSummary"),runButton=$("issueFinderRun");
+   entries.length=0;render();runButton.disabled=true;state.textContent="Checking…";summary.textContent="Running diagnostics. This does not place trades or access account credentials.";
+   const checks=[];
+   const check=async(name,fn)=>{try{const value=await fn();checks.push({name,ok:true,value});record("OK",name,typeof value==="string"?value:JSON.stringify(value));}catch(error){checks.push({name,ok:false,error:error.message||String(error)});record("FAIL",name,error.message||String(error),error.stack||"");}};
+   await check("App JavaScript",async()=>{if(!document.querySelector('script[src*="chart-dist/app.js"]'))throw Error("Chart app script tag is missing");const loaded=performance.getEntriesByType("resource").some(x=>x.name.includes("/chart-dist/app.js")&&x.responseEnd>0);if(!loaded)throw Error("chart-dist/app.js has not loaded (404, build output missing, or blocked)");return "chart-dist/app.js resource loaded";});
+   await check("Chart mount",async()=>{if(!$("derivSmartChartRoot"))throw Error("#derivSmartChartRoot is missing from the Trade tab");return "Chart mount exists";});
+   await check("Chart runtime",async()=>{const status=$("derivChartStatus");if(status?.textContent?.trim())throw Error(status.textContent.trim());if(!$("derivSmartChartRoot")?.children?.length)throw Error("SmartChart has not mounted yet");return "Chart root has rendered content";});
+   await check("Public Deriv WebSocket + API",probePublicFeed);
+   await check("Market feed freshness",async()=>{const count=Number($("tickCount")?.textContent||0);const tick=$("lastTick")?.textContent||"—";if(!count||tick==="—")throw Error("No live ticks have been received by the main market feed in this page session");return count+" selected-market ticks; last tick "+tick;});
+   await check("Market catalogue",async()=>{const count=Number($("marketCount")?.textContent||0);if(!count)throw Error("No Accumulator-compatible synthetic markets are loaded");return count+" markets loaded";});
+   await check("Account trading socket",async()=>{if(!window.tradingSocket && !document.getElementById("tradeConnectionState")?.textContent?.includes("Connected"))throw Error($("tradeConnectionState")?.textContent||"Trading account socket is not connected; connect Deriv account to test authenticated trading");return $("tradeConnectionState")?.textContent||"Account socket connected";});
+   const failures=checks.filter(x=>!x.ok);
+   state.textContent=failures.length?failures.length+" issue(s) found":"Checks passed";
+   summary.textContent=failures.length?"First failure: "+failures[0].name+" — "+failures[0].error:"All available checks passed. Account-specific checks depend on an authorized Deriv login.";
+   record(failures.length?"FAIL":"OK","RESULT",failures.length+" failing check(s) out of "+checks.length);
+   runButton.disabled=false;
+ }
+ $("issueFinderOpen")?.addEventListener("click",()=>{$("issueFinderModal").hidden=false;});
+ $("issueFinderClose")?.addEventListener("click",()=>{$("issueFinderModal").hidden=true;});
+ $("issueFinderModal")?.addEventListener("click",e=>{if(e.target===$("issueFinderModal"))$("issueFinderModal").hidden=true;});
+ $("issueFinderRun")?.addEventListener("click",run);
+ document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("issueFinderModal")&&!$("issueFinderModal").hidden)$("issueFinderModal").hidden=true;});
+ record("INFO","issue finder","Diagnostic capture enabled on this page");
+})();
+</script>
+</body></html>
