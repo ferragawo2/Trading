@@ -4,6 +4,8 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080b12">
 <title>Accumulator Market Monitor · Deriv</title>
+<link rel="stylesheet" href="./chart-dist/smartcharts.css">
+<style>.deriv-chart-card{margin-bottom:14px}.deriv-smartchart-shell{height:430px;min-height:340px;overflow:hidden;background:#050505;border:1px solid #242424;border-radius:12px;margin-top:12px}.deriv-chart-status{padding:24px;color:#aaa;font-size:12px}.deriv-smartchart-shell>div{height:100%}@media(max-width:800px){.deriv-smartchart-shell{height:360px;min-height:320px}}</style>
 <style>
 :root{color-scheme:dark;--bg:#000000;--panel:#000000;--panel2:#000000;--line:#000000;--line2:#000000;--text:#f7f7f7;--muted:#929292;--green:#d8f5e7;--red:#ff8585;--blue:#dedede;--radius:18px}
 *{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:18px}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
@@ -193,7 +195,7 @@
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
 <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
-<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full" id="executionPanel">
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">DERIV LIVE CHART</h2><span class="pill">SmartCharts · live ticks</span></div><div id="derivSmartChartRoot"><div id="derivChartStatus" class="deriv-chart-status">Loading Deriv chart…</div></div></section><section class="card full" id="executionPanel">
   <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><span class="pill" id="tradeConnectionState">Account not selected</span></div>
   <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
   <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
@@ -433,7 +435,7 @@ function renderMarketCards(){
 }
 function selectMarket(symbol){
   if(!marketBySymbol[symbol])return;
-  selectedSymbol=symbol;$("symbol").value=symbol;document.querySelectorAll(".market-card").forEach(card=>card.classList.toggle("selected",card.dataset.market===symbol));
+  selectedSymbol=symbol;window.__derivChartSetSymbol?.(symbol);$("symbol").value=symbol;document.querySelectorAll(".market-card").forEach(card=>card.classList.toggle("selected",card.dataset.market===symbol));
   const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
   $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
   $("lastTick").textContent=t?new Date(t.epoch*1000).toLocaleTimeString():"—";
@@ -649,4 +651,4 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
  const syncHeroBalance=()=>{const value=(balanceSource?.textContent||"—").trim();if(value&&value!=="—"&&value!=="Connecting…")lastHeroBalance=value;heroBalance.textContent=balanceHidden?"••••••":lastHeroBalance;document.getElementById("heroBalanceCaption").textContent=value==="—"||value==="Connecting…"?"Connect your Deriv account to see your live balance":"Live balance · selected Deriv account";};
  balanceEye.addEventListener("click",()=>{balanceHidden=!balanceHidden;balanceEye.setAttribute("aria-pressed",String(balanceHidden));balanceEye.setAttribute("aria-label",balanceHidden?"Show balance":"Hide balance");balanceEye.title=balanceHidden?"Show balance":"Hide balance";balanceEye.innerHTML=balanceHidden?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.5-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';syncHeroBalance();});
  new MutationObserver(syncHeroBalance).observe(balanceSource,{childList:true,characterData:true,subtree:true});syncHeroBalance();
-</script></body></html>
+</script><script type="module" src="./chart-dist/app.js"></script></body></html>
