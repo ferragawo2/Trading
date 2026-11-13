@@ -22,19 +22,16 @@
 .market-card .market-live{font-size:9px;color:#999;margin-top:4px}
 @media(min-width:760px){.market-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.market-card{min-height:205px;padding:18px}}
 .market-showcase{width:100%;margin:0;padding:0;background:#000}
-.market-card{position:relative;background:
-  radial-gradient(ellipse 42% 38% at 0% 0%,rgba(255,255,255,.15),transparent 100%),
-  radial-gradient(ellipse 42% 38% at 100% 0%,rgba(255,255,255,.13),transparent 100%),
-  radial-gradient(ellipse 42% 38% at 0% 100%,rgba(255,255,255,.13),transparent 100%),
-  radial-gradient(ellipse 42% 38% at 100% 100%,rgba(255,255,255,.15),transparent 100%),
-  #000!important;
-  border:1px solid transparent!important;border-radius:18px;box-shadow:none;isolation:isolate}
-.market-card:hover,.market-card.selected{background:
-  radial-gradient(ellipse 45% 40% at 0% 0%,rgba(255,255,255,.2),transparent 100%),
-  radial-gradient(ellipse 45% 40% at 100% 0%,rgba(255,255,255,.18),transparent 100%),
-  radial-gradient(ellipse 45% 40% at 0% 100%,rgba(255,255,255,.18),transparent 100%),
-  radial-gradient(ellipse 45% 40% at 100% 100%,rgba(255,255,255,.2),transparent 100%),
-  #000!important;border-color:transparent!important}
+.market-card{position:relative;background:#000!important;
+  border:1px solid rgba(255,255,255,.24)!important;
+  border-radius:20px;
+  box-shadow:0 0 0 1px rgba(255,255,255,.055),0 7px 20px -8px rgba(255,255,255,.22)!important;
+  isolation:isolate;transition:border-color .18s,box-shadow .18s,transform .18s}
+.market-card:hover,.market-card.selected{
+  background:#000!important;
+  border-color:rgba(255,255,255,.42)!important;
+  box-shadow:0 0 0 1px rgba(255,255,255,.09),0 8px 24px -7px rgba(255,255,255,.3)!important
+}
 .market-card .name{width:100%;font-size:13px;font-weight:750;letter-spacing:.015em;text-transform:uppercase;min-height:40px;gap:10px}
 .market-card .name .index-kind-icon{width:36px;height:36px;flex:0 0 36px;border-radius:50%;overflow:hidden}
 .market-card strong{color:#fff!important;font-size:21px;font-weight:750}
