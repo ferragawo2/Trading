@@ -5,8 +5,8 @@ import { SmartChart, setSmartChartsPublicPath } from "@deriv-com/smartcharts-cha
 setSmartChartsPublicPath("/chart-dist/");
 
 // DTrader's market-data adapter uses the standard Deriv WebSocket API v3.
-const DERIV_APP_ID = String(window.DERIV_APP_ID || "34WX87fDeFNQ59aiYs4N9").trim();
-const WS_URL = `wss://ws.derivws.com/websockets/v3?app_id=${encodeURIComponent(DERIV_APP_ID)}`;
+// Deriv current public market-data WebSocket; no App ID or login is required.
+const WS_URL = "wss://api.derivws.com/trading/v1/options/ws/public";
 
 function createDerivTransport() {
   let socket;
