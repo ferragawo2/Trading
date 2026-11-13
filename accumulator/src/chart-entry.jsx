@@ -140,9 +140,37 @@ function ChartApp() {
     if (style === "candles" || granularity) { request.style = "candles"; request.granularity = Number(granularity) || 60; }
     else request.style = "ticks";
     const response = await transport.send(request);
-    if (response.history) return { history: { times: response.history.times || [], prices: response.history.prices || [] } };
-    if (response.candles) return { candles: response.candles };
-    return { history: { times: [], prices: [] }, candles: [] };
+    const quotes = [];
+    if (Number(granularity) === 0 && response.history) {
+      const times = response.history.times || [];
+      const prices = response.history.prices || [];
+      for (let i = 0; i < Math.min(times.length, prices.length); i++) {
+        quotes.push({
+          Date: String(times[i]),
+          Close: Number(prices[i]),
+          DT: new Date(Number(times[i]) * 1000)
+        });
+      }
+    } else if (response.candles) {
+      for (const candle of response.candles) {
+        quotes.push({
+          Date: String(candle.epoch),
+          Open: Number(candle.open),
+          High: Number(candle.high),
+          Low: Number(candle.low),
+          Close: Number(candle.close),
+          DT: new Date(Number(candle.epoch) * 1000)
+        });
+      }
+    }
+    return {
+      quotes,
+      meta: {
+        symbol: requestedSymbol,
+        granularity: Number(granularity) || 0,
+        delay_amount: Number(response.pip_size) || 0
+      }
+    };
   }, []);
 
   const subscribeQuotes = useCallback(({ symbol: requestedSymbol, granularity = 0 }, callback) => {
@@ -152,7 +180,7 @@ function ChartApp() {
       if (cancelled) return;
       if (message.tick) {
         const tick = message.tick;
-        callback({ Date: new Date(tick.epoch * 1000).toISOString(), Close: Number(tick.quote), DT: new Date(tick.epoch * 1000), tick });
+        callback({ Date: String(tick.epoch), Close: Number(tick.quote), DT: new Date(tick.epoch * 1000), tick });
       } else if (message.candles?.length) callback({ candles: message.candles });
     }).then(fn => { unsubscribe = fn; if (cancelled) fn(); }).catch(error => {
       const node = document.getElementById("derivChartStatus");
