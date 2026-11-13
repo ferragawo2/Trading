@@ -28,10 +28,10 @@
 .market-card:before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;
   border:1px solid rgba(255,255,255,.72);border-radius:20px;
   mask:
-    radial-gradient(circle at 0 0,#000 0 22px,transparent 22.5px) top left/50% 50% no-repeat,
-    radial-gradient(circle at 100% 0,#000 0 22px,transparent 22.5px) top right/50% 50% no-repeat,
-    radial-gradient(circle at 0 100%,#000 0 22px,transparent 22.5px) bottom left/50% 50% no-repeat,
-    radial-gradient(circle at 100% 100%,#000 0 22px,transparent 22.5px) bottom right/50% 50% no-repeat;
+    linear-gradient(#000 0 0) top left/26px 26px no-repeat,
+    linear-gradient(#000 0 0) top right/26px 26px no-repeat,
+    linear-gradient(#000 0 0) bottom left/26px 26px no-repeat,
+    linear-gradient(#000 0 0) bottom right/26px 26px no-repeat;
   filter:drop-shadow(0 0 2px rgba(255,255,255,.22))}
 .market-card>*{position:relative;z-index:1}
 .market-card:hover,.market-card.selected{background:#000!important;box-shadow:none!important;transform:translateY(-1px)}
