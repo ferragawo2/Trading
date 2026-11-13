@@ -73,7 +73,7 @@
       intervals: ALL_INTERVALS,
       timeframePreferences,
       ...(workspaces ? { workspaces } : {}),
-      chartType: "line",
+      chartType: "area",
       theme: {
         ...base.darkTheme,
         background: "#000000",
