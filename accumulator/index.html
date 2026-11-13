@@ -17,8 +17,10 @@
 .market-card .symbol-meta{display:none}
 .market-card strong{display:block;font-size:21px;font-weight:750;font-variant-numeric:tabular-nums;margin:2px 0 9px;letter-spacing:-.02em}
 .market-card .market-sparkline{width:100%;height:34px;margin-top:auto;overflow:visible}
-.market-card .market-sparkline path{fill:none;stroke:#12b995;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
-.market-card .market-sparkline.down path{stroke:#e04462}
+.market-card .market-sparkline .area{stroke:none;fill:rgba(57,201,138,.18)}
+.market-card .market-sparkline .line{fill:none;stroke:#39c98a;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
+.market-card .market-sparkline.down .area{fill:rgba(239,100,119,.2)}
+.market-card .market-sparkline.down .line{stroke:#ef6477}
 .market-card .market-live{font-size:9px;color:#999;margin-top:4px}
 @media(min-width:760px){.market-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.market-card{min-height:205px;padding:18px}}
 .market-showcase{width:100%;margin:0;padding:0;background:#000}
@@ -374,8 +376,15 @@ function updateMarketCard(symbol){
     changeEl.classList.toggle("down",Number.isFinite(pct)&&pct<0);
   }
   const points=marketSparkPath(history);
-  if(path)path.setAttribute("d",points?"M"+points.replace(/ /g," L"):"");
-  if(spark)spark.classList.toggle("down",history.length>1&&history[history.length-1]<history[0]);
+  const lineD=points?"M"+points.replace(/ /g," L"):"";
+  if(path)path.setAttribute("d",lineD);
+  const area= spark?.querySelector(".area");
+  if(area){
+    const coords=points?points.split(" ").map(p=>p.split(",").map(Number)):[];
+    const areaD=coords.length>1?"M"+coords[0][0]+",34 L"+points.replace(/ /g," L")+" L"+coords[coords.length-1][0]+",34 Z":"";
+    area.setAttribute("d",areaD);
+  }
+  if(spark)spark.classList.toggle("down",Number.isFinite(pct)?pct<0:(history.length>1&&history[history.length-1]<history[0]));
   if(status)status.textContent=history.length>1?"24H · HOURLY CHART": "LOADING 24H HISTORY";
 }
 function renderMarketCards(){
@@ -386,7 +395,7 @@ function renderMarketCards(){
     const sym=document.createElement("div");sym.className="meta symbol-meta";sym.textContent=m.symbol+" · ACCU";
     const price=document.createElement("strong");price.textContent="Waiting for tick…";
     const change=document.createElement("div");change.className="market-change";change.textContent="24H CHANGE —";
-    const spark=document.createElementNS("http://www.w3.org/2000/svg","svg");spark.setAttribute("viewBox","0 0 100 34");spark.setAttribute("preserveAspectRatio","none");spark.setAttribute("class","market-sparkline");const path=document.createElementNS("http://www.w3.org/2000/svg","path");spark.append(path);
+    const spark=document.createElementNS("http://www.w3.org/2000/svg","svg");spark.setAttribute("viewBox","0 0 100 34");spark.setAttribute("preserveAspectRatio","none");spark.setAttribute("class","market-sparkline");const area=document.createElementNS("http://www.w3.org/2000/svg","path");area.setAttribute("class","area");const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("class","line");spark.append(area,path);
     const status=document.createElement("div");status.className="market-live";status.textContent="WAITING FOR TICKS";
     card.append(name,sym,price,change,spark,status);box.append(card);updateMarketCard(m.symbol);
   });
