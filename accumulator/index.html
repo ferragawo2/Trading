@@ -123,7 +123,7 @@
 #tradePage .trade-tabs{display:flex;width:max-content;max-width:100%;margin-left:auto;margin-right:auto;padding:4px;gap:5px;background:#000000!important;border-color:#000000!important;box-shadow:none!important;}
 #tradePage .trade-tab{flex:0 0 auto;min-width:104px;padding-left:18px;padding-right:18px;}
 
-#tradePage .trade-tabs{margin-top:0;margin-bottom:14px}
+#tradePage .trade-tabs{position:sticky;top:0;z-index:40;margin-top:0;margin-bottom:14px;padding-top:8px;padding-bottom:8px;background:#000!important;}\nbody.trade-active #home{display:none!important;}\nbody.trade-active #tradePage{padding-top:0;}
 #tradePage .trade-tab:not(.is-active){background:#000000;color:#aaa;border-color:#292929}
 #tradePage .trade-tab:not(.is-active):hover{background:#000000;color:#fff}
 </style>
@@ -656,7 +656,7 @@ connect();
 
 function setTradeTab(mode){const manual=mode==="manual";$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
 $("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
-function showAppPage(page){const trade=page==="trade";$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
+function showAppPage(page){const trade=page==="trade";document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("click",event=>{event.preventDefault();const page=link.dataset.page;showAppPage(page);history.replaceState(null,"",page==="trade"?"#tradePage":page==="markets"?"#marketView":"#homePage");const menu=link.closest("details");if(menu)menu.open=false;}));
 })();
 
