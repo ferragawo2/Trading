@@ -104,6 +104,27 @@ function createDerivTransport() {
 
 const transport = createDerivTransport();
 
+function toTradingTimesMap(data) {
+  const result = {};
+  const markets = data?.markets || [];
+  for (const market of markets) {
+    for (const submarket of market.submarkets || []) {
+      for (const item of submarket.symbols || []) {
+        const symbol = item.underlying_symbol || item.symbol;
+        if (!symbol) continue;
+        const open = item.times?.open || [];
+        const close = item.times?.close || [];
+        result[symbol] = {
+          isOpen: open.length > 0 && close.length > 0 && open[0] !== "--" && close[0] !== "--",
+          openTime: open[0] || "--",
+          closeTime: close[0] || "--"
+        };
+      }
+    }
+  }
+  return result;
+}
+
 function toActiveSymbol(item) {
   return {
     allow_forward_starting: 0,
@@ -122,7 +143,7 @@ function toActiveSymbol(item) {
 
 function ChartApp() {
   const [symbols, setSymbols] = useState([]);
-  const [tradingTimes, setTradingTimes] = useState({ trading_times: { markets: [] } });
+  const [tradingTimes, setTradingTimes] = useState({});
   const [symbol, setSymbol] = useState(new URLSearchParams(location.search).get("symbol") || "R_100");
   const [ready, setReady] = useState(false);
   const liveSymbol = useRef(symbol);
@@ -133,12 +154,12 @@ function ChartApp() {
       if (next) { liveSymbol.current = next; setSymbol(next); }
     };
     let cancelled = false;
-    Promise.all([transport.send({ active_symbols: "brief", contract_type: ["ACCU"] }), transport.send({ trading_times: "today" }).catch(() => null)])
+    Promise.all([transport.send({ active_symbols: "brief" }), transport.send({ trading_times: "today" }).catch(() => null)])
       .then(([response, timesResponse]) => {
         if (cancelled) return;
         const list = (response.active_symbols || []).map(toActiveSymbol);
         setSymbols(list);
-        if (timesResponse?.trading_times) setTradingTimes({ trading_times: timesResponse.trading_times });
+        if (timesResponse?.trading_times) setTradingTimes(toTradingTimesMap(timesResponse.trading_times));
         if (list.some(item => item.symbol === liveSymbol.current)) setSymbol(liveSymbol.current);
         else if (list.length) setSymbol(list[0].symbol);
         setReady(true);
@@ -235,7 +256,7 @@ function ChartApp() {
   const chartData = useMemo(() => ({
     activeSymbols: symbols,
     tradingTimes
-  }), [symbols]);
+  }), [symbols, tradingTimes]);
 
   return <div className="deriv-smartchart-shell">
     <div id="derivChartStatus" className="deriv-chart-status" hidden={ready}>Connecting to Deriv chart feed…</div>
