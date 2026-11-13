@@ -76,7 +76,7 @@
       chartType: "line",
       theme: {
         ...base.darkTheme,
-        background: "#080d14",
+        background: "#000000",
         text: "#aab7c8",
         gridColor: "#1d2a3b",
         upColor: "#20bd88",
@@ -85,7 +85,7 @@
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos",
       mobile: "auto",
       rail: true,
-      topbar: true,
+      topbar: false,
       indicators: true,
       statusline: true,
       bottombar: true,
