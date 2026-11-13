@@ -11,33 +11,36 @@
 
   function intervalSeconds(value) {
     const code = String(value || "1h").trim().toLowerCase();
-    const match = code.match(/^(\\d+)(s|m|h|d|w)$/);
+    const match = code.match(/^(\d+)(s|m|h|d|w)$/);
     if (!match) return 3600;
-    const amount = Math.max(1, Number(match[1]));
-    return amount * ({ s: 1, m: 60, h: 3600, d: 86400, w: 604800 }[match[2]]);
+    return Math.max(1, Number(match[1])) * ({ s: 1, m: 60, h: 3600, d: 86400, w: 604800 }[match[2]]);
   }
 
-  function toCandles(ticks, seconds) {
+  function toCandles(ticks, interval) {
     const candles = [];
+    const tickMode = String(interval).toUpperCase() === "T1";
+    let previousTime = -Infinity;
     for (const tick of ticks || []) {
-      const time = Number(tick.time);
-      const price = Number(tick.price);
-      if (!Number.isFinite(time) || !Number.isFinite(price)) continue;
-      const bucket = Math.floor(time / seconds) * seconds;
-      const last = candles[candles.length - 1];
-      if (!last || last.time !== bucket) {
-        candles.push({ time: bucket, open: price, high: price, low: price, close: price });
-      } else {
-        last.high = Math.max(last.high, price);
-        last.low = Math.min(last.low, price);
-        last.close = price;
+      const epoch = Number(tick.time), price = Number(tick.price);
+      if (!Number.isFinite(epoch) || !Number.isFinite(price)) continue;
+      if (tickMode) {
+        const time = Math.max(epoch, previousTime + 0.000001);
+        previousTime = time;
+        candles.push({ time, open: price, high: price, low: price, close: price, volume: 1 });
+        continue;
       }
+      const seconds = intervalSeconds(interval);
+      const bucket = Math.floor(epoch / seconds) * seconds;
+      const last = candles[candles.length - 1];
+      if (!last || last.time !== bucket) candles.push({ time: bucket, open: price, high: price, low: price, close: price });
+      else { last.high = Math.max(last.high, price); last.low = Math.min(last.low, price); last.close = price; }
     }
     return candles;
   }
 
   try {
     const base = await import(CDN + "openalgo-charts.mjs");
+    if (typeof base.registerInterval === "function") base.registerInterval({ code: "T1", bucketing: { mode: "ticks", count: 1 } });
     const indicators = await import(CDN + "openalgo-charts.indicators.mjs");
     const drawings = await import(CDN + "openalgo-charts.draw.mjs");
     // Optional tiers register their chart types, profile tools and GPU renderer.
@@ -59,8 +62,9 @@
     const widget = widgetModule.createWidget(root, {
       symbol: "R_10",
       exchange: "DERIV",
-      interval: "1h",
-      intervals: ["1m", "5m", "15m", "30m", "1h", "4h", "1d"],
+      interval: "T1",
+      intervals: ["T1", "1m", "5m", "15m", "30m", "1h", "4h", "1d"],
+      chartType: "line",
       theme: {
         ...base.darkTheme,
         background: "#080d14",
@@ -76,7 +80,7 @@
       indicators: true,
       statusline: true,
       bottombar: true,
-      persist: "deriv-accumulator-trade",
+      persist: "deriv-accumulator-trade-tick-line",
       drawingScope: "instrument",
       navigation: { mousePan: "both", defaultVisibleBars: 120 },
       renderer: "auto"
@@ -87,6 +91,8 @@
     let lastKey = "";
     let lastSignature = "";
     let lastCount = 0;
+    let lastRawCount = 0;
+    let tickRefreshCount = 0;
     let ready = false;
     let pending = null;
     let activeSymbol = "R_10";
@@ -120,18 +126,20 @@
         }
       }
       const interval = widget.interval();
-      const seconds = intervalSeconds(interval);
-      const candles = toCandles(ticks, seconds);
+      const candles = toCandles(ticks, interval);
       const key = String(meta.symbol || activeSymbol) + "|" + interval;
       const tail = candles[candles.length - 1];
       const signature = key + "|" + candles.length + "|" +
         (tail ? [tail.time, tail.open, tail.high, tail.low, tail.close].join(":") : "");
       if (signature !== lastSignature) {
-        if (key !== lastKey || candles.length !== lastCount || !lastCount) {
-          widget.series.setData(candles);
-        } else if (tail) {
-          widget.series.update(tail);
-        }
+        if (String(interval).toUpperCase() === "T1") {
+          const reset = key !== lastKey || !lastCount || ticks.length < lastRawCount || ticks.length > lastRawCount + 1 || (ticks.length === lastRawCount && tickRefreshCount >= 100);
+          if (reset) { widget.series.setData(candles); tickRefreshCount = 0; }
+          else if (tail) { widget.series.update(tail); tickRefreshCount++; }
+          lastRawCount = ticks.length;
+        } else if (key !== lastKey || candles.length !== lastCount || !lastCount) {
+          widget.series.setData(candles); lastRawCount = ticks.length;
+        } else if (tail) { widget.series.update(tail); lastRawCount = ticks.length; }
         lastSignature = signature;
         lastCount = candles.length;
       }
@@ -163,6 +171,8 @@
           lastKey = "";
           lastSignature = "";
           lastCount = 0;
+          lastRawCount = 0;
+          tickRefreshCount = 0;
         }
         if (!ready) {
           pending = { ticks, meta };
@@ -207,6 +217,8 @@
       destroy() {
         widget.destroy();
         lastCount = 0;
+        lastRawCount = 0;
+        tickRefreshCount = 0;
         lastSignature = "";
       }
     };
