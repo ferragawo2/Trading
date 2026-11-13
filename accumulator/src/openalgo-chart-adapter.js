@@ -6,7 +6,7 @@
   "use strict";
   const VERSION = "2.7.2";
   const CDN = "https://cdn.jsdelivr.net/npm/openalgo-charts@" + VERSION + "/dist/openalgo-charts.mjs";
-  const root = document.getElementById("nativeChartWrap");
+  const root = document.getElementById("nativeChartHost");
   if (!root) return;
 
   const intervalSeconds = value => Math.max(60, Number(value) * 60 || 3600);
