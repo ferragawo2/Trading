@@ -76,6 +76,15 @@ function createDerivTransport() {
         callbacks.delete(key);
       };
     },
+    unsubscribe: request => {
+      const key = request.symbol + "|" + (request.granularity || 0);
+      const sub = subscriptions.get(key);
+      if (sub?.subId && socket?.readyState === WebSocket.OPEN) {
+        socket.send(JSON.stringify({ forget: sub.subId, req_id: nextId++ }));
+      }
+      subscriptions.delete(key);
+      callbacks.delete(key);
+    },
     close: () => { try { socket?.close(); } catch {} }
   };
 }
@@ -153,9 +162,7 @@ function ChartApp() {
   }, []);
 
   const unsubscribeQuotes = useCallback(request => {
-    const key = request.symbol + "|" + (request.granularity || 0);
-    const sub = transport;
-    void key; void sub;
+    transport.unsubscribe(request);
   }, []);
 
   const chartData = useMemo(() => ({
