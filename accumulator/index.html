@@ -4,7 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080b12">
 <title>Accumulator Market Monitor · Deriv</title>
-<script src="./src/chart-engine.js"></script>
+<script src="./src/openalgo-chart-adapter.js"></script>
 
 <style>
 :root{color-scheme:dark;--bg:#000000;--panel:#000000;--panel2:#000000;--line:#000000;--line2:#000000;--text:#f7f7f7;--muted:#929292;--green:#d8f5e7;--red:#ff8585;--blue:#dedede;--radius:18px}
@@ -195,7 +195,7 @@
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
 <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
-<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><div class="row" style="gap:7px;flex-wrap:wrap;margin:12px 0"><label class="muted" for="nativeChartInterval">CANDLE</label><select id="nativeChartInterval" aria-label="Chart candle interval"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="60" selected>1 hour</option></select><button type="button" class="secondary" id="nativeChartReset">Reset view</button><span class="muted" id="nativeChartDetail" style="font-size:11px">Waiting for market ticks</span></div><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#080d14;border:1px solid #253246;border-radius:12px;overflow:hidden"><canvas id="nativeTradeCanvas" role="img" aria-label="Live Deriv candlestick chart" style="display:block;width:100%;height:100%;touch-action:pan-y"></canvas><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">Drag to pan · scroll or pinch to zoom · move over the chart to inspect price and time. Prices are streamed directly from Deriv.</p></section><section class="card full" id="executionPanel">
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><div class="row" style="gap:7px;flex-wrap:wrap;margin:12px 0"><label class="muted" for="nativeChartInterval">CANDLE</label><select id="nativeChartInterval" aria-label="Chart candle interval"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="60" selected>1 hour</option></select><button type="button" class="secondary" id="nativeChartReset">Reset view</button><span class="muted" id="nativeChartDetail" style="font-size:11px">Waiting for market ticks</span></div><div class="row" id="nativeChartTradeReadout" style="gap:7px;flex-wrap:wrap;margin:0 0 10px"><span class="pill" id="nativeChartEntrySpot">ENTRY —</span><span class="pill" id="nativeChartBarrier">BARRIER —</span><span class="pill" id="nativeChartCurrentSpot">LIVE SPOT —</span><span class="pill" id="nativeChartContractState">NO ACTIVE CONTRACT</span></div><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#080d14;border:1px solid #253246;border-radius:12px;overflow:hidden"><canvas id="nativeTradeCanvas" role="img" aria-label="Live Deriv candlestick chart" style="display:block;width:100%;height:100%;touch-action:pan-y"></canvas><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">Drag to pan · scroll or pinch to zoom · move over the chart to inspect price and time. Prices are streamed directly from Deriv.</p></section><section class="card full" id="executionPanel">
   <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><div class="row"><span class="pill" id="tradeConnectionState">Account not selected</span><button class="secondary" id="issueFinderOpen" type="button">Run issue finder</button></div></div>
   <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
   <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
@@ -221,7 +221,7 @@ const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
-const nativeChartTicks={};
+const nativeChartTicks={};let activeTradeOverlay=null;
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
 const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
 ["deriv_accumulator_survival_v2","deriv_accumulator_survival_v3","deriv_accumulator_survival_v4","deriv_accumulator_survival_v5"].forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
@@ -352,6 +352,7 @@ function handleTick(t,m){
   $("liveCount").textContent=String(Object.keys(latestTicks).length);
   updateMarketCard(key);
   if(key===selectedSymbol){
+    if(activeTradeOverlay&&activeTradeOverlay.symbol===key)activeTradeOverlay.currentSpot=price;
     $("price").textContent=price.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)));
     $("lastTick").textContent=Number.isFinite(epoch)?new Date(epoch*1000).toLocaleTimeString():"—";
     $("tickCount").textContent=String(tickCounts[key]);
@@ -575,7 +576,7 @@ function tradeSend(payload,kind){
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
   if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
-  activeTradeAccount=account;currentTradeProposal=null;activeContractId=null;
+  activeTradeAccount=account;currentTradeProposal=null;activeContractId=null;activeTradeOverlay=null;
   $("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
   $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
   $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
@@ -594,8 +595,8 @@ async function connectTradeAccount(accountId){
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=true}return}
       if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString()}
       if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received. Review it, then choose Buy contract.";$("confirmTradeBuy").disabled=!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
-      if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").disabled=true;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
-      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");if(c.is_sold){try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}}
+      if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").disabled=true;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
+      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=Number(c.entry_spot),barrier=Number(c.barrier),spot=Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;drawNativeTradeChart();}if(c.is_sold){try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}}
     };
     socket.onerror=()=>{$("tradeConnectionState").textContent="Trading connection error";$("tradeMessage").textContent="Could not maintain authenticated Deriv connection."};
     socket.onclose=()=>{if(tradingSocket===socket){tradingSocket=null;$("tradeConnectionState").textContent="Account disconnected";$("getTradeQuote").disabled=true;$("confirmTradeBuy").disabled=true}};
@@ -638,19 +639,25 @@ $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;pa
 $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",()=>{drawChart();drawNativeTradeChart();});renderNativeStats();
 function drawNativeTradeChart(){
- const canvas=$("nativeTradeCanvas");if(!canvas||!window.AccumulatorChart)return;
- if(!window.__accumulatorChart)window.__accumulatorChart=window.AccumulatorChart.create(canvas);
+ const chart=window.__openAlgoAccumulatorChart;if(!chart)return;
  const interval=Number($("nativeChartInterval")?.value||60);
  const raw=nativeChartTicks[selectedSymbol]||[];
- window.__accumulatorChart.setData(raw,interval,{symbol:selectedSymbol,precision:Math.min(8,marketBySymbol[selectedSymbol]?.pipSize||2),name:marketBySymbol[selectedSymbol]?.name||selectedSymbol});
- const state=window.__accumulatorChart.state();
+ const meta={symbol:selectedSymbol,precision:Math.max(0,Math.min(8,marketBySymbol[selectedSymbol]?.pipSize??2)),name:marketBySymbol[selectedSymbol]?.name||selectedSymbol};
+ chart.setData(raw,interval,meta);
+ const overlay=activeTradeOverlay&&activeTradeOverlay.symbol===selectedSymbol?activeTradeOverlay:null;
+ chart.setOverlay(overlay,meta);
+ const state=chart.state();
  $("nativeChartEmpty").style.display=state.candleCount?"none":"grid";
- $("nativeChartConnection").textContent=ws&&ws.readyState===WebSocket.OPEN?(latestTicks[selectedSymbol]?"LIVE TICKS":"CONNECTED · WAITING FOR TICKS"):"DISCONNECTED";
- $("nativeChartDetail").textContent=state.candleCount?state.visibleCount+" candles · "+(marketBySymbol[selectedSymbol]?.name||selectedSymbol):"Waiting for tick history";
+ $("nativeChartConnection").textContent=chart.ready?(ws&&ws.readyState===WebSocket.OPEN?(latestTicks[selectedSymbol]?"LIVE TICKS":"CONNECTED · WAITING FOR TICKS"):"DISCONNECTED"):"LOADING OPENALGO CHART";
+ $("nativeChartDetail").textContent=state.candleCount?state.candleCount+" candles · "+meta.name:"Waiting for tick history";
+ $("nativeChartEntrySpot").textContent="ENTRY "+(overlay&&Number.isFinite(overlay.entrySpot)?overlay.entrySpot.toFixed(meta.precision):"—");
+ $("nativeChartBarrier").textContent="BARRIER "+(overlay&&Number.isFinite(overlay.barrier)?overlay.barrier.toFixed(meta.precision):"—");
+ const live=latestTicks[selectedSymbol]?.price??(overlay&&overlay.currentSpot);
+ $("nativeChartCurrentSpot").textContent="LIVE SPOT "+(Number.isFinite(live)?Number(live).toFixed(meta.precision):"—");
+ $("nativeChartContractState").textContent=overlay?(overlay.status||"CONTRACT ACTIVE"):"NO ACTIVE CONTRACT";
 }
-function resetNativeChart(){window.__accumulatorChart?.reset();drawNativeTradeChart();}
+function resetNativeChart(){window.__openAlgoAccumulatorChart?.reset();drawNativeTradeChart();}
 $("nativeChartInterval")?.addEventListener("change",resetNativeChart);$("nativeChartReset")?.addEventListener("click",resetNativeChart);
-const nativeChartObserver=new ResizeObserver(()=>window.__accumulatorChart?.resize());if($("nativeChartWrap"))nativeChartObserver.observe($("nativeChartWrap"));
 setInterval(drawNativeTradeChart,1000);
 connect();
 
