@@ -23,9 +23,10 @@ function createDerivTransport() {
       const ws = new WebSocket(WS_URL);
       socket = ws;
       const timeout = setTimeout(() => reject(new Error("Deriv chart connection timed out")), 12000);
-      ws.onopen = () => { clearTimeout(timeout); opening = null; resolve(ws); };
-      ws.onerror = event => { clearTimeout(timeout); opening = null; console.error("[Deriv SmartChart] WebSocket transport error", event); reject(new Error("Deriv WebSocket transport error; check the browser console for details")); };
+      ws.onopen = () => { clearTimeout(timeout); opening = null; window.dispatchEvent(new CustomEvent("deriv-chart-connection", { detail: { connected: true } })); resolve(ws); };
+      ws.onerror = event => { window.dispatchEvent(new CustomEvent("deriv-chart-connection", { detail: { connected: false } })); clearTimeout(timeout); opening = null; console.error("[Deriv SmartChart] WebSocket transport error", event); reject(new Error("Deriv WebSocket transport error; check the browser console for details")); };
       ws.onclose = event => {
+        window.dispatchEvent(new CustomEvent("deriv-chart-connection", { detail: { connected: false } }));
         clearTimeout(timeout);
         opening = null;
         const detail = `Deriv WebSocket closed (code ${event.code}${event.reason ? `: ${event.reason}` : ""}${event.wasClean ? ", clean" : ""})`;
@@ -154,10 +155,13 @@ function ChartApp() {
   const [tradingTimes, setTradingTimes] = useState({});
   const [symbol, setSymbol] = useState(new URLSearchParams(location.search).get("symbol") || "R_100");
   const [ready, setReady] = useState(false);
+  const [feedConnected, setFeedConnected] = useState(false);
   const [chartVisible, setChartVisible] = useState(false);
   const liveSymbol = useRef(symbol);
 
   useEffect(() => {
+    const syncConnection = event => setFeedConnected(Boolean(event?.detail?.connected));
+    window.addEventListener("deriv-chart-connection", syncConnection);
     const syncVisibility = event => {
       const detail = event?.detail || {};
       setChartVisible(detail.page === "trade" && detail.tab !== "algo");
@@ -166,6 +170,7 @@ function ChartApp() {
     window.__derivChartSetVisible = visible => setChartVisible(Boolean(visible));
     return () => {
       window.removeEventListener("app-page-change", syncVisibility);
+      window.removeEventListener("deriv-chart-connection", syncConnection);
       delete window.__derivChartSetVisible;
     };
   }, []);
@@ -312,7 +317,7 @@ function ChartApp() {
       feedCall={{ activeSymbols: false, tradingTimes: false }}
       isMobile={window.innerWidth < 760}
       isVerticalScrollEnabled={window.innerWidth >= 760}
-      isConnectionOpened={true}
+      isConnectionOpened={feedConnected}
       maxTick={500}
       shouldFetchTradingTimes={false}
     />}
