@@ -163,13 +163,27 @@ function ChartApp() {
         });
       }
     }
+    // SmartCharts Champion's public getQuotes contract is NOT the
+    // adapter's internal { quotes, meta } shape. Deriv's own DTrader
+    // adapter returns the legacy feed shape expected by SmartCharts:
+    // { history: { prices, times } } for ticks, or { candles } for OHLC.
+    const isCandles = style === "candles" || Number(granularity) > 0;
+    if (!isCandles) {
+      return {
+        history: {
+          prices: quotes.map(quote => quote.Close),
+          times: quotes.map(quote => Number(quote.Date))
+        }
+      };
+    }
     return {
-      quotes,
-      meta: {
-        symbol: requestedSymbol,
-        granularity: Number(granularity) || 0,
-        delay_amount: Number(response.pip_size) || 0
-      }
+      candles: quotes.map(quote => ({
+        open: quote.Open ?? quote.Close,
+        high: quote.High ?? quote.Close,
+        low: quote.Low ?? quote.Close,
+        close: quote.Close,
+        epoch: Number(quote.Date)
+      }))
     };
   }, []);
 
