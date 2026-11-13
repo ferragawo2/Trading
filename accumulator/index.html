@@ -640,7 +640,7 @@ function updateTradeHeaderBalance(){
  const currency=(account&&account.currency)||"";
  const code=currency.toUpperCase();
  const logo=$("tradeCurrencyLogo");
- logo.textContent=code?code.slice(0,4):"—";
+ const currencyMarks={USD:"$",EUR:"€",GBP:"£",BTC:"₿",ETH:"Ξ",USDT:"₮",LTC:"Ł",BCH:"◆"};logo.textContent=currencyMarks[code]|| (code?code.slice(0,3):"—");
  logo.setAttribute("aria-label",code?currency+" currency":"Currency unavailable");
  $("tradeHeaderBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2):"—";
  const mode=$("tradeAccountMode");
