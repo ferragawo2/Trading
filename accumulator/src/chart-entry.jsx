@@ -4,7 +4,9 @@ import { SmartChart, setSmartChartsPublicPath } from "@deriv-com/smartcharts-cha
 
 setSmartChartsPublicPath("/chart-dist/");
 
-const WS_URL = "wss://api.derivws.com/trading/v1/options/ws/public";
+// DTrader's market-data adapter uses the standard Deriv WebSocket API v3.
+const DERIV_APP_ID = Number(window.DERIV_APP_ID || 16929);
+const WS_URL = `wss://ws.derivws.com/websockets/v3?app_id=${DERIV_APP_ID}`;
 
 function createDerivTransport() {
   let socket;
@@ -128,16 +130,18 @@ function toTradingTimesMap(data) {
 function toActiveSymbol(item) {
   return {
     allow_forward_starting: 0,
-    display_name: item.display_name || item.symbol,
-    exchange_is_open: item.exchange_is_open ?? 1,
+    display_name: item.display_name || item.underlying_symbol || item.symbol,
+    exchange_is_open: item.exchange_is_open ?? 0,
     is_trading_suspended: item.is_trading_suspended ?? 0,
-    market: item.market || "synthetic_index",
-    market_display_name: item.market_display_name || "Synthetic Indices",
-    pip: Number(item.pip) || 0.01,
-    submarket: item.submarket || "synthetics",
-    submarket_display_name: item.submarket_display_name || "Synthetics",
-    symbol: item.symbol,
-    symbol_type: item.symbol_type || "stockindex"
+    market: item.market || "",
+    market_display_name: item.market_display_name || "",
+    subgroup: item.subgroup || "",
+    subgroup_display_name: item.subgroup_display_name || "",
+    pip: Number(item.pip || item.pip_size) || 0.01,
+    submarket: item.submarket || "",
+    submarket_display_name: item.submarket_display_name || "",
+    symbol: item.underlying_symbol || item.symbol,
+    symbol_type: item.underlying_symbol_type || item.symbol_type || ""
   };
 }
 
@@ -146,7 +150,21 @@ function ChartApp() {
   const [tradingTimes, setTradingTimes] = useState({});
   const [symbol, setSymbol] = useState(new URLSearchParams(location.search).get("symbol") || "R_100");
   const [ready, setReady] = useState(false);
+  const [chartVisible, setChartVisible] = useState(false);
   const liveSymbol = useRef(symbol);
+
+  useEffect(() => {
+    const syncVisibility = event => {
+      const detail = event?.detail || {};
+      setChartVisible(detail.page === "trade" && detail.tab !== "algo");
+    };
+    window.addEventListener("app-page-change", syncVisibility);
+    window.__derivChartSetVisible = visible => setChartVisible(Boolean(visible));
+    return () => {
+      window.removeEventListener("app-page-change", syncVisibility);
+      delete window.__derivChartSetVisible;
+    };
+  }, []);
 
   useEffect(() => {
     liveSymbol.current = symbol;
@@ -241,7 +259,18 @@ function ChartApp() {
       if (message.tick) {
         const tick = message.tick;
         callback({ Date: String(tick.epoch), Close: Number(tick.quote), DT: new Date(tick.epoch * 1000), tick });
-      } else if (message.candles?.length) callback({ candles: message.candles });
+      } else if (message.ohlc) {
+        const candle = message.ohlc;
+        callback({
+          Date: String(candle.epoch),
+          Open: Number(candle.open),
+          High: Number(candle.high),
+          Low: Number(candle.low),
+          Close: Number(candle.close),
+          DT: new Date(Number(candle.epoch) * 1000),
+          ohlc: candle
+        });
+      }
     }).then(fn => { unsubscribe = fn; if (cancelled) fn(); }).catch(error => {
       const node = document.getElementById("derivChartStatus");
       if (node) node.textContent = error.message;
@@ -260,7 +289,7 @@ function ChartApp() {
 
   return <div className="deriv-smartchart-shell">
     <div id="derivChartStatus" className="deriv-chart-status" hidden={ready}>Connecting to Deriv chart feed…</div>
-    {ready && symbols.length > 0 && <SmartChart
+    {ready && chartVisible && symbols.length > 0 && <SmartChart
       id="accumulator-deriv-smartchart"
       symbol={symbol}
       chartType="mountain"
@@ -271,11 +300,12 @@ function ChartApp() {
       chartData={chartData}
       feedCall={{ activeSymbols: false, tradingTimes: false }}
       isMobile={window.innerWidth < 760}
+      isVerticalScrollEnabled={window.innerWidth >= 760}
       isConnectionOpened={true}
       maxTick={500}
       shouldFetchTradingTimes={false}
     />}
-    {ready && !symbols.length && <div className="deriv-chart-status">Deriv did not return supported chart symbols.</div>}
+    {ready && chartVisible && !symbols.length && <div className="deriv-chart-status">Deriv did not return supported chart symbols.</div>}
   </div>;
 }
 
