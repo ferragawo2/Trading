@@ -317,7 +317,7 @@ function renderMarketCards(){
     const price=document.createElement("strong");price.textContent="Waiting for tick…";
     const spark=document.createElementNS("http://www.w3.org/2000/svg","svg");spark.setAttribute("viewBox","0 0 100 34");spark.setAttribute("preserveAspectRatio","none");spark.setAttribute("class","market-sparkline");const path=document.createElementNS("http://www.w3.org/2000/svg","path");spark.append(path);
     const status=document.createElement("div");status.className="market-live";status.textContent="WAITING FOR TICKS";
-    card.append(createIndexKindIcon(m.symbol,"card"),name,sym,price,spark,status);box.append(card);updateMarketCard(m.symbol);
+    card.append(name,sym,price,spark,status);box.append(card);updateMarketCard(m.symbol);
   });
 }
 function selectMarket(symbol){
