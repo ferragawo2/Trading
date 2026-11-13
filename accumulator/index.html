@@ -20,7 +20,16 @@
 .market-card .market-sparkline path{fill:none;stroke:#12b995;stroke-width:2.4;stroke-linecap:round;stroke-linejoin:round}
 .market-card .market-sparkline.down path{stroke:#e04462}
 .market-card .market-live{font-size:9px;color:#999;margin-top:4px}
-@media(min-width:760px){.market-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.market-card{min-height:205px;padding:18px}}.market-logo{width:38px;height:38px;flex:0 0 38px;border-radius:50%;object-fit:contain;display:block}.market-card .meta{font-size:10px;color:#929292}.log{height:150px;overflow:auto;background:#000000;border:1px solid #000000;border-radius:11px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#bcbcbc}.log div{border-bottom:1px solid #000000;padding:3px 0}.note{border:1px solid #333;background:#000000;color:#d2d2d2;padding:12px 14px;border-radius:12px;font-size:11px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#777;font-size:10px;text-align:center;padding:24px 10px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#000000;border:1px solid #000000;border-radius:13px;padding:14px;min-width:0}.barrier-card h3{font-size:11px;margin:0 0 10px;letter-spacing:.1em}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:9px;color:#929292;letter-spacing:.08em}.barrier-meta{font-size:10px;color:#888;margin-top:10px;line-height:1.7}.barrier-status{font-size:10px;color:#d6d6d6;margin-top:8px}.survival-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.survival-card{background:#000000;border:1px solid #000000;border-radius:13px;padding:14px;min-width:0}.survival-card h3{font-size:12px;margin:0 0 10px}.survival-rate{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.survival-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.survival-stats strong{display:block;font-size:14px;font-variant-numeric:tabular-nums}.survival-stats small{color:#929292;font-size:10px}.survival-state{font-size:10px;color:#c9c9c9;margin-top:9px;line-height:1.5}.run-history-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:10px}.run-history-cell{background:#000000;border:1px solid #000000;border-radius:5px;text-align:center;padding:5px 1px;font:11px ui-monospace,monospace;color:#eee;min-width:0}.run-history-cell.zero{color:#ff9999;background:#211414}.run-history-empty{grid-column:1/-1;color:var(--muted);font-size:11px;padding:8px 0}.stats-panel{margin-top:13px;padding:14px;background:#000000;border:1px solid #000000;border-radius:14px}.stats-current{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:12px;padding:14px;background:#000000;border:1px solid #000000;border-radius:11px}.stats-current-label{width:100%;font-size:9px;letter-spacing:.12em;color:#999;font-weight:700}.stats-current strong{font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;color:#fff}.stats-current span:last-child{font-size:10px;color:#999}.stats-heading{display:flex;align-items:center;gap:10px}.stats-heading>strong{font-size:12px;margin-right:auto}.stats-heading select{width:auto;min-width:58px;padding:6px 8px;font-size:10px}.stats-toggle{width:31px;height:29px;padding:0;border:1px solid #383838;background:#000000;color:#fff;border-radius:8px;font-size:17px;line-height:1}.stats-values,.stats-history-values{display:flex;gap:7px;overflow-x:auto;white-space:nowrap;padding:10px 0 2px;scrollbar-width:thin}.stats-value{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:7px 9px;border-radius:8px;background:#000000;border:1px solid #000000;color:#eee;font:600 12px ui-monospace,monospace}.stats-value.zero{color:#ff9999}.stats-empty{font-size:10px;color:#888;padding:7px 0}.stats-history{border-top:1px solid #000000;margin-top:10px;padding-top:9px}.stats-history-title{font-size:9px;color:#999;letter-spacing:.1em;font-weight:700}.stats-history-values{flex-wrap:wrap;white-space:normal;max-height:240px;overflow-y:auto}.stats-history-values .stats-value{min-width:38px}@media(max-width:520px){.run-history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}.account-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#000000;border:1px solid #282828;border-radius:16px;padding:15px 16px;margin:0 0 14px}.account-copy{min-width:180px;flex:1}.account-copy strong{display:block;font-size:13px}.account-copy span{display:block;color:#999;font-size:10px;margin-top:4px}.account-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.account-actions button{font-size:11px}.account-message{font-size:10px;color:#d0d0d0;margin-top:5px}
+@media(min-width:760px){.market-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.market-card{min-height:205px;padding:18px}}
+.market-showcase{width:100%;margin:0;padding:0;background:#000}
+.market-card{background:#000!important;border:1px solid #171717!important;border-radius:18px;box-shadow:none}
+.market-card:hover,.market-card.selected{background:#000!important;border-color:#555!important}
+.market-card .name{width:100%;font-size:13px;font-weight:750;letter-spacing:.015em;text-transform:uppercase;min-height:40px;gap:10px}
+.market-card .name .index-kind-icon{width:36px;height:36px;flex:0 0 36px;border-radius:50%;overflow:hidden}
+.market-card strong{color:#fff!important;font-size:21px;font-weight:750}
+.market-card .market-sparkline{height:38px}
+.market-card .market-live{color:#777;font-size:9px}
+.market-logo{width:38px;height:38px;flex:0 0 38px;border-radius:50%;object-fit:contain;display:block}.market-card .meta{font-size:10px;color:#929292}.log{height:150px;overflow:auto;background:#000000;border:1px solid #000000;border-radius:11px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#bcbcbc}.log div{border-bottom:1px solid #000000;padding:3px 0}.note{border:1px solid #333;background:#000000;color:#d2d2d2;padding:12px 14px;border-radius:12px;font-size:11px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#777;font-size:10px;text-align:center;padding:24px 10px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#000000;border:1px solid #000000;border-radius:13px;padding:14px;min-width:0}.barrier-card h3{font-size:11px;margin:0 0 10px;letter-spacing:.1em}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:9px;color:#929292;letter-spacing:.08em}.barrier-meta{font-size:10px;color:#888;margin-top:10px;line-height:1.7}.barrier-status{font-size:10px;color:#d6d6d6;margin-top:8px}.survival-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.survival-card{background:#000000;border:1px solid #000000;border-radius:13px;padding:14px;min-width:0}.survival-card h3{font-size:12px;margin:0 0 10px}.survival-rate{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.survival-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.survival-stats strong{display:block;font-size:14px;font-variant-numeric:tabular-nums}.survival-stats small{color:#929292;font-size:10px}.survival-state{font-size:10px;color:#c9c9c9;margin-top:9px;line-height:1.5}.run-history-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:10px}.run-history-cell{background:#000000;border:1px solid #000000;border-radius:5px;text-align:center;padding:5px 1px;font:11px ui-monospace,monospace;color:#eee;min-width:0}.run-history-cell.zero{color:#ff9999;background:#211414}.run-history-empty{grid-column:1/-1;color:var(--muted);font-size:11px;padding:8px 0}.stats-panel{margin-top:13px;padding:14px;background:#000000;border:1px solid #000000;border-radius:14px}.stats-current{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:12px;padding:14px;background:#000000;border:1px solid #000000;border-radius:11px}.stats-current-label{width:100%;font-size:9px;letter-spacing:.12em;color:#999;font-weight:700}.stats-current strong{font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;color:#fff}.stats-current span:last-child{font-size:10px;color:#999}.stats-heading{display:flex;align-items:center;gap:10px}.stats-heading>strong{font-size:12px;margin-right:auto}.stats-heading select{width:auto;min-width:58px;padding:6px 8px;font-size:10px}.stats-toggle{width:31px;height:29px;padding:0;border:1px solid #383838;background:#000000;color:#fff;border-radius:8px;font-size:17px;line-height:1}.stats-values,.stats-history-values{display:flex;gap:7px;overflow-x:auto;white-space:nowrap;padding:10px 0 2px;scrollbar-width:thin}.stats-value{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:7px 9px;border-radius:8px;background:#000000;border:1px solid #000000;color:#eee;font:600 12px ui-monospace,monospace}.stats-value.zero{color:#ff9999}.stats-empty{font-size:10px;color:#888;padding:7px 0}.stats-history{border-top:1px solid #000000;margin-top:10px;padding-top:9px}.stats-history-title{font-size:9px;color:#999;letter-spacing:.1em;font-weight:700}.stats-history-values{flex-wrap:wrap;white-space:normal;max-height:240px;overflow-y:auto}.stats-history-values .stats-value{min-width:38px}@media(max-width:520px){.run-history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}.account-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#000000;border:1px solid #282828;border-radius:16px;padding:15px 16px;margin:0 0 14px}.account-copy{min-width:180px;flex:1}.account-copy strong{display:block;font-size:13px}.account-copy span{display:block;color:#999;font-size:10px;margin-top:4px}.account-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.account-actions button{font-size:11px}.account-message{font-size:10px;color:#d0d0d0;margin-top:5px}
 #executionPanel{margin-bottom:16px}#executionPanel>.row:first-child{margin-bottom:2px}#executionPanel .note{margin-top:13px;margin-bottom:0;background:#000000;border-color:#333;color:#ccc}#marketView{min-width:0}#marketView .chart{position:relative}
 .mobile-nav{display:none}
 @media(max-width:800px){body{padding-bottom:78px}.wrap{padding:16px 13px 24px}.grid{grid-template-columns:1fr;gap:12px}.card{padding:16px;border-radius:16px}.top{align-items:center;margin-bottom:17px}.app-toolbar{min-height:44px}.toolbar-circle{width:40px;height:40px;flex-basis:40px}.toolbar-circle svg{width:20px;height:20px}.toolbar-brand{padding:10px 18px;font-size:10px}.mode-switch{margin:-4px 0 16px;gap:8px}.mode-pill{min-width:94px;padding:10px 20px}.toolbar-actions{gap:7px}.metrics{gap:7px}.metric{padding:10px}.metric strong{font-size:16px}.controls{grid-template-columns:1fr}.controls button{width:100%}.chart{height:220px}.account-panel{padding:13px}.account-actions{width:100%}.account-actions button{flex:1}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.market-card{padding:11px}.barrier-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.foot{padding-bottom:8px}.mobile-nav{position:fixed;z-index:30;left:12px;right:auto;bottom:12px;width:67vw;max-width:420px;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:7px;background:rgba(5,5,5,.16);border:1px solid rgba(255,255,255,.24);border-radius:999px;box-shadow:0 0 0 1px rgba(255,255,255,.045),0 0 14px rgba(255,255,255,.13),0 0 34px rgba(255,255,255,.075),0 10px 36px rgba(0,0,0,.16),inset 0 0 14px rgba(255,255,255,.055);backdrop-filter:blur(15px) saturate(115%);-webkit-backdrop-filter:blur(15px) saturate(115%)}.mobile-nav a{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;min-width:0;padding:11px 6px;border-radius:999px;color:rgba(255,255,255,.9);text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.015em;transition:background .18s,color .18s}.mobile-nav a svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex:none}.mobile-nav a:active,.mobile-nav a:focus-visible{background:rgba(255,255,255,.14);color:#fff;outline:none}}
@@ -104,7 +113,7 @@
     </div>
   </div>
 </section>
-<section class="card full"><div class="row between"><h2 style="margin:0">MOST TRADED ACCUMULATOR MARKETS</h2><span class="pill" id="listStatus">Not loaded</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Live prices and mini charts update from each index tick stream. Select a card to open its Accumulator chart.</p><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
+<section class="market-showcase"><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
 
 
 <section class="card full" id="executionPanel">
@@ -144,7 +153,7 @@ const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null;
-let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, tickCounts={}, latestTicks={};
+let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
 const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
 ["deriv_accumulator_survival_v2","deriv_accumulator_survival_v3","deriv_accumulator_survival_v4","deriv_accumulator_survival_v5"].forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
@@ -179,7 +188,7 @@ const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Er
 function connect(){
   manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
   if(ws){const previous=ws;previous.onclose=null;previous.onerror=null;previous.onmessage=null;try{previous.close(1000,"Refreshing market feed")}catch{}}
-  manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};tickCounts={};latestTicks={};
+  manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};marketHistory24h={};marketHistoryReqs={};tickCounts={};latestTicks={};
   $("symbol").disabled=true;$("symbol").innerHTML="<option>Connecting to Deriv…</option>";
   $("marketGrid").innerHTML='<div class="metric"><small>MARKET DISCOVERY</small><strong>Requesting live catalogue…</strong></div>';
   $("marketCount").textContent="—";$("liveCount").textContent="0";$("price").textContent="—";$("lastTick").textContent="—";$("tickCount").textContent="0";
@@ -195,6 +204,7 @@ function connect(){
     if(m.error){const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
     if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
+    if(m.msg_type==="history"&&m.candles){handleMarketHistory24h(m);return;}
     if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
     if(m.msg_type==="proposal"&&m.proposal){handleAccumulatorProposal(m);return;}
     if(m.msg_type==="ping")return;
@@ -223,14 +233,27 @@ function handleSymbols(rows){
   $("symbol").innerHTML="";
   markets.forEach(m=>{const o=document.createElement("option");o.value=m.symbol;o.textContent=m.name+" ("+m.symbol+")";$("symbol").append(o);});
   $("symbol").disabled=false;selectedSymbol=markets[0].symbol;$("symbol").value=selectedSymbol;
-  $("listStatus").textContent=markets.length+" markets found";
+  const listStatus=$("listStatus");if(listStatus)listStatus.textContent="";
   renderMarketCards();renderTickerMarkets();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
   const symbols=markets.map(m=>m.symbol);
+  markets.forEach(m=>requestMarketHistory24h(m.symbol));
   try{
     send({ticks:symbols,subscribe:1});
     log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
   }catch(e){log("Could not subscribe to markets: "+e.message)}
   requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);renderNativeStats();
+}
+function requestMarketHistory24h(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  try{const id=send({ticks_history:symbol,count:24,end:"latest",style:"candles",granularity:3600});marketHistoryReqs[id]=symbol;}catch(e){log("24h history request failed for "+symbol+": "+e.message);}
+}
+function handleMarketHistory24h(m){
+  const symbol=marketHistoryReqs[m.req_id]||m.echo_req?.ticks_history;
+  if(!symbol||!marketBySymbol[symbol]||!Array.isArray(m.candles))return false;
+  marketHistory24h[symbol]=m.candles.map(c=>({epoch:Number(c.epoch),close:Number(c.close)})).filter(c=>Number.isFinite(c.epoch)&&Number.isFinite(c.close)).slice(-24);
+  delete marketHistoryReqs[m.req_id];
+  updateMarketCard(symbol);
+  return true;
 }
 function requestHistory(symbol){
   if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
@@ -303,16 +326,18 @@ function updateMarketCard(symbol){
   if(!m||!card)return;
   const tick=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize)),price=card.querySelector("strong"),spark=card.querySelector(".market-sparkline"),path=spark?.querySelector("path"),status=card.querySelector(".market-live");
   if(price)price.textContent=tick?tick.price.toFixed(dp):"Waiting for tick…";
-  if(status)status.textContent=tick?"LIVE · "+(tickCounts[symbol]||0)+" TICKS":"WAITING FOR TICKS";
-  const points=marketSparkPath(priceHistory[symbol]);
+  if(status)status.textContent=marketHistory24h[symbol]?.length?"24H HISTORY · HOURLY":"LOADING 24H HISTORY";
+  const history=(marketHistory24h[symbol]||[]).map(c=>c.close);
+  if(tick&&history.length)history[history.length-1]=tick.price;
+  const points=marketSparkPath(history);
   if(path)path.setAttribute("d",points?"M"+points.replace(/ /g," L"):"");
-  if(spark)spark.classList.toggle("down",(priceHistory[symbol]||[]).length>1&&priceHistory[symbol].at(-1)<priceHistory[symbol][0]);
+  if(spark)spark.classList.toggle("down",history.length>1&&history[history.length-1]<history[0]);
 }
 function renderMarketCards(){
   const box=$("marketGrid");box.replaceChildren();
   markets.forEach(m=>{
     const card=document.createElement("button");card.type="button";card.className="market-card"+(m.symbol===selectedSymbol?" selected":"");card.dataset.market=m.symbol;card.setAttribute("aria-label","Select "+m.name);card.onclick=()=>selectMarket(m.symbol);
-    const name=document.createElement("div");name.className="name";name.append(createIndexKindIcon(m.symbol,"card"));const title=document.createElement("span");title.textContent=m.name;name.append(title);
+    const name=document.createElement("div");name.className="name";name.append(createIndexKindIcon(m.symbol,"card"));const title=document.createElement("span");title.textContent=m.name.toUpperCase();name.append(title);
     const sym=document.createElement("div");sym.className="meta symbol-meta";sym.textContent=m.symbol+" · ACCU";
     const price=document.createElement("strong");price.textContent="Waiting for tick…";
     const spark=document.createElementNS("http://www.w3.org/2000/svg","svg");spark.setAttribute("viewBox","0 0 100 34");spark.setAttribute("preserveAspectRatio","none");spark.setAttribute("class","market-sparkline");const path=document.createElementNS("http://www.w3.org/2000/svg","path");spark.append(path);
