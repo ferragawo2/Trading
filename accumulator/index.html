@@ -42,7 +42,15 @@
 .index-market-pill:hover,.index-market-pill:focus-visible{border-color:#888;background:#111;outline:none;transform:translateY(-1px)}
 .index-market-pill img,.index-market-fallback{width:31px;height:31px;flex:0 0 31px;border-radius:50%;object-fit:contain;display:grid;place-items:center}.index-kind-icon{display:inline-grid;place-items:center;flex:0 0 auto;width:31px;height:31px;border-radius:50%;overflow:hidden}.index-kind-icon.card{width:38px;height:38px}.index-kind-icon{background-position:center;background-repeat:no-repeat;background-size:100% 100%}
 .index-market-fallback{background:#191919;border:1px solid #444;color:#fff;font-size:10px;font-weight:900;letter-spacing:-.04em}
-.index-market-pill span:last-child{font-size:11px;font-weight:750;letter-spacing:.01em}
+.index-market-pill{min-height:62px;min-width:176px;padding:8px 12px;gap:10px;border-radius:15px;display:grid;grid-template-columns:34px minmax(0,1fr);grid-template-rows:auto 18px;column-gap:10px;row-gap:3px;align-items:center}
+.index-market-pill .index-kind-icon{grid-column:1;grid-row:1 / span 2;width:34px;height:34px}
+.index-pill-info{grid-column:2;grid-row:1;display:flex;flex-direction:column;min-width:0;gap:2px}
+.index-pill-name{font-size:10px;font-weight:800;letter-spacing:.015em;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:132px}
+.index-pill-price{font-size:9px;color:#aaa;font-variant-numeric:tabular-nums}
+.index-pill-spark{grid-column:2;grid-row:2;width:100%;height:18px;overflow:visible;opacity:.95}
+.index-pill-spark path{fill:none;stroke:#19b994;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.index-pill-spark.empty path{stroke:#555}
+@media(max-width:800px){.index-market-pill{min-height:58px;min-width:160px;padding:7px 10px;grid-template-columns:31px minmax(0,1fr);grid-template-rows:auto 17px}.index-market-pill .index-kind-icon{width:31px;height:31px}.index-pill-name{font-size:9px;max-width:118px}.index-pill-price{font-size:8px}.index-pill-spark{height:17px}}
 @keyframes indexTickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
 @media(prefers-reduced-motion:reduce){.index-ticker-track{animation:none}}
 @media(max-width:800px){.index-ticker{margin:0 0 17px}.index-ticker-heading{margin-bottom:7px}.index-market-pill{min-height:44px;padding:6px 12px 6px 7px;gap:8px}.index-market-pill img,.index-market-fallback{width:29px;height:29px;flex-basis:29px}.index-market-pill span:last-child{font-size:10px}}
@@ -235,7 +243,7 @@ function handleTick(t,m){
   // When the API responds to an array subscription, the tick payload identifies its own symbol.
   const key=Array.isArray(symbol)?null:symbol;
   if(!key||!marketBySymbol[key])return;
-  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;updateTickerMarket(key);
   if(!priceHistory[key])priceHistory[key]=[];
   priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
   $("liveCount").textContent=String(Object.keys(latestTicks).length);
@@ -261,14 +269,31 @@ function createIndexKindIcon(symbol,size){
   icon.style.backgroundSize="100% 100%";
   return icon;
 }
+function tickerSparkPath(values){
+  const data=(values||[]).slice(-28).map(Number).filter(Number.isFinite);
+  if(data.length<2)return "";
+  let lo=Math.min(...data),hi=Math.max(...data),span=hi-lo||Math.max(Math.abs(hi)*0.000001,1e-8);
+  return data.map((v,i)=>((i/(data.length-1))*100).toFixed(1)+","+((16-((v-lo)/span)*13)).toFixed(1)).join(" ");
+}
+function updateTickerMarket(symbol){
+  document.querySelectorAll('.index-market-pill[data-market="'+symbol+'"]').forEach(button=>{
+    const market=marketBySymbol[symbol],tick=latestTicks[symbol],price=button.querySelector(".index-pill-price"),spark=button.querySelector(".index-pill-spark"),path=spark?.querySelector("path");
+    if(price&&tick)price.textContent=tick.price.toFixed(Math.max(0,Math.min(8,market.pipSize)));
+    if(path){const points=tickerSparkPath(priceHistory[symbol]);path.setAttribute("d",points?"M"+points.replace(/ /g," L"):"");spark.classList.toggle("empty",!points);}
+  });
+}
 function renderTickerMarkets(){
   const primary=$("indexTickerPrimary"),clone=$("indexTickerClone"),track=$("indexTickerTrack");
   if(!primary||!clone||!track)return;
   primary.replaceChildren();clone.replaceChildren();
   const makePill=m=>{
-    const button=document.createElement("button");button.type="button";button.className="index-market-pill";button.title="Open "+m.name+" Accumulator market";button.setAttribute("aria-label","Select "+m.name);
+    const button=document.createElement("button");button.type="button";button.className="index-market-pill";button.dataset.market=m.symbol;button.title="Open "+m.name+" Accumulator market";button.setAttribute("aria-label","Select "+m.name);
     button.append(createIndexKindIcon(m.symbol,"ticker"));
-    const label=document.createElement("span");label.textContent=m.name;button.append(label);
+    const info=document.createElement("span");info.className="index-pill-info";
+    const label=document.createElement("span");label.className="index-pill-name";label.textContent=m.name;info.append(label);
+    const price=document.createElement("span");price.className="index-pill-price";const tick=latestTicks[m.symbol];price.textContent=tick?tick.price.toFixed(Math.max(0,Math.min(8,m.pipSize))):"Waiting for tick";info.append(price);button.append(info);
+    const svg=document.createElementNS("http://www.w3.org/2000/svg","svg");svg.setAttribute("viewBox","0 0 100 18");svg.setAttribute("preserveAspectRatio","none");svg.setAttribute("class","index-pill-spark"+(tickerSparkPath(priceHistory[m.symbol])?"":" empty"));
+    const path=document.createElementNS("http://www.w3.org/2000/svg","path"),points=tickerSparkPath(priceHistory[m.symbol]);if(points)path.setAttribute("d","M"+points.replace(/ /g," L"));svg.append(path);button.append(svg);
     button.addEventListener("click",()=>{selectMarket(m.symbol);$("marketView").scrollIntoView({behavior:"smooth",block:"start"});});
     return button;
   };
