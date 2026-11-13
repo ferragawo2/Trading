@@ -195,7 +195,7 @@
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
 <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
-<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">DERIV LIVE CHART</h2><span class="pill">SmartCharts · live ticks</span></div><div id="derivSmartChartRoot"><div id="derivChartStatus" class="deriv-chart-status">Loading Deriv chart…</div></div></section><section class="card full" id="executionPanel">
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><div class="row" style="gap:7px;flex-wrap:wrap;margin:12px 0"><label class="muted" for="nativeChartInterval">CANDLE</label><select id="nativeChartInterval" aria-label="Chart candle interval"><option value="1">1 minute</option><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="60" selected>1 hour</option></select><button type="button" class="secondary" id="nativeChartReset">Reset view</button><span class="muted" id="nativeChartDetail" style="font-size:11px">Waiting for market ticks</span></div><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#080d14;border:1px solid #253246;border-radius:12px;overflow:hidden"><canvas id="nativeTradeCanvas" role="img" aria-label="Live Deriv candlestick chart" style="display:block;width:100%;height:100%;touch-action:pan-y"></canvas><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">Drag to pan · scroll or pinch to zoom · move over the chart to inspect price and time. Prices are streamed directly from Deriv.</p></section><section class="card full" id="executionPanel">
   <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><div class="row"><span class="pill" id="tradeConnectionState">Account not selected</span><button class="secondary" id="issueFinderOpen" type="button">Run issue finder</button></div></div>
   <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
   <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
@@ -221,6 +221,7 @@ const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
+const nativeChartTicks={}; let nativeChartOffset=0,nativeChartScale=1,nativeChartPointer=null;
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
 const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
 ["deriv_accumulator_survival_v2","deriv_accumulator_survival_v3","deriv_accumulator_survival_v4","deriv_accumulator_survival_v5"].forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
@@ -334,7 +335,8 @@ function handleHistory(m){
   const symbol=m.echo_req?.ticks_history||m.echo_req?.symbol||selectedSymbol;
   if(symbol!==selectedSymbol||!m.history?.prices)return;
   priceHistory[symbol]=m.history.prices.map(Number).filter(Number.isFinite).slice(-120);
-  drawChart();
+  const times=m.history.times||[];nativeChartTicks[symbol]=times.map((time,i)=>({time:Number(time),price:Number(m.history.prices[i])})).filter(p=>Number.isFinite(p.time)&&Number.isFinite(p.price)).slice(-12000);
+  drawChart();drawNativeTradeChart();
 }
 function handleTick(t,m){
   const symbol=t.underlying_symbol||t.symbol||m.echo_req?.ticks;
@@ -344,6 +346,7 @@ function handleTick(t,m){
   const key=Array.isArray(symbol)?null:symbol;
   if(!key||!marketBySymbol[key])return;
   latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  if(!nativeChartTicks[key])nativeChartTicks[key]=[];nativeChartTicks[key].push({time:Number.isFinite(epoch)?epoch:Date.now()/1000,price});if(nativeChartTicks[key].length>12000)nativeChartTicks[key].splice(0,nativeChartTicks[key].length-12000);
   if(!priceHistory[key])priceHistory[key]=[];
   priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
   $("liveCount").textContent=String(Object.keys(latestTicks).length);
@@ -633,7 +636,38 @@ $("connectBtn").onclick=connect;
 $("statsGrowthRate").onchange=renderNativeStats;
 $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;panel.hidden=!open;$("statsToggle").setAttribute("aria-expanded",String(open));$("statsChevron").textContent=open?"⌃":"⌄";};
 $("symbol").onchange=()=>selectMarket($("symbol").value);
-window.addEventListener("resize",drawChart);renderNativeStats();
+window.addEventListener("resize",()=>{drawChart();drawNativeTradeChart();});renderNativeStats();
+function drawNativeTradeChart(){
+ const canvas=$("nativeTradeCanvas");if(!canvas)return;const ctx=canvas.getContext("2d");const rect=canvas.getBoundingClientRect();if(!rect.width||!rect.height)return;
+ const dpr=Math.min(window.devicePixelRatio||1,2);canvas.width=Math.round(rect.width*dpr);canvas.height=Math.round(rect.height*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+ const w=rect.width,h=rect.height,left=12,right=76,top=16,bottom=28,plotW=w-left-right,plotH=h-top-bottom;
+ ctx.clearRect(0,0,w,h);ctx.fillStyle="#080d14";ctx.fillRect(0,0,w,h);
+ const raw=nativeChartTicks[selectedSymbol]||[];const mins=Number($("nativeChartInterval")?.value||60),step=mins*60;
+ const candles=[];for(const p of raw){const bucket=Math.floor(p.time/step)*step;let c=candles[candles.length-1];if(!c||c.time!==bucket){c={time:bucket,open:p.price,high:p.price,low:p.price,close:p.price};candles.push(c);}else{c.high=Math.max(c.high,p.price);c.low=Math.min(c.low,p.price);c.close=p.price;}}
+ const visible=Math.max(8,Math.floor(plotW/(nativeChartScale*9)));const end=Math.max(0,candles.length-nativeChartOffset);const start=Math.max(0,end-visible);const data=candles.slice(start,end);
+ $("nativeChartEmpty").style.display=data.length?"none":"grid";
+ $("nativeChartConnection").textContent=ws&&ws.readyState===WebSocket.OPEN?(latestTicks[selectedSymbol]?"LIVE TICKS":"CONNECTED · WAITING FOR TICKS"):"DISCONNECTED";
+ $("nativeChartDetail").textContent=data.length?data.length+" candles · "+(marketBySymbol[selectedSymbol]?.name||selectedSymbol):"Waiting for tick history";
+ if(!data.length)return;
+ let lo=Math.min(...data.map(c=>c.low)),hi=Math.max(...data.map(c=>c.high));if(lo===hi){lo-=Math.abs(lo*.001)||1;hi+=Math.abs(hi*.001)||1;}const pad=(hi-lo)*.08;lo-=pad;hi+=pad;
+ const y=v=>top+(hi-v)/(hi-lo)*plotH;const x=i=>left+(i+.5)*plotW/data.length;
+ ctx.font="10px system-ui";ctx.textAlign="right";ctx.textBaseline="middle";
+ for(let i=0;i<=5;i++){const val=hi-(hi-lo)*i/5,yy=top+plotH*i/5;ctx.strokeStyle="#202d3d";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(left,yy);ctx.lineTo(left+plotW,yy);ctx.stroke();ctx.fillStyle="#9aa8ba";ctx.fillText(val.toFixed(Math.min(8,marketBySymbol[selectedSymbol]?.pipSize||2)),w-7,yy);}
+ const cw=Math.max(2,Math.min(14,plotW/data.length*.65));
+ data.forEach((c,i)=>{const xx=x(i),up=c.close>=c.open,col=up?"#24c78a":"#f05b68";ctx.strokeStyle=col;ctx.fillStyle=col;ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(xx,y(c.high));ctx.lineTo(xx,y(c.low));ctx.stroke();const yy=Math.min(y(c.open),y(c.close)),bh=Math.max(1,Math.abs(y(c.open)-y(c.close)));ctx.fillRect(xx-cw/2,yy,cw,bh);});
+ const last=data[data.length-1],py=y(last.close);ctx.strokeStyle="#e7b84b";ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(left,py);ctx.lineTo(left+plotW,py);ctx.stroke();ctx.setLineDash([]);ctx.fillStyle="#e7b84b";ctx.fillRect(left+plotW+3,py-9,right-9,18);ctx.fillStyle="#111";ctx.textAlign="center";ctx.fillText(last.close.toFixed(Math.min(8,marketBySymbol[selectedSymbol]?.pipSize||2)),left+plotW+(right-9)/2,py);
+ ctx.textAlign="center";ctx.fillStyle="#9aa8ba";for(let i=0;i<5;i++){const index=Math.min(data.length-1,Math.floor(i*(data.length-1)/4));if(data[index])ctx.fillText(new Date(data[index].time*1000).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit"}),x(index),h-11);}
+ if(nativeChartPointer){const px=nativeChartPointer.x,py2=nativeChartPointer.y;if(px>=left&&px<=left+plotW&&py2>=top&&py2<=top+plotH){ctx.strokeStyle="#8da2bb";ctx.setLineDash([3,4]);ctx.beginPath();ctx.moveTo(px,top);ctx.lineTo(px,top+plotH);ctx.moveTo(left,py2);ctx.lineTo(left+plotW,py2);ctx.stroke();ctx.setLineDash([]);}}
+}
+function resetNativeChart(){nativeChartOffset=0;nativeChartScale=1;drawNativeTradeChart();}
+$("nativeChartInterval")?.addEventListener("change",resetNativeChart);$("nativeChartReset")?.addEventListener("click",resetNativeChart);
+const nativeCanvas=$("nativeTradeCanvas");
+nativeCanvas?.addEventListener("pointerdown",e=>{nativeCanvas.setPointerCapture(e.pointerId);nativeChartPointer={x:e.offsetX,y:e.offsetY};nativeCanvas.dataset.dragX=String(e.clientX);nativeCanvas.dataset.dragOffset=String(nativeChartOffset);});
+nativeCanvas?.addEventListener("pointermove",e=>{nativeChartPointer={x:e.offsetX,y:e.offsetY};if(e.buttons&&nativeCanvas.dataset.dragX){const dx=e.clientX-Number(nativeCanvas.dataset.dragX);const width=nativeCanvas.clientWidth;const step=Math.max(1,Math.floor((nativeChartTicks[selectedSymbol]||[]).length/Math.max(8,width/(nativeChartScale*9))));nativeChartOffset=Math.max(0,Number(nativeCanvas.dataset.dragOffset)-Math.round(dx/9)*step);}drawNativeTradeChart();});
+nativeCanvas?.addEventListener("pointerup",()=>{nativeCanvas.dataset.dragX="";});nativeCanvas?.addEventListener("pointerleave",()=>{nativeChartPointer=null;drawNativeTradeChart();});
+nativeCanvas?.addEventListener("wheel",e=>{e.preventDefault();nativeChartScale=Math.max(.5,Math.min(5,nativeChartScale*(e.deltaY<0?1.15:.87)));drawNativeTradeChart();},{passive:false});
+const nativeChartObserver=new ResizeObserver(drawNativeTradeChart);if($("nativeChartWrap"))nativeChartObserver.observe($("nativeChartWrap"));
+setInterval(drawNativeTradeChart,1000);
 connect();
 
 function setTradeTab(mode){const manual=mode==="manual";$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
@@ -651,7 +685,7 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
  const syncHeroBalance=()=>{const value=(balanceSource?.textContent||"—").trim();if(value&&value!=="—"&&value!=="Connecting…")lastHeroBalance=value;heroBalance.textContent=balanceHidden?"••••••":lastHeroBalance;document.getElementById("heroBalanceCaption").textContent=value==="—"||value==="Connecting…"?"Connect your Deriv account to see your live balance":"Live balance · selected Deriv account";};
  balanceEye.addEventListener("click",()=>{balanceHidden=!balanceHidden;balanceEye.setAttribute("aria-pressed",String(balanceHidden));balanceEye.setAttribute("aria-label",balanceHidden?"Show balance":"Hide balance");balanceEye.title=balanceHidden?"Show balance":"Hide balance";balanceEye.innerHTML=balanceHidden?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.5-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';syncHeroBalance();});
  new MutationObserver(syncHeroBalance).observe(balanceSource,{childList:true,characterData:true,subtree:true});syncHeroBalance();
-</script><script type="module" src="./chart-dist/app.js"></script><div id="issueFinderModal" hidden role="dialog" aria-modal="true" aria-labelledby="issueFinderTitle" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);padding:18px;display:grid;place-items:center"><section style="width:min(720px,100%);max-height:88vh;overflow:auto;background:#080808;border:1px solid #444;border-radius:18px;padding:18px;box-shadow:0 20px 80px #000"><div class="row between"><h2 id="issueFinderTitle" style="margin:0">LIVE ISSUE FINDER</h2><button class="secondary" id="issueFinderClose" type="button">Close</button></div><p class="muted" style="font-size:11px">Checks the live Deriv public feed, market catalogue, tick stream, chart bundle, chart status and account connection. Errors are timestamped with the failing check and source location when the browser provides it.</p><div class="row" style="margin:12px 0"><button id="issueFinderRun" type="button">Run full check</button><span class="pill" id="issueFinderState">Not checked</span></div><div id="issueFinderSummary" class="note" aria-live="polite">Run the check to identify the first failing component.</div><div id="issueFinderLog" class="log" style="height:min(46vh,390px);white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"><div>Issue finder ready.</div></div></section></div><script>
+</script><div id="issueFinderModal" hidden role="dialog" aria-modal="true" aria-labelledby="issueFinderTitle" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);padding:18px;display:grid;place-items:center"><section style="width:min(720px,100%);max-height:88vh;overflow:auto;background:#080808;border:1px solid #444;border-radius:18px;padding:18px;box-shadow:0 20px 80px #000"><div class="row between"><h2 id="issueFinderTitle" style="margin:0">LIVE ISSUE FINDER</h2><button class="secondary" id="issueFinderClose" type="button">Close</button></div><p class="muted" style="font-size:11px">Checks the live Deriv public feed, market catalogue, tick stream, chart bundle, chart status and account connection. Errors are timestamped with the failing check and source location when the browser provides it.</p><div class="row" style="margin:12px 0"><button id="issueFinderRun" type="button">Run full check</button><span class="pill" id="issueFinderState">Not checked</span></div><div id="issueFinderSummary" class="note" aria-live="polite">Run the check to identify the first failing component.</div><div id="issueFinderLog" class="log" style="height:min(46vh,390px);white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"><div>Issue finder ready.</div></div></section></div><script>
 (() => {
  const $=id=>document.getElementById(id), entries=[], max=120;
  const stamp=()=>new Date().toLocaleTimeString();
