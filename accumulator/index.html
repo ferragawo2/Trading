@@ -239,7 +239,7 @@ function connect(){
       const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
     if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
-    if(m.msg_type==="history"&&(m.candles||m.history?.candles)){handleMarketHistory24h(m);return;}
+    if(m.msg_type==="candles"||m.candles||m.history?.candles){handleMarketHistory24h(m);return;}
     if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
     if(m.msg_type==="proposal"&&m.proposal){handleAccumulatorProposal(m);return;}
     if(m.msg_type==="ping")return;
