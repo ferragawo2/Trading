@@ -731,7 +731,8 @@ async function disconnectDeriv(){
   refreshDerivAccount();
 }
 $("derivLogin").onclick=startDerivLogin;
-$("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);\n$("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").value);\n$("tradeAccountMode").onchange=()=>switchTradeAccountMode($("tradeAccountMode").value);
+$("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);
+$("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").value);\n$("tradeAccountMode").onchange=()=>switchTradeAccountMode($("tradeAccountMode").value);
 $("getTradeQuote").onclick=requestTradeQuote;
 $("confirmTradeBuy").onclick=buyTradeProposal;
 $("derivLogout").onclick=disconnectDeriv;
