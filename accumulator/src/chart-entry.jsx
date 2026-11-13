@@ -39,7 +39,8 @@ function createDerivTransport() {
         if (id && pending.has(id)) {
           const item = pending.get(id);
           pending.delete(id);
-          if (message.error) item.reject(new Error(message.error.message || "Deriv API error"));
+          const apiError = message.error || message.errors?.[0];
+          if (apiError) item.reject(new Error(apiError.message || apiError.code || "Deriv API error"));
           else item.resolve(message);
         }
         const subId = message.subscription?.id;
@@ -190,8 +191,8 @@ function ChartApp() {
   }, []);
 
   const getQuotes = useCallback(async ({ symbol: requestedSymbol, granularity = 0, count = 1000, start, end, style }) => {
-    const request = { ticks_history: requestedSymbol, end: end || "latest", adjust_start_time: 1 };
-    if (start) request.start = start; else request.count = count || 1000;
+    const request = { ticks_history: requestedSymbol, end: end == null ? "latest" : String(end), adjust_start_time: 1 };
+    if (start != null) request.start = Number(start); else request.count = count || 1000;
     if (style === "candles" || granularity) { request.style = "candles"; request.granularity = Number(granularity) || 60; }
     else request.style = "ticks";
     const statusNode = document.getElementById("derivChartStatus");
@@ -208,6 +209,13 @@ function ChartApp() {
       throw error;
     }
     const quotes = [];
+    if (!response.history && !response.candles) {
+      const detail = response.errors?.[0]?.message || response.error?.message || `Unexpected Deriv response: ${response.msg_type || "no history data"}`;
+      const error = new Error(detail);
+      console.error("[Deriv SmartChart] Unexpected history response", response);
+      if (statusNode) { statusNode.textContent = error.message; statusNode.hidden = false; }
+      throw error;
+    }
     if (Number(granularity) === 0 && response.history) {
       const times = response.history.times || [];
       const prices = response.history.prices || [];
