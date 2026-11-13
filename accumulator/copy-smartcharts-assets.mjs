@@ -3,8 +3,7 @@ import path from "node:path";
 import { createRequire } from "node:module";
 
 const require = createRequire(import.meta.url);
-const packageRoot = path.dirname(require.resolve("@deriv-com/smartcharts-champion/package.json"));
-const dist = path.join(packageRoot, "dist");
+const dist = path.dirname(require.resolve("@deriv-com/smartcharts-champion"));
 const target = path.resolve("chart-dist");
 await fs.mkdir(target, { recursive: true });
 for (const entry of await fs.readdir(dist, { withFileTypes: true })) {
