@@ -167,8 +167,7 @@ function handleTick(t,m){
     drawChart();
   }
 }
-function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";}
-  if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";
+function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";}
 function renderMarketCards(){
   const box=$("marketGrid");box.replaceChildren();
   markets.forEach(m=>{
