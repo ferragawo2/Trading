@@ -674,10 +674,9 @@ $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",()=>{drawChart();drawNativeTradeChart();});renderNativeStats();
 function drawNativeTradeChart(){
  const chart=window.__openAlgoAccumulatorChart;if(!chart)return;
- const interval=Number($("nativeChartInterval")?.value||60);
  const raw=nativeChartTicks[selectedSymbol]||[];
  const meta={symbol:selectedSymbol,precision:Math.max(0,Math.min(8,marketBySymbol[selectedSymbol]?.pipSize??2)),name:marketBySymbol[selectedSymbol]?.name||selectedSymbol};
- chart.setData(raw,interval,meta);
+ chart.setData(raw,null,meta);
  const overlay=activeTradeOverlay&&activeTradeOverlay.symbol===selectedSymbol?activeTradeOverlay:null;
  chart.setOverlay(overlay,meta);
  const state=chart.state();
@@ -691,7 +690,7 @@ function drawNativeTradeChart(){
  $("nativeChartContractState").textContent=overlay?(overlay.status||"CONTRACT ACTIVE"):"NO ACTIVE CONTRACT";
 }
 function resetNativeChart(){window.__openAlgoAccumulatorChart?.reset();drawNativeTradeChart();}
-$("nativeChartInterval")?.addEventListener("change",resetNativeChart);$("nativeChartReset")?.addEventListener("click",resetNativeChart);
+$("nativeChartReset")?.addEventListener("click",resetNativeChart);
 setInterval(drawNativeTradeChart,1000);
 connect();
 
