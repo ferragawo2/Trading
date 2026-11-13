@@ -154,6 +154,41 @@ body.trade-active #tradePage #executionPanel{margin-top:18px}
 }
 #tradePage .trade-tab:not(.is-active){background:#000000;color:#aaa;border-color:#292929}
 #tradePage .trade-tab:not(.is-active):hover{background:#000000;color:#fff}
+ 
+.trade-control-header{position:relative;z-index:5;padding:8px 14px 12px;background:#000}
+.trade-header-top{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px}
+.trade-tabs{display:flex;gap:9px;padding:0;margin:0;border:0;border-radius:0;background:transparent;flex:0 0 auto}
+.trade-tab{min-width:112px;min-height:42px;padding:9px 20px;border:1px solid #424242;border-radius:9px;background:#090909;color:#aaa;font-size:11px;font-weight:850;letter-spacing:.1em;box-shadow:none}
+.trade-tab.is-active{background:#fff;color:#000;border-color:#fff;box-shadow:none}
+.trade-balance{display:flex;align-items:center;justify-content:flex-end;gap:9px;min-width:0;color:#fff;font-variant-numeric:tabular-nums}
+.currency-logo{width:27px;height:27px;flex:0 0 27px;border:1px solid #777;border-radius:50%;display:grid;place-items:center;font-size:8px;font-weight:900;letter-spacing:-.04em;color:#fff}
+.trade-balance-value{font-size:17px;font-weight:750;white-space:nowrap}
+.trade-header-bottom{display:flex;align-items:center;gap:9px;margin-top:11px;min-width:0}
+.trade-select-shell{position:relative;display:flex;align-items:center;height:43px;min-width:0;border:1px solid #343434;border-radius:12px;background:#090909;color:#fff}
+.trade-select-shell select{height:100%;width:100%;min-width:0;appearance:none;-webkit-appearance:none;border:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:#f7f7f7;padding:0 29px 0 12px;font-size:12px;font-weight:750;white-space:nowrap;text-overflow:ellipsis}
+.trade-select-shell select option{background:#111;color:#fff}
+.instrument-shell{flex:1 1 48%;max-width:52%;gap:7px;padding-left:9px}
+.instrument-mark{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#1b1b1b;color:#fff;font-size:11px;font-weight:850}
+.instrument-shell select{padding-left:0}
+.select-chevron{position:absolute;right:10px;top:50%;transform:translateY(-55%);pointer-events:none;color:#bcbcbc;font-size:17px;line-height:1}
+.growth-shell{flex:0 0 104px;border-radius:8px}
+.account-mode-shell{flex:0 0 92px}
+.account-mode-shell select{text-align:center;padding-left:10px}
+body.trade-active #tradePage .deriv-chart-card{height:calc(100dvh - 190px);height:calc(100vh - 190px);min-height:340px;max-height:none}
+body.trade-active #tradePage #nativeChartHost,body.trade-active #tradePage #nativeChartWrap{background:#000!important}
+body.trade-active #tradePage .deriv-chart-card{margin-top:0}
+@media(max-width:600px){
+ .trade-control-header{padding:7px 10px 10px}
+ .trade-tab{min-width:91px;min-height:39px;padding:8px 13px}
+ .trade-header-bottom{gap:7px;margin-top:9px}
+ .trade-select-shell{height:40px}
+ .instrument-shell{max-width:none;flex:1 1 auto}
+ .growth-shell{flex-basis:76px}
+ .account-mode-shell{flex-basis:76px}
+ .trade-balance-value{font-size:15px}
+ .currency-logo{width:25px;height:25px;flex-basis:25px}
+ body.trade-active #tradePage .deriv-chart-card{height:calc(100dvh - 180px);height:calc(100vh - 180px);min-height:330px}
+}
 </style>
 </head>
 <body><main class="wrap">
@@ -222,12 +257,22 @@ body.trade-active #tradePage #executionPanel{margin-top:18px}
 
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
-<div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
+<div class="trade-control-header">
+ <div class="trade-header-top">
+  <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
+  <div class="trade-balance" aria-live="polite"><span class="currency-logo" id="tradeCurrencyLogo">—</span><span class="trade-balance-value" id="tradeHeaderBalance">—</span></div>
+ </div>
+ <div class="trade-header-bottom">
+  <label class="trade-select-shell instrument-shell"><span class="instrument-mark" id="tradeInstrumentMark">◈</span><select id="tradeInstrumentSelect" aria-label="Select instrument" disabled><option>Loading instruments…</option></select><span class="select-chevron">⌄</span></label>
+  <label class="trade-select-shell growth-shell"><select id="tradeGrowth" aria-label="Growth rate"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select><span class="select-chevron">⌄</span></label>
+  <label class="trade-select-shell account-mode-shell"><select id="tradeAccountMode" aria-label="Trading account type"><option value="demo">DEMO</option><option value="real">REAL</option></select><span class="select-chevron">⌄</span></label>
+ </div>
+</div>
 <div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><span id="nativeChartDetail" hidden>Waiting for market ticks</span><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#000000;border:0;border-radius:0;overflow:hidden"><div id="nativeChartHost" style="position:absolute;inset:0"></div><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">OpenAlgo chart tools are powered by the live Deriv price stream. Chart studies and drawings are visual analysis tools, not trade signals.</p></section><section class="card full" id="executionPanel">
   <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><div class="row"><span class="pill" id="tradeConnectionState">Account not selected</span><button class="secondary" id="issueFinderOpen" type="button">Run issue finder</button></div></div>
   <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
   <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
-  <div class="row" style="margin-top:12px"><div class="field"><label>STAKE</label><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div><div class="field"><label>GROWTH RATE</label><select id="tradeGrowth"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select></div><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
+  <div class="row" style="margin-top:12px"><div class="field"><label>STAKE</label><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
   <div class="row" style="margin-top:12px;align-items:center"><button id="getTradeQuote" type="button" disabled>Get trade quote</button><button id="confirmTradeBuy" type="button" disabled>Buy contract</button><span class="muted" id="tradeMessage" aria-live="polite" style="font-size:11px">Connect Deriv and select a trading account.</span></div>
   <div class="metrics" style="margin-top:12px"><div class="metric"><small>QUOTED PRICE / STAKE</small><strong id="quoteAsk">—</strong></div><div class="metric"><small>QUOTED PAYOUT</small><strong id="quotePayout">—</strong></div><div class="metric"><small>DERIV CONTRACT ID</small><strong id="tradeContractId">—</strong></div></div>
   <div class="metric" style="margin-top:10px"><small>CONTRACT STATUS</small><strong id="tradeContractStatus" style="font-size:14px">No contract purchased</strong><small id="tradeContractDetail">A quote does not place a trade. Buying requires the separate Buy contract action.</small></div>
@@ -333,7 +378,7 @@ function handleSymbols(rows){
   markets.forEach(m=>{const o=document.createElement("option");o.value=m.symbol;o.textContent=m.name+" ("+m.symbol+")";$("symbol").append(o);});
   $("symbol").disabled=false;selectedSymbol=markets[0].symbol;$("symbol").value=selectedSymbol;
   const listStatus=$("listStatus");if(listStatus)listStatus.textContent="";
-  renderMarketCards();renderTickerMarkets();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
+  renderMarketCards();renderTickerMarkets();renderTradeInstrumentOptions();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
   const symbols=markets.map(m=>m.symbol);
   markets.forEach((m,i)=>setTimeout(()=>requestMarketHistory24h(m.symbol),i*250));
   try{
@@ -468,7 +513,7 @@ function renderMarketCards(){
 }
 function selectMarket(symbol){
   if(!marketBySymbol[symbol])return;
-  selectedSymbol=symbol;window.__derivChartSetSymbol?.(symbol);$("symbol").value=symbol;document.querySelectorAll(".market-card").forEach(card=>card.classList.toggle("selected",card.dataset.market===symbol));
+  selectedSymbol=symbol;window.__derivChartSetSymbol?.(symbol);$("symbol").value=symbol;updateTradeInstrumentMark();document.querySelectorAll(".market-card").forEach(card=>card.classList.toggle("selected",card.dataset.market===symbol));
   const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
   $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
   $("lastTick").textContent=t?new Date(t.epoch*1000).toLocaleTimeString():"—";
@@ -590,13 +635,43 @@ async function startDerivLogin(){
     window.location.assign(data.authorization_url);
   }catch(e){message.textContent=e.message;button.disabled=false;}
 }
+function updateTradeHeaderBalance(){
+ const account=activeTradeAccount;
+ const currency=(account&&account.currency)||"";
+ const code=currency.toUpperCase();
+ const logo=$("tradeCurrencyLogo");
+ logo.textContent=code?code.slice(0,4):"—";
+ logo.setAttribute("aria-label",code?currency+" currency":"Currency unavailable");
+ $("tradeHeaderBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2):"—";
+ const mode=$("tradeAccountMode");
+ if(account){mode.value=account.is_virtual?"demo":"real";}
+}
+function renderTradeInstrumentOptions(){
+ const select=$("tradeInstrumentSelect");if(!select)return;
+ select.replaceChildren();
+ if(!markets.length){const option=document.createElement("option");option.textContent="No instruments";select.append(option);select.disabled=true;return;}
+ markets.forEach(m=>{const option=document.createElement("option");option.value=m.symbol;option.textContent=m.name||m.symbol;select.append(option);});
+ select.disabled=false;select.value=selectedSymbol||markets[0].symbol;
+ updateTradeInstrumentMark();
+}
+function updateTradeInstrumentMark(){
+ const market=marketBySymbol[selectedSymbol];
+ $("tradeInstrumentMark").textContent=market?(market.symbol||"◈").replace(/[^A-Za-z0-9]/g,"").slice(0,3)||"◈":"◈";
+ const select=$("tradeInstrumentSelect");if(select&&selectedSymbol)select.value=selectedSymbol;
+}
+function switchTradeAccountMode(mode){
+ const account=derivAccounts.find(a=>a.is_virtual===(mode==="demo"));
+ if(!account){$("tradeMessage").textContent="No "+mode+" Deriv account is available. Connect an account of this type first.";updateTradeHeaderBalance();return;}
+ $("tradeAccount").value=account.account_id;
+ connectTradeAccount(account.account_id);
+}
 function renderTradeAccounts(){
   const select=$("tradeAccount");select.replaceChildren();
   if(!derivAccounts.length){const o=document.createElement("option");o.textContent="No trading accounts returned";select.append(o);select.disabled=true;return;}
   derivAccounts.forEach(a=>{const o=document.createElement("option");o.value=a.account_id;o.textContent=(a.is_virtual?"DEMO":"REAL")+" · "+(a.account_type||"Options")+" · "+(a.currency||"")+" · "+a.account_id;select.append(o);});
   select.disabled=false;
   const preferred=derivAccounts.find(a=>a.is_virtual)||derivAccounts[0];
-  select.value=preferred.account_id;connectTradeAccount(preferred.account_id);
+  select.value=preferred.account_id;connectTradeAccount(preferred.account_id);updateTradeHeaderBalance();$("tradeAccountMode").value=preferred.is_virtual?"demo":"real";
 }
 function tradeSend(payload,kind){
   if(!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)throw new Error("Selected Deriv account is not connected.");
@@ -605,7 +680,7 @@ function tradeSend(payload,kind){
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
   if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
-  activeTradeAccount=account;currentTradeProposal=null;activeContractId=null;activeTradeOverlay=null;
+  activeTradeAccount=account;currentTradeProposal=null;activeContractId=null;activeTradeOverlay=null;updateTradeHeaderBalance();
   $("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
   $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
   $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
@@ -622,7 +697,7 @@ async function connectTradeAccount(accountId){
       let m;try{m=JSON.parse(event.data)}catch{return}
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=true}return}
-      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString()}
+      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
       if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received. Review it, then choose Buy contract.";$("confirmTradeBuy").disabled=!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").disabled=true;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
       if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=c.entry_spot==null||c.entry_spot===""?NaN:Number(c.entry_spot),barrier=c.barrier==null||c.barrier===""?NaN:Number(c.barrier),spot=c.current_spot==null||c.current_spot===""?NaN:Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;drawNativeTradeChart();}if(c.is_sold){try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}}
@@ -656,7 +731,7 @@ async function disconnectDeriv(){
   refreshDerivAccount();
 }
 $("derivLogin").onclick=startDerivLogin;
-$("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);
+$("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);\n$("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").value);\n$("tradeAccountMode").onchange=()=>switchTradeAccountMode($("tradeAccountMode").value);
 $("getTradeQuote").onclick=requestTradeQuote;
 $("confirmTradeBuy").onclick=buyTradeProposal;
 $("derivLogout").onclick=disconnectDeriv;
