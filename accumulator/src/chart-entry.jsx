@@ -1,7 +1,6 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { SmartChart, setSmartChartsPublicPath } from "@deriv-com/smartcharts-champion";
-import "@deriv-com/smartcharts-champion/dist/smartcharts.css";
 
 setSmartChartsPublicPath("/chart-dist/");
 
