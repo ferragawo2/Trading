@@ -100,9 +100,10 @@
           return;
         }
         const precision = Math.max(0, Math.min(8, Number(meta.precision ?? 2)));
-        const entry = Number(overlay.entrySpot);
-        const barrier = Number(overlay.barrier);
-        const live = Number(overlay.currentSpot);
+        const priceValue = value => value == null || value === "" ? NaN : Number(value);
+        const entry = priceValue(overlay.entrySpot);
+        const barrier = priceValue(overlay.barrier);
+        const live = priceValue(overlay.currentSpot);
         syncLine("entry", Number.isFinite(entry) ? entry : NaN, {
           color: "#48a9ff", lineWidth: 2, lineStyle: "dashed",
           badge: "ENTRY", leftLabel: Number.isFinite(entry) ? entry.toFixed(precision) : "",
