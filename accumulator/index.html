@@ -883,8 +883,8 @@ window.__derivChartBridge={
       });
       rows=nativeChartTicks[symbol]||[];
     }
-    const start=Number(request?.start);
-    const end=request?.end==="latest"||request?.end===undefined?NaN:Number(request.end);
+    const start=request?.start==null?NaN:Number(request.start);
+    const end=request?.end==null||request?.end==="latest"?NaN:Number(request.end);
     rows=rows.filter(row=>
       (!Number.isFinite(start)||Number(row.time)>=start)&&
       (!Number.isFinite(end)||Number(row.time)<=end)
