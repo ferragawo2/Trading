@@ -7,7 +7,9 @@ import './deriv-smartchart.css';
 setSmartChartsPublicPath('/dist/');
 
 // Use the same public market-data endpoint already used by the main app.
-const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
+// SmartCharts uses Deriv's classic Binary API (ticks_history, active_symbols and trading_times).
+// Use the same v3 endpoint and sample app ID as Deriv's own SmartCharts app.
+const WS_URL = 'wss://red.derivws.com/websockets/v3?app_id=12812&l=EN';
 
 function toQuote(message) {
     if (message.tick) {
