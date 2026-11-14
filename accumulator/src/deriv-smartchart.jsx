@@ -9,14 +9,14 @@ setSmartChartsPublicPath('/dist/');
 // Use the same public market-data endpoint already used by the main app.
 // SmartCharts uses Deriv's classic Binary API (ticks_history, active_symbols and trading_times).
 // Use the same v3 endpoint and sample app ID as Deriv's own SmartCharts app.
-const WS_URL = 'wss://red.derivws.com/websockets/v3?app_id=12812&l=EN';
+const WS_URL = 'wss://ws.derivws.com/websockets/v3?app_id=12812&l=EN';
 
 function toQuote(message) {
     if (message.tick) {
         const tick = message.tick;
         const epoch = Number(tick.epoch);
         return {
-            Date: new Date(epoch * 1000).toISOString(),
+            Date: String(epoch),
             Close: Number(tick.quote),
             tick,
             DT: new Date(epoch * 1000),
@@ -58,7 +58,7 @@ function simplifyTradingTimes(response) {
                     closeTime = date + close[0] + 'Z';
                     isOpen = now >= new Date(openTime) && now < new Date(closeTime);
                 }
-                result[item.symbol] = { isOpen, openTime, closeTime };
+                result[item.underlying_symbol || item.symbol] = { isOpen, openTime, closeTime };
             });
         });
     });
