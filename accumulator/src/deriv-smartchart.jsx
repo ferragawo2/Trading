@@ -6,8 +6,8 @@ import './deriv-smartchart.css';
 
 setSmartChartsPublicPath('/dist/');
 
-// Deriv's documented public test application ID; replace with the production app's registered legacy WebSocket ID when available.
-const WS_URL = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
+// Use the same public market-data endpoint already used by the main app.
+const WS_URL = 'wss://api.derivws.com/trading/v1/options/ws/public';
 
 function toQuote(message) {
     if (message.tick) {
@@ -92,19 +92,25 @@ class DerivChartFeed {
             socket.onopen = async () => {
                 this.connected = true;
                 this.onStatus(true);
-                try {
-                    const [symbols, times] = await Promise.all([
-                        this.request({ active_symbols: 'brief' }),
-                        this.request({ trading_times: 'today' }),
-                    ]);
-                    this.metadata = {
-                        activeSymbols: Array.isArray(symbols.active_symbols) ? symbols.active_symbols : [],
-                        tradingTimes: simplifyTradingTimes(times),
-                    };
-                    this.onData({ ...this.metadata });
-                } catch (error) {
-                    console.error('Deriv SmartCharts market metadata:', error);
+                // Publish a usable initial state immediately; metadata must not
+                // keep the chart stuck on its connection screen.
+                this.onData({ ...this.metadata });
+                const [symbolsResult, timesResult] = await Promise.allSettled([
+                    this.request({ active_symbols: 'brief' }),
+                    this.request({ trading_times: 'today' }),
+                ]);
+                if (symbolsResult.status === 'fulfilled') {
+                    this.metadata.activeSymbols = Array.isArray(symbolsResult.value.active_symbols)
+                        ? symbolsResult.value.active_symbols : [];
+                } else {
+                    console.error('Deriv SmartCharts active-symbol metadata:', symbolsResult.reason);
                 }
+                if (timesResult.status === 'fulfilled') {
+                    this.metadata.tradingTimes = simplifyTradingTimes(timesResult.value);
+                } else {
+                    console.warn('Deriv SmartCharts trading-times metadata unavailable:', timesResult.reason);
+                }
+                this.onData({ ...this.metadata });
             };
             socket.onmessage = event => this.handleMessage(event);
             socket.onerror = event => { console.error('Deriv SmartCharts WebSocket error:', event); this.onStatus(false); };
@@ -278,7 +284,10 @@ function ChartApp() {
     const [chartState, setChartState] = React.useState(() => window.__derivAccumulatorChartState || {});
     const [connected, setConnected] = React.useState(false);
     const [chartData, setChartData] = React.useState(null);
-    const [feed] = React.useState(() => new DerivChartFeed(setConnected, setChartData));
+    const [feed] = React.useState(() => new DerivChartFeed(value => {
+        setConnected(value);
+        window.dispatchEvent(new CustomEvent('deriv-chart-connection', { detail: { connected: value } }));
+    }, setChartData));
 
     React.useEffect(() => {
         const update = event => setChartState(event.detail || {});
