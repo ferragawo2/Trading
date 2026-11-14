@@ -930,6 +930,7 @@ function handleTick(t,m){
     $("tickCount").textContent=String(tickCounts[key]);
     $("tickHistory").textContent=priceHistory[key].slice(-12).reverse().map(v=>v.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)))).join("  ·  ");
     $("feedNote").textContent="Live · "+(tickCounts[key]||0)+" ticks";
+    renderPurposeChartScaffold();
     drawChart();
   }
 }
