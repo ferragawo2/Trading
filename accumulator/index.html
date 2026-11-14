@@ -539,6 +539,51 @@ body.trade-active #tradePage #manualTradeView #executionPanel::after{
   }
 }
 
+
+/* Three evenly spaced summary pills above the manual trade controls. */
+body.trade-active #tradePage #executionPanel .trade-summary-pills{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:center!important;
+  gap:14px!important;
+  width:100%!important;
+  margin:0 0 16px!important;
+}
+body.trade-active #tradePage #executionPanel .trade-summary-pill{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  min-width:0!important;
+  min-height:48px!important;
+  padding:10px 14px!important;
+  box-sizing:border-box!important;
+  border:1px solid rgba(255,255,255,.2)!important;
+  border-radius:999px!important;
+  background:#080808!important;
+  color:#fff!important;
+  font-size:14px!important;
+  font-weight:800!important;
+  letter-spacing:.04em!important;
+}
+body.trade-active #tradePage #executionPanel .trade-summary-stake{
+  gap:10px!important;
+}
+body.trade-active #tradePage #executionPanel .trade-summary-stake input{
+  width:min(78px,45%)!important;
+  min-width:0!important;
+  padding:4px 2px!important;
+  border:0!important;
+  outline:none!important;
+  background:transparent!important;
+  color:#fff!important;
+  text-align:center!important;
+  font-size:15px!important;
+  font-weight:800!important;
+}
+@media(max-width:600px){
+  body.trade-active #tradePage #executionPanel .trade-summary-pills{gap:8px!important;margin-bottom:12px!important}
+  body.trade-active #tradePage #executionPanel .trade-summary-pill{min-height:42px!important;padding:8px 6px!important;font-size:12px!important}
+}
 </style>
 </head>
 <body><main class="wrap">
@@ -627,10 +672,18 @@ body.trade-active #tradePage #manualTradeView #executionPanel::after{
   <div class="stats-strip-full-history" id="statsHistory" hidden><div class="stats-strip-history-values" id="statsHistoryValues"></div></div>
 </div>
 <section class="card full" id="executionPanel">
-  <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><div class="row"><span class="pill" id="tradeConnectionState">Account not selected</span><button class="secondary" id="issueFinderOpen" type="button">Run issue finder</button></div></div>
-  <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
-  <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
-  <div class="row" style="margin-top:12px"><div class="field"><label>STAKE</label><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
+  <div class="trade-summary-pills" aria-label="Trade summary">
+    <div class="trade-summary-pill trade-summary-stake"><span>STAKE</span><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" aria-label="Stake amount"></div>
+    <div class="trade-summary-pill">TP</div>
+    <div class="trade-summary-pill">PnL</div>
+  </div>
+  <div hidden aria-hidden="true">
+    <span id="tradeConnectionState">Account not selected</span>
+    <button id="issueFinderOpen" type="button">Run issue finder</button>
+    <select id="tradeAccount" disabled><option>Connect Deriv first</option></select>
+    <strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small>
+  </div>
+  <div class="row" style="margin-top:12px"><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
   <div class="row" style="margin-top:12px;align-items:center"><button id="getTradeQuote" type="button" disabled>Get trade quote</button><button id="confirmTradeBuy" type="button" disabled>Buy contract</button><span class="muted" id="tradeMessage" aria-live="polite" style="font-size:11px">Connect Deriv and select a trading account.</span></div>
   <div class="metrics" style="margin-top:12px"><div class="metric"><small>QUOTED PRICE / STAKE</small><strong id="quoteAsk">—</strong></div><div class="metric"><small>QUOTED PAYOUT</small><strong id="quotePayout">—</strong></div><div class="metric"><small>DERIV CONTRACT ID</small><strong id="tradeContractId">—</strong></div></div>
   <div class="metric" style="margin-top:10px"><small>CONTRACT STATUS</small><strong id="tradeContractStatus" style="font-size:14px">No contract purchased</strong><small id="tradeContractDetail">A quote does not place a trade. Buying requires the separate Buy contract action.</small></div>
