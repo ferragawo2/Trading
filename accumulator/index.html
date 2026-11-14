@@ -952,44 +952,51 @@ function renderPurposeChartBarriers(){
  const valid=Number.isFinite(high)&&Number.isFinite(low)&&high>low;
  layer.hidden=!valid;
  if(!valid)return;
- const span=high-low,mid=(high+low)/2,visibleRange=span/0.22,min=mid-visibleRange/2,max=mid+visibleRange/2;
+ const domain=purposeChartPriceDomain(purposeChartVisibleHistory()),visibleRange=domain.range,min=domain.min,max=domain.max;
  const upper=((max-high)/visibleRange)*100,lower=((max-low)/visibleRange)*100;
  const band=layer.querySelector(".purpose-chart-barrier-band"),upperLine=layer.querySelector(".purpose-chart-barrier-line.upper"),lowerLine=layer.querySelector(".purpose-chart-barrier-line.lower");
  upperLine.style.top=upper+"%";lowerLine.style.top=lower+"%";band.style.top=upper+"%";band.style.height=(lower-upper)+"%";
  layer.setAttribute("aria-label","Live Deriv upper and lower barriers for "+Math.round(rate*100)+" percent growth");
 }
 
-function renderPurposeChartPriceArea(){
- const svg=$("purposeChartPriceArea"),line=$("purposeChartAreaLine"),fill=$("purposeChartAreaFill");
- if(!svg||!line||!fill)return;
- const history=(nativeChartTicks[selectedSymbol]||[]).slice(-120);
- if(history.length<2){line.setAttribute("d","");fill.setAttribute("d","");return;}
+const purposeChartView={count:120,end:null,zoom:1,shift:0,drag:null};
+function purposeChartVisibleHistory(){
+ const all=nativeChartTicks[selectedSymbol]||[],end=purposeChartView.end===null?all.length:Math.max(2,Math.min(all.length,purposeChartView.end));
+ const count=Math.max(12,Math.min(1200,purposeChartView.count));
+ return all.slice(Math.max(0,end-count),end);
+}
+function purposeChartPriceDomain(history){
  const rate=Number($("tradeGrowth")?.value||0.01),barrier=barrierData[rate];
  const high=Number(barrier?.high),low=Number(barrier?.low),hasBarrier=Number.isFinite(high)&&Number.isFinite(low)&&high>low;
  let min,max;
  if(hasBarrier){const mid=(high+low)/2,range=(high-low)/0.22;min=mid-range/2;max=mid+range/2;}
- else{min=Math.min(...history.map(p=>p.price));max=Math.max(...history.map(p=>p.price));const pad=(max-min)*0.15||Math.max(Math.abs(history[history.length-1].price)*0.00015,0.000001);min-=pad;max+=pad;}
- const span=max-min||1;
- const points=history.map((p,i)=>({x:i/(history.length-1)*1000,y:100-(p.price-min)/span*100}));
+ else if(history.length){min=Math.min(...history.map(p=>p.price));max=Math.max(...history.map(p=>p.price));const pad=(max-min)*0.15||Math.max(Math.abs(history[history.length-1].price)*0.00015,0.000001);min-=pad;max+=pad;}
+ else{const spot=Number(latestTicks[selectedSymbol]?.price)||1;min=spot*.999;max=spot*1.001;}
+ const baseRange=Math.max(max-min,Math.abs(max)*1e-10,1e-10),range=baseRange/Math.max(.2,Math.min(12,purposeChartView.zoom));
+ const center=(min+max)/2+purposeChartView.shift;
+ return {min:center-range/2,max:center+range/2,range};
+}
+function renderPurposeChartPriceArea(){
+ const svg=$("purposeChartPriceArea"),line=$("purposeChartAreaLine"),fill=$("purposeChartAreaFill");
+ if(!svg||!line||!fill)return;
+ const history=purposeChartVisibleHistory();
+ if(history.length<2){line.setAttribute("d","");fill.setAttribute("d","");return;}
+ const domain=purposeChartPriceDomain(history),span=domain.range;
+ const points=history.map((p,i)=>({x:i/(history.length-1)*1000,y:100-(p.price-domain.min)/span*100}));
  const d=points.map((p,i)=>(i?"L":"M")+p.x.toFixed(2)+" "+p.y.toFixed(2)).join(" ");
- line.setAttribute("d",d);
- fill.setAttribute("d",d+" L1000 100 L0 100 Z");
+ line.setAttribute("d",d);fill.setAttribute("d",d+" L1000 100 L0 100 Z");
 }
 function renderPurposeChartScaffold(){
  const priceBox=$("purposeChartPriceLabels"),timeBox=$("purposeChartTimeLabels"),grid=$("purposeChartGrid");
  if(!priceBox||!timeBox||!grid)return;
- const market=marketBySymbol[selectedSymbol],tick=latestTicks[selectedSymbol],history=nativeChartTicks[selectedSymbol]||[];
- const precision=Math.max(0,Math.min(8,Number(market?.pipSize??2)));
- const spot=Number(tick?.price),rate=Number($("tradeGrowth")?.value||0.01),barrier=barrierData[rate];
- const high=Number(barrier?.high),low=Number(barrier?.low),hasBarrier=Number.isFinite(high)&&Number.isFinite(low)&&high>low;
+ const market=marketBySymbol[selectedSymbol],tick=latestTicks[selectedSymbol],all=nativeChartTicks[selectedSymbol]||[],history=purposeChartVisibleHistory();
+ const precision=Math.max(0,Math.min(8,Number(market?.pipSize??2))),domain=purposeChartPriceDomain(history);
  const priceLabels=[];
- if(hasBarrier){const mid=(high+low)/2,range=(high-low)/0.22,min=mid-range/2,max=mid+range/2;for(let i=0;i<7;i++)priceLabels.push((max-range*i/6).toFixed(precision));}
- else if(Number.isFinite(spot)){const step=Math.pow(10,-precision)*10;for(let i=3;i>=-3;i--)priceLabels.push((spot+i*step).toFixed(precision));}
- else{for(let i=0;i<7;i++)priceLabels.push("—");}
+ for(let i=0;i<7;i++)priceLabels.push((domain.max-domain.range*i/6).toFixed(precision));
  priceBox.replaceChildren(...priceLabels.map(value=>{const el=document.createElement("span");el.textContent=value;return el;}));
  grid.replaceChildren(...Array.from({length:7},()=>document.createElement("span")));
  const last=Number(history[history.length-1]?.time)||Number(tick?.epoch)||Date.now()/1000;
- const first=Number(history[Math.max(0,history.length-80)]?.time)||last-240;
+ const first=Number(history[0]?.time)||last-240;
  const labels=[];
  for(let i=0;i<5;i++){
   const stamp=first+(last-first)*(i/4);
@@ -998,6 +1005,45 @@ function renderPurposeChartScaffold(){
  timeBox.replaceChildren(...labels.map(value=>{const el=document.createElement("span");el.textContent=value;return el;}));
  renderPurposeChartBarriers();
  renderPurposeChartPriceArea();
+}
+function setupPurposeChartInteractions(){
+ const plot=$("purposeChartPriceArea")?.parentElement,scale=$("purposeChartPriceLabels")?.parentElement;
+ if(!plot||!scale||plot.dataset.interactive)return;
+ plot.dataset.interactive="true";scale.dataset.interactive="true";
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const redraw=()=>renderPurposeChartScaffold();
+ const begin=(kind,event)=>{
+  if(event.button!==undefined&&event.button!==0)return;
+  event.preventDefault();
+  const history=nativeChartTicks[selectedSymbol]||[];
+  if(purposeChartView.end===null)purposeChartView.end=history.length;
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  purposeChartView.drag={kind,x:event.clientX,y:event.clientY,end:purposeChartView.end,count:purposeChartView.count,shift:purposeChartView.shift,zoom:purposeChartView.zoom};
+ };
+ const move=event=>{
+  const drag=purposeChartView.drag;if(!drag)return;
+  if(drag.kind==="time"){
+   const width=Math.max(1,plot.clientWidth),delta=Math.round((event.clientX-drag.x)/width*drag.count);
+   purposeChartView.end=clamp(drag.end-delta,Math.min(12,(nativeChartTicks[selectedSymbol]||[]).length), (nativeChartTicks[selectedSymbol]||[]).length);
+  }else{
+   const domain=purposeChartPriceDomain(purposeChartVisibleHistory());
+   const dy=event.clientY-drag.y;
+   if(event.shiftKey)purposeChartView.zoom=clamp(drag.zoom*Math.exp(-dy*.012),.2,12);
+   else purposeChartView.shift=drag.shift+dy/Math.max(1,scale.clientHeight)*domain.range;
+  }
+  redraw();
+ };
+ const end=()=>{purposeChartView.drag=null;};
+ plot.addEventListener("pointerdown",e=>begin("time",e));
+ plot.addEventListener("pointermove",e=>{if(purposeChartView.drag?.kind==="time")move(e);});
+ plot.addEventListener("pointerup",end);plot.addEventListener("pointercancel",end);
+ plot.addEventListener("wheel",e=>{e.preventDefault();const factor=Math.exp(Math.sign(e.deltaY)*Math.min(1.5,Math.abs(e.deltaY)/240)*.22);purposeChartView.count=clamp(Math.round(purposeChartView.count*factor),12,1200);if(purposeChartView.end===null)purposeChartView.end=(nativeChartTicks[selectedSymbol]||[]).length;redraw();},{passive:false});
+ scale.addEventListener("pointerdown",e=>begin("price",e));
+ scale.addEventListener("pointermove",e=>{if(purposeChartView.drag?.kind==="price")move(e);});
+ scale.addEventListener("pointerup",end);scale.addEventListener("pointercancel",end);
+ scale.addEventListener("wheel",e=>{e.preventDefault();purposeChartView.zoom=clamp(purposeChartView.zoom*Math.exp(-e.deltaY*.002),.2,12);redraw();},{passive:false});
+ scale.title="Drag to shift the price scale; hold Shift while dragging to zoom vertically. Scroll to zoom.";
+ plot.title="Drag to pan through time; scroll to zoom in or out.";
 }
 
 function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";}
@@ -1326,7 +1372,7 @@ $("connectBtn").onclick=connect;
 $("statsGrowthRate").onchange=renderNativeStats;
 $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;panel.hidden=!open;$("statsToggle").setAttribute("aria-expanded",String(open));$("statsChevron").textContent=open?"⌃":"⌄";};
 $("symbol").onchange=()=>selectMarket($("symbol").value);
-window.addEventListener("resize",()=>{drawChart();renderPurposeChartScaffold();});renderNativeStats();renderPurposeChartScaffold();
+window.addEventListener("resize",()=>{drawChart();renderPurposeChartScaffold();});setupPurposeChartInteractions();renderNativeStats();renderPurposeChartScaffold();
 connect();
 
 function setTradeTab(mode){const manual=mode==="manual";$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
