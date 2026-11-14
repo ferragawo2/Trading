@@ -512,6 +512,27 @@ body.trade-active #tradePage #manualTradeView #executionPanel{
   body.trade-active #tradePage .stats-strip-history-preview{gap:9px!important;font-size:13px!important}
 }
 
+/* Keep the execution panel start pure black with only a crisp edge line. */
+body.trade-active #tradePage #manualTradeView{
+  background:#000000!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel{
+  background:#000000!important;
+  box-shadow:none!important;
+  border:0!important;
+  border-top:1px solid rgba(255,255,255,.38)!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel::before,
+body.trade-active #tradePage #manualTradeView #executionPanel::after{
+  content:none!important;
+  display:none!important;
+}
+@media(max-width:600px){
+  body.trade-active #tradePage #manualTradeView #executionPanel{
+    margin-top:0!important;
+  }
+}
+
 </style>
 </head>
 <body><main class="wrap">
