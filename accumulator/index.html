@@ -224,7 +224,7 @@ body.trade-active #tradePage .deriv-chart-card{margin-top:0}
 #tradePage .trade-header-top{position:relative;z-index:7}
 #tradePage .trade-header-bottom{
  position:absolute!important;z-index:12;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
- display:grid!important;width:55vw;max-width:55vw;min-width:0;
+ display:grid!important;width:calc(55vw + 10px);max-width:calc(55vw + 10px);min-width:0;
  grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr);
  gap:7px!important;margin:0!important;padding:0!important;
  background:transparent!important;border:0!important;box-shadow:none!important;
@@ -239,7 +239,7 @@ body.trade-active #tradePage .deriv-chart-card{margin-top:0}
 #tradePage .deriv-chart-card{margin-top:0!important;padding-top:0!important}
 #tradePage .deriv-chart-card>.row:first-child{position:relative;z-index:1}
 @media(max-width:600px){
- #tradePage .trade-header-bottom{width:55vw;max-width:55vw;grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);gap:5px!important;top:calc(100% + 7px)}
+ #tradePage .trade-header-bottom{width:calc(55vw + 10px);max-width:calc(55vw + 10px);grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);gap:5px!important;top:calc(100% + 7px)}
  #tradePage .trade-header-bottom .trade-select-shell{height:36px}
 }
 
@@ -251,7 +251,7 @@ body.trade-active #tradePage .deriv-chart-card{margin-top:0}
  border-color:#343434!important;
  box-shadow:none!important;
 }
-#tradePage .trade-header-bottom{grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr)!important}
+#tradePage .trade-header-bottom{grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr)!important}
 #tradePage .trade-header-bottom .select-chevron{
  font-size:0!important;
  width:7px;height:7px;right:13px;
