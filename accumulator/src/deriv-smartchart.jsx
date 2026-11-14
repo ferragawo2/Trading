@@ -6,7 +6,8 @@ import './deriv-smartchart.css';
 
 setSmartChartsPublicPath('/dist/');
 
-const WS_URL = 'wss://ws.derivws.com/websockets/v3?app_id=12812';
+// Deriv's documented public test application ID; replace with the production app's registered legacy WebSocket ID when available.
+const WS_URL = 'wss://ws.derivws.com/websockets/v3?app_id=1089';
 
 function toQuote(message) {
     if (message.tick) {
@@ -106,9 +107,10 @@ class DerivChartFeed {
                 }
             };
             socket.onmessage = event => this.handleMessage(event);
-            socket.onerror = () => this.onStatus(false);
+            socket.onerror = event => { console.error('Deriv SmartCharts WebSocket error:', event); this.onStatus(false); };
             socket.onclose = () => {
                 this.connected = false;
+                console.warn('Deriv SmartCharts WebSocket closed; reconnecting.');
                 this.onStatus(false);
                 if (!this.destroyed) {
                     clearTimeout(this.reconnectTimer);
