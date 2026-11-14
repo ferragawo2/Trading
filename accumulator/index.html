@@ -244,15 +244,14 @@ body.trade-active #tradePage .deriv-chart-card{margin-top:0}
 }
 
 
-/* Cleaner, brand-style select indicators and slightly brighter outer pills */
+/* Restore original black finish and give each outer selector 5px more room */
 #tradePage .trade-header-bottom .instrument-shell,
 #tradePage .trade-header-bottom .account-mode-shell{
- background:#0d0d0d!important;
- border-color:#444!important;
- box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 1px 3px rgba(0,0,0,.22);
+ background:#000!important;
+ border-color:#343434!important;
+ box-shadow:none!important;
 }
-#tradePage .trade-header-bottom .instrument-shell select,
-#tradePage .trade-header-bottom .account-mode-shell select{color:#f7f7f7}
+#tradePage .trade-header-bottom{grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr)!important}
 #tradePage .trade-header-bottom .select-chevron{
  font-size:0!important;
  width:7px;height:7px;right:13px;
