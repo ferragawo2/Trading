@@ -551,38 +551,80 @@ body.trade-active #tradePage #executionPanel .trade-summary-pills{
 }
 body.trade-active #tradePage #executionPanel .trade-summary-pill{
   display:flex!important;
+  flex-direction:column!important;
   align-items:center!important;
   justify-content:center!important;
+  gap:5px!important;
   min-width:0!important;
-  min-height:48px!important;
-  padding:10px 14px!important;
+  min-height:66px!important;
+  padding:9px 12px!important;
   box-sizing:border-box!important;
   border:1px solid rgba(255,255,255,.2)!important;
-  border-radius:999px!important;
+  border-radius:14px!important;
   background:#080808!important;
   color:#fff!important;
-  font-size:14px!important;
+  font-size:12px!important;
   font-weight:800!important;
   letter-spacing:.04em!important;
 }
-body.trade-active #tradePage #executionPanel .trade-summary-stake{
-  gap:10px!important;
+body.trade-active #tradePage #executionPanel .trade-summary-pill strong{
+  color:#fff!important;font-size:16px!important;font-weight:850!important;letter-spacing:0!important;
 }
+body.trade-active #tradePage #executionPanel .trade-summary-stake{gap:5px!important}
 body.trade-active #tradePage #executionPanel .trade-summary-stake input{
-  width:min(78px,45%)!important;
+body.trade-active #tradePage #executionPanel .trade-summary-stake input{
+  width:min(90px,75%)!important;
   min-width:0!important;
-  padding:4px 2px!important;
+  padding:2px!important;
   border:0!important;
   outline:none!important;
   background:transparent!important;
   color:#fff!important;
   text-align:center!important;
-  font-size:15px!important;
-  font-weight:800!important;
+  font-size:16px!important;
+  font-weight:850!important;
 }
+body.trade-active #tradePage #executionPanel .trade-quote-panel{
+  display:flex!important;flex-direction:column!important;gap:0!important;width:100%!important;margin:2px 0 16px!important;
+}
+body.trade-active #tradePage #executionPanel .trade-quote-row{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;
+  min-height:34px!important;padding:7px 2px!important;border-bottom:1px solid rgba(255,255,255,.12)!important;
+  color:#cfcfcf!important;font-size:12px!important;font-weight:750!important;letter-spacing:.025em!important;
+}
+body.trade-active #tradePage #executionPanel .trade-quote-row strong{
+  color:#fff!important;font-size:14px!important;font-weight:850!important;text-align:right!important;
+  font-variant-numeric:tabular-nums!important;overflow-wrap:anywhere!important;
+}
+body.trade-active #tradePage #executionPanel .trade-action-row{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;width:100%!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control{
+  display:flex!important;align-items:center!important;gap:10px!important;color:#ddd!important;
+  font-size:11px!important;font-weight:800!important;letter-spacing:.04em!important;cursor:pointer!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control input{
+  appearance:none!important;width:38px!important;height:21px!important;border-radius:20px!important;
+  background:#333!important;border:1px solid #666!important;position:relative!important;cursor:pointer!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control input::after{
+  content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;
+  background:#fff!important;transition:transform .18s ease!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control input:checked{background:#fff!important;border-color:#fff!important}
+body.trade-active #tradePage #executionPanel .one-tap-control input:checked::after{background:#000!important;transform:translateX(17px)}
+body.trade-active #tradePage #executionPanel .trade-buy-pill{
+  min-width:128px!important;min-height:46px!important;padding:10px 24px!important;border-radius:12px!important;
+  border:1px solid rgba(255,255,255,.35)!important;background:#fff!important;color:#000!important;
+  font-size:14px!important;font-weight:900!important;letter-spacing:.08em!important;cursor:pointer!important;
+}
+body.trade-active #tradePage #executionPanel .trade-buy-pill:disabled{opacity:.38!important;cursor:not-allowed!important}
 @media(max-width:600px){
   body.trade-active #tradePage #executionPanel .trade-summary-pills{gap:8px!important;margin-bottom:12px!important}
-  body.trade-active #tradePage #executionPanel .trade-summary-pill{min-height:42px!important;padding:8px 6px!important;font-size:12px!important}
+  body.trade-active #tradePage #executionPanel .trade-summary-pill{min-height:58px!important;padding:7px 5px!important;font-size:11px!important}
+  body.trade-active #tradePage #executionPanel .trade-summary-pill strong{font-size:14px!important}
+  body.trade-active #tradePage #executionPanel .trade-action-row{gap:8px!important}
+  body.trade-active #tradePage #executionPanel .trade-buy-pill{min-width:108px!important;padding:9px 16px!important}
 }
 </style>
 </head>
@@ -674,8 +716,8 @@ body.trade-active #tradePage #executionPanel .trade-summary-stake input{
 <section class="card full" id="executionPanel">
   <div class="trade-summary-pills" aria-label="Trade summary">
     <div class="trade-summary-pill trade-summary-stake"><span>STAKE</span><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" aria-label="Stake amount"></div>
-    <div class="trade-summary-pill">TP</div>
-    <div class="trade-summary-pill">PnL</div>
+    <div class="trade-summary-pill"><span>TP</span><strong id="tradeTpValue">—</strong></div>
+    <div class="trade-summary-pill"><span>PnL</span><strong id="tradePnlValue">—</strong></div>
   </div>
   <div hidden aria-hidden="true">
     <span id="tradeConnectionState">Account not selected</span>
@@ -683,11 +725,22 @@ body.trade-active #tradePage #executionPanel .trade-summary-stake input{
     <select id="tradeAccount" disabled><option>Connect Deriv first</option></select>
     <strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small>
   </div>
-  <div class="row" style="margin-top:12px"><div class="field"><label>MARKET</label><input id="tradeMarket" value="Select a market above" disabled style="background:#0a111b;border:1px solid #2b3a50;border-radius:10px;padding:11px 12px;color:var(--text)"></div></div>
-  <div class="row" style="margin-top:12px;align-items:center"><button id="getTradeQuote" type="button" disabled>Get trade quote</button><button id="confirmTradeBuy" type="button" disabled>Buy contract</button><span class="muted" id="tradeMessage" aria-live="polite" style="font-size:11px">Connect Deriv and select a trading account.</span></div>
-  <div class="metrics" style="margin-top:12px"><div class="metric"><small>QUOTED PRICE / STAKE</small><strong id="quoteAsk">—</strong></div><div class="metric"><small>QUOTED PAYOUT</small><strong id="quotePayout">—</strong></div><div class="metric"><small>DERIV CONTRACT ID</small><strong id="tradeContractId">—</strong></div></div>
-  <div class="metric" style="margin-top:10px"><small>CONTRACT STATUS</small><strong id="tradeContractStatus" style="font-size:14px">No contract purchased</strong><small id="tradeContractDetail">A quote does not place a trade. Buying requires the separate Buy contract action.</small></div>
-  <div class="note" style="margin:12px 0 0">Real-account purchases risk real funds. Check the account type, stake, growth rate and Deriv quote before every purchase. The bot is not enabled by this manual panel.</div>
+  <div class="trade-quote-panel" aria-label="Trade quote details">
+    <div class="trade-quote-row"><span>QUOTED PRICE / STAKE</span><strong id="quoteAsk">—</strong></div>
+    <div class="trade-quote-row"><span>CONTRACT ID</span><strong id="tradeContractId">—</strong></div>
+  </div>
+  <div class="trade-action-row">
+    <label class="one-tap-control"><span>ONE TAP TRADING</span><input id="oneTapTrading" type="checkbox" aria-label="Enable one tap trading"><i aria-hidden="true"></i></label>
+    <button id="confirmTradeBuy" class="trade-buy-pill" type="button" disabled>BUY</button>
+  </div>
+  <div hidden aria-hidden="true">
+    <input id="tradeMarket" value="Select a market above" disabled>
+    <button id="getTradeQuote" type="button" disabled>Get trade quote</button>
+    <span id="quotePayout">—</span>
+    <span id="tradeContractStatus">No contract purchased</span>
+    <span id="tradeContractDetail"></span>
+    <span id="tradeMessage" aria-live="polite">Connect Deriv and select a trading account.</span>
+  </div>
 </section></div>
 <section id="algoTradeView" class="algo-placeholder" role="tabpanel" aria-labelledby="algoTab" hidden><div class="algo-mark" aria-hidden="true">⌁</div><h2>ALGO TRADING</h2><p>Automated strategies will be configured here. Algo execution is not enabled yet; no trades will be placed automatically.</p><span class="algo-status">COMING SOON</span></section>
 </section>
@@ -931,7 +984,7 @@ function selectMarket(symbol){
   $("tickCount").textContent=String(tickCounts[symbol]||0);
   $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
   $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
-  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();if(activeTradeAccount&&tradingSocket?.readyState===WebSocket.OPEN)requestTradeQuote();
 }
 
 function clearAccumulatorQuotes(){
@@ -1104,15 +1157,16 @@ async function connectTradeAccount(accountId){
     const response=await fetch(OAUTH_API+"/api/account/otp",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+sid},body:JSON.stringify({account_id:accountId})});
     const data=await response.json();if(!response.ok||!data.ws_url)throw new Error(data.error||"Could not authorize this Deriv account.");
     const socket=new WebSocket(data.ws_url);tradingSocket=socket;
-    socket.onopen=()=>{if(tradingSocket!==socket)return;$("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connected";$("tradeMessage").textContent="Authenticated to "+(account.is_virtual?"demo":"real")+" account.";$("getTradeQuote").disabled=false;try{tradeSend({balance:1,subscribe:1},"balance")}catch(e){$("tradeMessage").textContent=e.message}};
+    socket.onopen=()=>{if(tradingSocket!==socket)return;$("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connected";$("tradeMessage").textContent="Authenticated to "+(account.is_virtual?"demo":"real")+" account.";$("getTradeQuote").disabled=false;try{tradeSend({balance:1,subscribe:1},"balance")}catch(e){$("tradeMessage").textContent=e.message}if(selectedSymbol&&marketBySymbol[selectedSymbol])requestTradeQuote()};
     socket.onmessage=event=>{
       let m;try{m=JSON.parse(event.data)}catch{return}
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=true}return}
       if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
-      if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received. Review it, then choose Buy contract.";$("confirmTradeBuy").disabled=!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
-      if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").disabled=true;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
-      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=c.entry_spot==null||c.entry_spot===""?NaN:Number(c.entry_spot),barrier=c.barrier==null||c.barrier===""?NaN:Number(c.barrier),spot=c.current_spot==null||c.current_spot===""?NaN:Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;drawNativeTradeChart();}if(c.is_sold){try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}}
+      if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeTpValue").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received.";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
+      if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").textContent="CLOSE";$("confirmTradeBuy").disabled=!activeContractId;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
+      if(m.msg_type==="sell"&&m.sell){$("tradeMessage").textContent="Deriv confirmed the contract close.";activeContractId=null;activeTradeOverlay=null;$("tradeContractId").textContent="—";$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractStatus").textContent="Contract closed";try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
+      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");$("tradePnlValue").textContent=c.profit==null?"—":Number(c.profit).toFixed(2)+" "+(c.currency||account.currency||"");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=c.entry_spot==null||c.entry_spot===""?NaN:Number(c.entry_spot),barrier=c.barrier==null||c.barrier===""?NaN:Number(c.barrier),spot=c.current_spot==null||c.current_spot===""?NaN:Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;drawNativeTradeChart();}if(c.is_sold){activeContractId=null;currentTradeProposal=null;$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractId").textContent="—";activeTradeOverlay=null;try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}}
     };
     socket.onerror=()=>{$("tradeConnectionState").textContent="Trading connection error";$("tradeMessage").textContent="Could not maintain authenticated Deriv connection."};
     socket.onclose=()=>{if(tradingSocket===socket){tradingSocket=null;$("tradeConnectionState").textContent="Account disconnected";$("getTradeQuote").disabled=true;$("confirmTradeBuy").disabled=true}};
@@ -1128,12 +1182,20 @@ function requestTradeQuote(){
   try{tradeSend({proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:activeTradeAccount.currency,growth_rate:rate,underlying_symbol:selectedSymbol,subscribe:1},"proposal")}catch(e){$("tradeMessage").textContent=e.message}
 }
 function buyTradeProposal(){
+  if(activeContractId){closeTradeContract();return;}
   if(!currentTradeProposal||!activeTradeAccount)return;
   const stake=Number($("tradeStake").value),rate=Number($("tradeGrowth").value);
-  const summary="Buy ACCU on "+(activeTradeAccount.is_virtual?"DEMO":"REAL")+" account?\nMarket: "+selectedSymbol+"\nGrowth: "+Math.round(rate*100)+"%\nQuoted price: "+currentTradeProposal.askPrice+" "+(activeTradeAccount.currency||"")+"\nPotential payout: "+(currentTradeProposal.payout??"not supplied")+"\nStake entered: "+stake;
-  if(!window.confirm((activeTradeAccount.is_virtual?"DEMO TRADE":"REAL-MONEY TRADE")+"\n\n"+summary+"\n\n"+(activeTradeAccount.is_virtual?"Place this demo trade?":"This purchase can lose the full stake. Continue?")))return;
+  const summary="Buy ACCU on "+(activeTradeAccount.is_virtual?"DEMO":"REAL")+" account?\nMarket: "+selectedSymbol+"\nGrowth: "+Math.round(rate*100)+"%\nQuoted price: "+currentTradeProposal.askPrice+" "+(activeTradeAccount.currency||"")+"\nStake entered: "+stake;
+  if(!$("oneTapTrading").checked&&!window.confirm((activeTradeAccount.is_virtual?"DEMO TRADE":"REAL-MONEY TRADE")+"\n\n"+summary+"\n\n"+(activeTradeAccount.is_virtual?"Place this demo trade?":"This purchase can lose the full stake. Continue?")))return;
   $("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Sending Buy request to Deriv…";
   try{tradeSend({buy:currentTradeProposal.id,price:currentTradeProposal.askPrice,subscribe:1},"buy")}catch(e){$("confirmTradeBuy").disabled=false;$("tradeMessage").textContent=e.message}
+}
+function closeTradeContract(){
+  if(!activeContractId||!activeTradeAccount)return;
+  const summary="Close contract "+activeContractId+" on "+(activeTradeAccount.is_virtual?"DEMO":"REAL")+" account?";
+  if(!$("oneTapTrading").checked&&!window.confirm(summary+"\n\nDeriv may return an early-sale value different from the original stake."))return;
+  $("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Sending close request to Deriv…";
+  try{tradeSend({sell:activeContractId,price:0},"sell")}catch(e){$("confirmTradeBuy").disabled=false;$("tradeMessage").textContent=e.message}
 }
 async function disconnectDeriv(){
   const appSession=sessionStorage.getItem("deriv_app_session");
@@ -1148,6 +1210,10 @@ $("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").
 $("tradeAccountMode").onchange=()=>switchTradeAccountMode($("tradeAccountMode").value);
 $("getTradeQuote").onclick=requestTradeQuote;
 $("confirmTradeBuy").onclick=buyTradeProposal;
+$("tradeStake").addEventListener("change",requestTradeQuote);
+$("tradeGrowth").addEventListener("change",requestTradeQuote);
+$("oneTapTrading").addEventListener("change",()=>{$("tradeMessage").textContent=$("oneTapTrading").checked?"One tap trading enabled. Orders will not ask for confirmation.":"One tap trading disabled. Orders will ask for confirmation.";});
+
 $("derivLogout").onclick=disconnectDeriv;
 if(new URLSearchParams(location.search).get("connected")==="1"){history.replaceState(null,"",location.pathname);$("accountMessage").textContent="Deriv account authorization completed."; }
 refreshDerivAccount();
