@@ -4,6 +4,26 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "node -e \"console.log('Static app: full OpenAlgo Charts widget is loaded from the pinned CDN adapter')\""
+    "build": "webpack --mode production --config webpack.config.cjs"
+  },
+  "dependencies": {
+    "@deriv-com/quill-tokens": "2.0.32",
+    "@deriv-com/quill-ui": "1.24.13",
+    "@deriv-com/smartcharts-champion": "2.2.0",
+    "mobx": "6.13.7",
+    "mobx-react-lite": "4.0.7",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  },
+  "devDependencies": {
+    "@babel/core": "7.26.10",
+    "@babel/preset-env": "7.26.9",
+    "@babel/preset-react": "7.26.3",
+    "babel-loader": "9.2.1",
+    "copy-webpack-plugin": "12.0.2",
+    "css-loader": "7.1.2",
+    "mini-css-extract-plugin": "2.9.2",
+    "webpack": "5.97.1",
+    "webpack-cli": "6.0.1"
   }
 }
