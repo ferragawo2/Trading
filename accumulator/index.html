@@ -601,7 +601,7 @@ body.trade-active #tradePage #executionPanel .trade-quote-row strong{
   font-variant-numeric:tabular-nums!important;overflow-wrap:anywhere!important;
 }
 body.trade-active #tradePage #executionPanel .trade-action-row{
-  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;width:100%!important;
+  display:grid!important;grid-template-columns:minmax(0,auto) minmax(160px,1fr)!important;align-items:center!important;justify-content:stretch!important;gap:16px!important;width:100%!important;
 }
 body.trade-active #tradePage #executionPanel .one-tap-control{
   display:flex!important;align-items:center!important;gap:10px!important;color:#ddd!important;
@@ -618,7 +618,7 @@ body.trade-active #tradePage #executionPanel .one-tap-control input::after{
 body.trade-active #tradePage #executionPanel .one-tap-control input:checked{background:#fff!important;border-color:#fff!important}
 body.trade-active #tradePage #executionPanel .one-tap-control input:checked::after{background:#000!important;transform:translateX(17px)}
 body.trade-active #tradePage #executionPanel .trade-buy-pill{
-  width:min(54%,260px)!important;min-width:170px!important;min-height:48px!important;padding:10px 28px!important;border-radius:12px!important;
+  width:100%!important;min-width:0!important;min-height:48px!important;padding:10px 28px!important;border-radius:12px!important;
   border:1px solid rgba(255,255,255,.35)!important;background:#fff!important;color:#000!important;
   font-size:14px!important;font-weight:900!important;letter-spacing:.08em!important;cursor:pointer!important;
 }
@@ -641,8 +641,8 @@ body.trade-active{padding-bottom:0!important}
   body.trade-active #tradePage #executionPanel .trade-summary-pills{gap:8px!important;margin-bottom:8px!important}
   body.trade-active #tradePage #executionPanel .trade-summary-pill{min-height:58px!important;padding:7px 5px!important;font-size:11px!important}
   body.trade-active #tradePage #executionPanel .trade-summary-pill strong{font-size:14px!important}
-  body.trade-active #tradePage #executionPanel .trade-action-row{gap:8px!important}
-  body.trade-active #tradePage #executionPanel .trade-buy-pill{width:54%!important;min-width:150px!important;padding:9px 16px!important}
+  body.trade-active #tradePage #executionPanel .trade-action-row{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)!important;gap:8px!important}
+  body.trade-active #tradePage #executionPanel .trade-buy-pill{width:100%!important;min-width:0!important;padding:9px 16px!important}
   body.trade-active #tradePage #executionPanel .trade-summary-tp input{font-size:13px!important}
 }
 </style>
@@ -775,7 +775,7 @@ const $ = id => document.getElementById(id);
 const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
-let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, latestTradeQuoteReqId=null, tradeQuoteDebounce=null, tpCloseRequested=false;
+let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null;
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
@@ -1182,7 +1182,7 @@ async function connectTradeAccount(accountId){
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell"){tpCloseRequested=false;$("confirmTradeBuy").disabled=false;}return}
       if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
-      if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId)return;const p=m.proposal,quotedStake=Number($("tradeStake").value),quotedRate=Number($("tradeGrowth").value);currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:selectedSymbol,accountId:account.account_id};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
+      if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").textContent="CLOSE";$("confirmTradeBuy").disabled=!activeContractId;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
       if(m.msg_type==="sell"&&m.sell){$("tradeMessage").textContent="Deriv confirmed the contract close.";activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");activeTradeOverlay=null;$("tradeContractId").textContent="—";$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractStatus").textContent="Contract closed";try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
       if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");$("tradePnlValue").textContent=c.profit==null?"—":Number(c.profit).toFixed(2)+" "+(c.currency||account.currency||"");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=c.entry_spot==null||c.entry_spot===""?NaN:Number(c.entry_spot),barrier=c.barrier==null||c.barrier===""?NaN:Number(c.barrier),spot=c.current_spot==null||c.current_spot===""?NaN:Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;drawNativeTradeChart();}const tpTarget=Number($("tradeTpTarget").value);if(!c.is_sold&&activeContractId&&!tpCloseRequested&&Number.isFinite(tpTarget)&&tpTarget>0&&Number(c.profit)>=tpTarget){tpCloseRequested=true;$("tradeMessage").textContent="Take-profit target reached. Closing contract…";closeTradeContract(true);}if(c.is_sold){activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");currentTradeProposal=null;$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractId").textContent="—";activeTradeOverlay=null;try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}}
@@ -1198,7 +1198,8 @@ function requestTradeQuote(){
   if(!selectedSymbol||!marketBySymbol[selectedSymbol]){$("tradeMessage").textContent="Select a supported market first.";return}
   if(!activeTradeAccount.currency){$("tradeMessage").textContent="Deriv did not provide this account's currency.";return}
   currentTradeProposal=null;$("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Requesting quote for "+stake.toFixed(2)+" "+activeTradeAccount.currency+"…";
-  try{latestTradeQuoteReqId=tradeSend({proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:activeTradeAccount.currency,growth_rate:rate,underlying_symbol:selectedSymbol,subscribe:1},"proposal")}catch(e){latestTradeQuoteReqId=null;$("tradeMessage").textContent=e.message}
+  latestTradeQuoteContext={stake,rate,symbol:selectedSymbol,accountId:activeTradeAccount.account_id};
+  try{latestTradeQuoteReqId=tradeSend({proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:activeTradeAccount.currency,growth_rate:rate,underlying_symbol:selectedSymbol,subscribe:1},"proposal")}catch(e){latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("tradeMessage").textContent=e.message}
 }
 function buyTradeProposal(){
   if(activeContractId){closeTradeContract();return;}
@@ -1230,7 +1231,7 @@ $("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").
 $("tradeAccountMode").onchange=()=>switchTradeAccountMode($("tradeAccountMode").value);
 $("getTradeQuote").onclick=requestTradeQuote;
 $("confirmTradeBuy").onclick=buyTradeProposal;
-$("tradeStake").addEventListener("input",()=>{currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId;if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);tradeQuoteDebounce=setTimeout(requestTradeQuote,280);});
+$("tradeStake").addEventListener("input",()=>{currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("confirmTradeBuy").disabled=!!activeContractId;if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);tradeQuoteDebounce=setTimeout(requestTradeQuote,280);});
 $("tradeStake").addEventListener("change",()=>{if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);requestTradeQuote();});
 $("tradeGrowth").addEventListener("change",requestTradeQuote);
 $("tradeTpTarget").addEventListener("input",()=>{if(tpCloseRequested&&Number($("tradeTpTarget").value)<=0)tpCloseRequested=false;});
