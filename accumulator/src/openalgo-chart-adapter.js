@@ -232,11 +232,35 @@
       zOrder() { return "top"; }
     }
     let barrierWindowPrimitive = null;
+    let lastCenteredSpot = null;
+    function centerPriceScaleOnSpot(spot) {
+      if (!Number.isFinite(spot) || spot === lastCenteredSpot) return;
+      const bars = chart.primaryBars?.() || [];
+      const recent = bars.slice(-120);
+      if (!recent.length) return;
+      let low = Infinity, high = -Infinity;
+      for (const bar of recent) {
+        const lo = Number(bar.low), hi = Number(bar.high);
+        if (Number.isFinite(lo)) low = Math.min(low, lo);
+        if (Number.isFinite(hi)) high = Math.max(high, hi);
+      }
+      if (!Number.isFinite(low) || !Number.isFinite(high) || high <= low) return;
+      const ratio = Math.max(0, Math.min(1, (spot - low) / (high - low)));
+      // Keep real Deriv prices; asymmetric scale padding centres the latest spot.
+      let top = 0.08, bottom = 0.08;
+      if (ratio < 0.5) bottom = Math.min(0.48, 1 - 0.5 / Math.max(0.0001, 1 - ratio));
+      else if (ratio > 0.5) top = Math.min(0.48, 1 - 0.5 / ratio);
+      chart.setPriceAxisOptions(chart.primaryPaneIndex(), "right", {
+        scaleMargins: { top: Math.max(0, top), bottom: Math.max(0, bottom) }
+      });
+      lastCenteredSpot = spot;
+    }
     function setBarrierWindow(data) {
       if (!barrierWindowPrimitive) {
         barrierWindowPrimitive = new DerivBarrierWindow();
         chart.addPrimitive(barrierWindowPrimitive);
       }
+      if (data) centerPriceScaleOnSpot(Number(data.spot));
       barrierWindowPrimitive.setData(data);
     }
 
