@@ -4,6 +4,7 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <meta name="theme-color" content="#080b12">
 <title>Accumulator Market Monitor · Deriv</title>
+<link rel="stylesheet" href="/dist/deriv-smartchart.css">
 
 <style>
 :root{color-scheme:dark;--bg:#000000;--panel:#000000;--panel2:#000000;--line:#000000;--line2:#000000;--text:#f7f7f7;--muted:#929292;--green:#d8f5e7;--red:#ff8585;--blue:#dedede;--radius:18px}
@@ -742,12 +743,9 @@ body.trade-active{padding-bottom:0!important}
   <label class="trade-select-shell account-mode-shell"><select id="tradeAccountMode" aria-label="Trading account type"><option value="demo">DEMO</option><option value="real">REAL</option></select><span class="select-chevron">⌄</span></label>
  </div>
 </div>
-<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card" aria-label="Purpose-built live price chart workspace"><div id="nativeChartWrap" class="purpose-chart-shell" aria-label="Chart price and time scales">
- <div id="nativeChartHost" class="purpose-chart-host">
-  <div class="purpose-chart-plot" aria-hidden="true"><svg class="purpose-chart-price-area" id="purposeChartPriceArea" viewBox="0 0 1000 100" preserveAspectRatio="none"><path class="purpose-chart-area-fill" id="purposeChartAreaFill"></path><path class="purpose-chart-area-line" id="purposeChartAreaLine"></path></svg><div class="purpose-chart-grid" id="purposeChartGrid"></div></div>
-  <aside class="purpose-chart-price-scale" aria-label="Price scale"><div class="purpose-chart-price-labels" id="purposeChartPriceLabels"><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span></div></aside>
-  <div class="purpose-chart-barrier-layer" id="purposeChartBarrierLayer" hidden aria-hidden="true"><div class="purpose-chart-barrier-band"></div><div class="purpose-chart-barrier-line upper"></div><div class="purpose-chart-barrier-line lower"></div></div>
-  <div class="purpose-chart-time-scale" aria-label="Time scale"><div class="purpose-chart-time-labels" id="purposeChartTimeLabels"><span>—</span><span>—</span><span>—</span><span>—</span><span>—</span></div></div>
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card" aria-label="Deriv native Accumulator chart workspace"><div id="nativeChartWrap" class="purpose-chart-shell" aria-label="Chart price and time scales">
+ <div id="nativeChartHost" class="purpose-chart-host deriv-smartchart-mount" aria-label="Deriv native Accumulator chart">
+  <div id="derivSmartChartRoot" role="img" aria-label="Live Deriv Accumulator price chart"></div>
  </div>
 </div></section><div class="stats-strip" id="statsPanel" aria-label="Live stats">
   <span class="stats-strip-label">Stats</span>
@@ -805,6 +803,18 @@ let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={},
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null;
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
+function syncDerivAccumulatorChart(){
+  const rate=Number($("tradeGrowth")?.value||0.01),item=barrierData[rate],tick=latestTicks[selectedSymbol];
+  const high=Number(item?.high),low=Number(item?.low),valid=Number.isFinite(high)&&Number.isFinite(low)&&high>low;
+  const spot=Number(tick?.price??item?.spot),epoch=Number(tick?.epoch??item?.spotTime??item?.lastTickEpoch);
+  const barrierEpoch=Number(item?.lastTickEpoch??item?.spotTime??epoch);
+  const state={symbol:selectedSymbol,rate,barrier:valid&&Number.isFinite(spot)&&Number.isFinite(epoch)?{
+    high:item.highDisplay||String(item.high),low:item.lowDisplay||String(item.low),
+    barrierEpoch:Number.isFinite(barrierEpoch)?barrierEpoch:epoch,spot,spotEpoch:epoch
+  }:null};
+  window.__derivAccumulatorChartState=state;
+  window.dispatchEvent(new CustomEvent("deriv-accumulator-chart-state",{detail:state}));
+}
 const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
 ["deriv_accumulator_survival_v2","deriv_accumulator_survival_v3","deriv_accumulator_survival_v4","deriv_accumulator_survival_v5"].forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
 const nativeStatsByKey={};
@@ -941,7 +951,7 @@ function handleTick(t,m){
     $("tickHistory").textContent=priceHistory[key].slice(-12).reverse().map(v=>v.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)))).join("  ·  ");
     $("feedNote").textContent="Live · "+(tickCounts[key]||0)+" ticks";
     renderPurposeChartScaffold();
-    drawChart();
+    drawChart();syncDerivAccumulatorChart();
   }
 }
 
@@ -1138,7 +1148,7 @@ function selectMarket(symbol){
   $("tickCount").textContent=String(tickCounts[symbol]||0);
   $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
   $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
-  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();if(activeTradeAccount&&tradingSocket?.readyState===WebSocket.OPEN)requestTradeQuote();
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();syncDerivAccumulatorChart();if(activeTradeAccount&&tradingSocket?.readyState===WebSocket.OPEN)requestTradeQuote();
 }
 
 function clearAccumulatorQuotes(){
@@ -1169,7 +1179,7 @@ function handleAccumulatorProposal(message){
   const numberOrNull=value=>{if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isFinite(n)?n:null;};
   item.askPrice=numberOrNull(proposal.ask_price);item.payout=numberOrNull(proposal.payout);
   item.spot=numberOrNull(proposal.spot);item.spotTime=numberOrNull(proposal.spot_time);
-  item.high=numberOrNull(details.high_barrier);item.low=numberOrNull(details.low_barrier);
+  item.high=numberOrNull(details.high_barrier);item.low=numberOrNull(details.low_barrier);item.highDisplay=details.high_barrier==null?null:String(details.high_barrier);item.lowDisplay=details.low_barrier==null?null:String(details.low_barrier);
   item.barrierPct=numberOrNull(details.tick_size_barrier_percentage);item.barrierSize=numberOrNull(details.tick_size_barrier);
   item.lastTickEpoch=numberOrNull(details.last_tick_epoch);item.maximumTicks=numberOrNull(details.maximum_ticks);
   item.maximumPayout=numberOrNull(details.maximum_payout);
@@ -1178,7 +1188,7 @@ function handleAccumulatorProposal(message){
   item.subscriptionId=message.subscription?.id||null;
   if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
   item.status=(item.high!==null&&item.low!==null&&item.high>item.low)?"Live Deriv barrier received":(item.high!==null&&item.low!==null?"Invalid barrier range returned":"Quote received; barrier fields not present");
-  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderPurposeChartScaffold();renderNativeStats();
+  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderPurposeChartScaffold();renderNativeStats();syncDerivAccumulatorChart();
 }
 function renderNativeStats(){
   const rate=Number($("statsGrowthRate")?.value||0.01);
@@ -1384,7 +1394,7 @@ connect();
 
 function setTradeTab(mode){const manual=mode==="manual";$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
 $("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
-$("tradeGrowth").addEventListener("change",renderPurposeChartScaffold);
+$("tradeGrowth").addEventListener("change",()=>{renderPurposeChartScaffold();syncDerivAccumulatorChart();});
 function showAppPage(page){const trade=page==="trade";document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("click",event=>{event.preventDefault();const page=link.dataset.page;showAppPage(page);history.replaceState(null,"",page==="trade"?"#tradePage":page==="markets"?"#marketView":"#homePage");const menu=link.closest("details");if(menu)menu.open=false;}));
 })();
@@ -1459,4 +1469,5 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
  record("INFO","issue finder","Diagnostic capture enabled on this page");
 })();
 </script>
+<script defer src="/dist/deriv-smartchart.js"></script>
 </body></html>
