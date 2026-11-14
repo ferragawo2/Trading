@@ -382,12 +382,16 @@ body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
   display:flex!important;
   align-items:center!important;
   justify-content:flex-start!important;
-  gap:12px!important;
+  gap:14px!important;
   flex-wrap:wrap!important;
+  position:relative!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  flex:0 0 100vw!important;
   width:100vw!important;
-  max-width:none!important;
-  margin:0 0 0 calc(50% - 50vw)!important;
-  padding:8px max(18px, calc((100vw - 1128px)/2 + 18px))!important;
+  max-width:100vw!important;
+  margin:0!important;
+  padding:9px 18px!important;
   box-sizing:border-box!important;
   background:#000000!important;
   border:0!important;
@@ -405,21 +409,22 @@ body.trade-active #tradePage .stats-strip-label{
 body.trade-active #tradePage .stats-strip-current{
   flex:0 0 auto;
   color:#fff;
-  font-size:15px;
+  font-size:17px;
+  font-weight:850;
   line-height:1;
   font-variant-numeric:tabular-nums;
 }
 body.trade-active #tradePage .stats-strip-history-preview{
   display:flex;
   align-items:center;
-  justify-content:flex-start;
-  gap:12px;
-  flex:0 1 auto;
+  justify-content:space-between;
+  gap:clamp(12px,2vw,24px);
+  flex:1 1 0;
   min-width:0;
   overflow:visible;
   white-space:nowrap;
-  color:#d0d0d0;
-  font:700 14px ui-monospace,monospace;
+  color:#e5e5e5;
+  font:800 16px ui-monospace,monospace;
 }
 body.trade-active #tradePage .stats-strip-history-preview .stats-value{
   display:inline!important;
@@ -431,7 +436,7 @@ body.trade-active #tradePage .stats-strip-history-preview .stats-value{
   background:transparent!important;
   color:#e0e0e0!important;
   font:inherit!important;
-  font-weight:750!important;
+  font-weight:850!important;
 }
 body.trade-active #tradePage .stats-strip-history-preview .stats-value.zero{color:#ff9999!important}
 body.trade-active #tradePage .stats-strip-history-preview .stats-empty{padding:0;color:#777}
@@ -483,12 +488,12 @@ body.trade-active #tradePage .stats-strip-history-values .stats-value.zero{color
 body.trade-active #tradePage #executionPanel{margin-top:0!important}
 @media(max-width:600px){
   body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
-    padding:7px 10px!important;
-    gap:9px!important;
+    padding:8px 12px!important;
+    gap:10px!important;
   }
   body.trade-active #tradePage .stats-strip-label{font-size:11px}
-  body.trade-active #tradePage .stats-strip-current{font-size:14px}
-  body.trade-active #tradePage .stats-strip-history-preview{gap:9px;font-size:12px}
+  body.trade-active #tradePage .stats-strip-current{font-size:16px}
+  body.trade-active #tradePage .stats-strip-history-preview{gap:10px;font-size:14px}
 }
 
 </style>
@@ -888,7 +893,7 @@ function renderNativeStats(){
   caption.textContent=data.current===0?"Deriv reports zero ticks in the current run.":"Consecutive ticks currently inside Deriv’s live barrier.";
   const runs=Array.isArray(data.history)?data.history.slice(0,100):[];
   if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="No previous completed runs returned yet.";values.append(empty);history.append(empty.cloneNode(true));}
-  else{runs.slice(0,10).forEach(n=>values.append(makeValue(n)));runs.forEach(n=>history.append(makeValue(n)));}
+  else{runs.slice(0,30).forEach(n=>values.append(makeValue(n)));runs.forEach(n=>history.append(makeValue(n)));}
 }
 function renderBarrierCards(){
   const box=$("barrierGrid");box.replaceChildren();
