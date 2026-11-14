@@ -119,6 +119,127 @@
       }
     }
 
+    class DerivBarrierWindow {
+      constructor() {
+        this.host = null;
+        this.upper = null;
+        this.lower = null;
+        this.targetUpper = null;
+        this.targetLower = null;
+        this.upperWidth = 0.2;
+        this.lowerWidth = 0.2;
+        this.targetUpperWidth = 0.2;
+        this.targetLowerWidth = 0.2;
+        this.lastTickId = null;
+        this.frame = null;
+        this.lastFrame = 0;
+      }
+      attached(host) { this.host = host; }
+      detached() {
+        if (this.frame !== null) cancelAnimationFrame(this.frame);
+        this.frame = null;
+        this.host = null;
+      }
+      setData(data) {
+        if (!data) {
+          this.targetUpper = this.targetLower = null;
+          this.targetUpperWidth = this.targetLowerWidth = 0.2;
+          this.lastTickId = null;
+          this.animate();
+          return;
+        }
+        const upper = Number(data.upper), lower = Number(data.lower);
+        if (!Number.isFinite(upper) || !Number.isFinite(lower) || upper <= lower) return;
+        this.targetUpper = upper;
+        this.targetLower = lower;
+        const tickId = data.tickId;
+        if (tickId !== undefined && tickId !== null && tickId !== this.lastTickId) {
+          this.lastTickId = tickId;
+          const spot = Number(data.spot);
+          if (Number.isFinite(spot) && spot > upper) {
+            this.targetUpperWidth = Math.min(1, this.targetUpperWidth + 0.08);
+            this.targetLowerWidth = 0.2;
+          } else if (Number.isFinite(spot) && spot < lower) {
+            this.targetLowerWidth = Math.min(1, this.targetLowerWidth + 0.08);
+            this.targetUpperWidth = 0.2;
+          } else if (Number.isFinite(spot)) {
+            this.targetUpperWidth = this.targetLowerWidth = 0.2;
+          }
+        }
+        if (this.upper === null) this.upper = upper;
+        if (this.lower === null) this.lower = lower;
+        this.animate();
+      }
+      animate() {
+        if (this.frame !== null) return;
+        const step = time => {
+          this.frame = null;
+          const elapsed = this.lastFrame ? Math.min(48, time - this.lastFrame) : 16;
+          this.lastFrame = time;
+          const amount = 1 - Math.exp(-elapsed / 115);
+          const approach = (current, target) => current + (target - current) * amount;
+          let moving = false;
+          if (this.targetUpper !== null) {
+            this.upper = approach(this.upper, this.targetUpper);
+            this.lower = approach(this.lower, this.targetLower);
+            this.upperWidth = approach(this.upperWidth, this.targetUpperWidth);
+            this.lowerWidth = approach(this.lowerWidth, this.targetLowerWidth);
+            moving = Math.abs(this.upper - this.targetUpper) > 0.0000001 ||
+              Math.abs(this.lower - this.targetLower) > 0.0000001 ||
+              Math.abs(this.upperWidth - this.targetUpperWidth) > 0.001 ||
+              Math.abs(this.lowerWidth - this.targetLowerWidth) > 0.001;
+          } else if (this.upper !== null || this.lower !== null) {
+            this.upper = this.lower = null;
+            this.upperWidth = this.lowerWidth = 0.2;
+          }
+          this.host?.requestUpdate();
+          if (moving) this.frame = requestAnimationFrame(step);
+          else this.lastFrame = 0;
+        };
+        this.frame = requestAnimationFrame(step);
+      }
+      draw(ctx, rc) {
+        if (this.upper === null || this.lower === null) return;
+        const upperY = rc.priceScale.priceToY(this.upper);
+        const lowerY = rc.priceScale.priceToY(this.lower);
+        if (!Number.isFinite(upperY) || !Number.isFinite(lowerY)) return;
+        const drawBarrier = (y, width, color, label) => {
+          const x = Math.max(0, rc.plotWidth * (1 - Math.max(0.2, Math.min(1, width))));
+          ctx.save();
+          ctx.strokeStyle = color;
+          ctx.fillStyle = color;
+          ctx.lineWidth = 1.7;
+          ctx.lineCap = "round";
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 7;
+          ctx.beginPath();
+          ctx.moveTo(x, y);
+          ctx.lineTo(rc.plotWidth, y);
+          ctx.stroke();
+          ctx.shadowBlur = 0;
+          ctx.beginPath();
+          ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.font = "700 9px system-ui, sans-serif";
+          ctx.textAlign = "left";
+          ctx.textBaseline = "bottom";
+          ctx.fillText(label, Math.min(x + 6, Math.max(6, rc.plotWidth - 52)), y - 4);
+          ctx.restore();
+        };
+        drawBarrier(upperY, this.upperWidth, "#e7a83e", "UPPER");
+        drawBarrier(lowerY, this.lowerWidth, "#5797e8", "LOWER");
+      }
+      zOrder() { return "top"; }
+    }
+    let barrierWindowPrimitive = null;
+    function setBarrierWindow(data) {
+      if (!barrierWindowPrimitive) {
+        barrierWindowPrimitive = new DerivBarrierWindow();
+        chart.addPrimitive(barrierWindowPrimitive);
+      }
+      barrierWindowPrimitive.setData(data);
+    }
+
     function makeTickBars(ticks, interval, key) {
       const count = Number(String(interval).slice(1));
       if (!Number.isSafeInteger(count) || count < 1) return [];
@@ -225,6 +346,7 @@
         if (!ready) { pending = { ticks, meta }; return { candleCount: lastCount }; }
         return applyData(ticks, meta);
       },
+      setBarrierWindow(data) { setBarrierWindow(data); },
       setOverlay(overlay, meta = {}) {
         if (!overlay) { removeLine("entry"); removeLine("barrier"); removeLine("live"); return; }
         const precision = Math.max(0, Math.min(8, Number(meta.precision ?? 2)));
