@@ -424,9 +424,15 @@ body.trade-active #tradePage .stats-strip-history-preview{
   overflow-x:auto!important;
   overflow-y:hidden!important;
   white-space:nowrap!important;
-  scrollbar-width:thin;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
   color:#e5e5e5;
   font:800 14px ui-monospace,monospace;
+}
+body.trade-active #tradePage .stats-strip-history-preview::-webkit-scrollbar{
+  display:none!important;
+  width:0!important;
+  height:0!important;
 }
 body.trade-active #tradePage .stats-strip-history-preview .stats-value{
   display:inline-block!important;
