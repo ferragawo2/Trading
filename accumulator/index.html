@@ -492,7 +492,14 @@ body.trade-active #tradePage .stats-strip-history-values .stats-value{
   font-weight:750!important;
 }
 body.trade-active #tradePage .stats-strip-history-values .stats-value.zero{color:#ff9999!important}
-body.trade-active #tradePage #executionPanel{margin-top:0!important}
+/* Butt the execution panel directly against the stats rail: no vertical gap. */
+body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
+  margin-bottom:0!important;
+  padding-bottom:0!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel{
+  margin-top:0!important;
+}
 @media(max-width:600px){
   body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
     padding:9px 12px!important;
