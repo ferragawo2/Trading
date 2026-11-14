@@ -1108,7 +1108,7 @@ function handleAccumulatorProposal(message){
   item.subscriptionId=message.subscription?.id||null;
   if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
   item.status=(item.high!==null&&item.low!==null&&item.high>item.low)?"Live Deriv barrier received":(item.high!==null&&item.low!==null?"Invalid barrier range returned":"Quote received; barrier fields not present");
-  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderPurposeChartBarriers();renderNativeStats();
+  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderPurposeChartScaffold();renderNativeStats();
 }
 function renderNativeStats(){
   const rate=Number($("statsGrowthRate")?.value||0.01);
