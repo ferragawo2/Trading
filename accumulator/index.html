@@ -270,6 +270,20 @@ body.trade-active #tradePage .deriv-chart-card{margin-top:0}
  background:#111!important;
 }
 
+
+/* Reduce the visible Trade chart height by 20%, keeping its top edge fixed */
+body.trade-active #tradePage .deriv-chart-card{
+ height:calc(80vh - 152px)!important;
+ height:calc(80dvh - 152px)!important;
+ min-height:272px!important;
+}
+@media(max-width:600px){
+ body.trade-active #tradePage .deriv-chart-card{
+  height:calc(80vh - 144px)!important;
+  height:calc(80dvh - 144px)!important;
+  min-height:264px!important;
+ }
+}
 </style>
 </head>
 <body><main class="wrap">
