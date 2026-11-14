@@ -745,7 +745,7 @@ body.trade-active{padding-bottom:0!important}
 </div>
 <div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card" aria-label="Deriv native Accumulator chart workspace"><div id="nativeChartWrap" class="purpose-chart-shell" aria-label="Chart price and time scales">
  <div id="nativeChartHost" class="purpose-chart-host deriv-smartchart-mount" aria-label="Deriv native Accumulator chart">
-  <div id="derivSmartChartRoot" role="img" aria-label="Live Deriv Accumulator price chart"></div>
+  <div id="derivSmartChartRoot" aria-label="Live Deriv Accumulator price chart"></div>
  </div>
 </div></section><div class="stats-strip" id="statsPanel" aria-label="Live stats">
   <span class="stats-strip-label">Stats</span>
@@ -1378,7 +1378,7 @@ $("getTradeQuote").onclick=requestTradeQuote;
 $("confirmTradeBuy").onclick=buyTradeProposal;
 $("tradeStake").addEventListener("input",()=>{currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("confirmTradeBuy").disabled=!!activeContractId;if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);tradeQuoteDebounce=setTimeout(requestTradeQuote,280);});
 $("tradeStake").addEventListener("change",()=>{if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);requestTradeQuote();});
-$("tradeGrowth").addEventListener("change",requestTradeQuote);
+$("tradeGrowth").addEventListener("change",()=>{requestTradeQuote();renderPurposeChartScaffold();syncDerivAccumulatorChart();});
 $("tradeTpTarget").addEventListener("input",()=>{if(tpCloseRequested&&Number($("tradeTpTarget").value)<=0)tpCloseRequested=false;});
 $("oneTapTrading").addEventListener("change",()=>{$("tradeMessage").textContent=$("oneTapTrading").checked?"One tap trading enabled. Orders will not ask for confirmation.":"One tap trading disabled. Orders will ask for confirmation.";});
 
