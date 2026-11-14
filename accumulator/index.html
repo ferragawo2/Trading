@@ -13,7 +13,7 @@
 /* Purpose-built chart scaffold: restrained price and time axes only. */
 .purpose-chart-shell{position:relative;width:100%;height:380px;min-height:260px;background:#000;overflow:hidden}
 .purpose-chart-host{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 66px;grid-template-rows:minmax(0,1fr) 29px;background:#000}
-.purpose-chart-plot{position:relative;grid-column:1;grid-row:1;min-width:0;overflow:hidden}
+.purpose-chart-plot{position:relative;grid-column:1;grid-row:1;min-width:0;overflow:hidden;touch-action:none;cursor:grab}.purpose-chart-plot:active{cursor:grabbing}.purpose-chart-price-scale{touch-action:none;cursor:ns-resize}
 .purpose-chart-price-area{position:absolute;z-index:1;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}.purpose-chart-area-fill{fill:rgba(55,145,255,.10);stroke:none}.purpose-chart-area-line{fill:none;stroke:#62aaff;stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}.purpose-chart-grid{position:absolute;z-index:0;inset:0;display:grid;grid-template-rows:repeat(7,minmax(0,1fr));pointer-events:none}
 .purpose-chart-grid span{border-top:1px solid rgba(150,160,175,.075)}
 .purpose-chart-barrier-layer{position:absolute;z-index:2;left:0;right:0;top:0;bottom:29px;pointer-events:none;overflow:hidden}
@@ -1028,8 +1028,8 @@ function setupPurposeChartInteractions(){
   }else{
    const domain=purposeChartPriceDomain(purposeChartVisibleHistory());
    const dy=event.clientY-drag.y;
-   if(event.shiftKey)purposeChartView.zoom=clamp(drag.zoom*Math.exp(-dy*.012),.2,12);
-   else purposeChartView.shift=drag.shift+dy/Math.max(1,scale.clientHeight)*domain.range;
+   if(event.shiftKey)purposeChartView.shift=drag.shift+dy/Math.max(1,scale.clientHeight)*domain.range;
+   else purposeChartView.zoom=clamp(drag.zoom*Math.exp(-dy*.012),.2,12);
   }
   redraw();
  };
@@ -1042,8 +1042,10 @@ function setupPurposeChartInteractions(){
  scale.addEventListener("pointermove",e=>{if(purposeChartView.drag?.kind==="price")move(e);});
  scale.addEventListener("pointerup",end);scale.addEventListener("pointercancel",end);
  scale.addEventListener("wheel",e=>{e.preventDefault();purposeChartView.zoom=clamp(purposeChartView.zoom*Math.exp(-e.deltaY*.002),.2,12);redraw();},{passive:false});
- scale.title="Drag to shift the price scale; hold Shift while dragging to zoom vertically. Scroll to zoom.";
+ scale.title="Drag vertically to expand or compress the price scale; hold Shift while dragging to move the price range. Scroll to zoom.";
  plot.title="Drag to pan through time; scroll to zoom in or out.";
+ const reset=()=>{purposeChartView.count=120;purposeChartView.end=null;purposeChartView.zoom=1;purposeChartView.shift=0;redraw();};
+ plot.addEventListener("dblclick",reset);scale.addEventListener("dblclick",reset);
 }
 
 function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";}
