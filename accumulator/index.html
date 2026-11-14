@@ -1450,7 +1450,7 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
    entries.length=0;render();runButton.disabled=true;state.textContent="Checking…";summary.textContent="Running diagnostics. This does not place trades or access account credentials.";
    const checks=[];
    const check=async(name,fn)=>{try{const value=await fn();checks.push({name,ok:true,value});record("OK",name,typeof value==="string"?value:JSON.stringify(value));}catch(error){checks.push({name,ok:false,error:error.message||String(error)});record("FAIL",name,error.message||String(error),error.stack||"");}};
-   await check("Chart workspace",async()=>{const wrap=$("nativeChartWrap");if(!wrap||wrap.clientWidth<100||wrap.clientHeight<180)throw Error("Reserved chart workspace has collapsed dimensions");return "Chart workspace is present and ready for the custom renderer";});
+   await check("Chart workspace",async()=>{const wrap=$("nativeChartWrap");const root=$("derivSmartChartRoot");if(!wrap||wrap.clientWidth<100||wrap.clientHeight<180||!root)throw Error("Deriv SmartCharts workspace has collapsed or is missing");return "Deriv SmartCharts mount is present";});
    await check("Public Deriv WebSocket + API",probePublicFeed);
    await check("Market feed freshness",async()=>{const count=Number($("tickCount")?.textContent||0);const tick=$("lastTick")?.textContent||"—";if(!count||tick==="—")throw Error("No live ticks have been received by the main market feed in this page session");return count+" selected-market ticks; last tick "+tick;});
    await check("Market catalogue",async()=>{const count=Number($("marketCount")?.textContent||0);if(!count)throw Error("No Accumulator-compatible synthetic markets are loaded");return count+" markets loaded";});
