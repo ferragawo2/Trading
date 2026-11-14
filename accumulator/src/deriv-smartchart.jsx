@@ -2,7 +2,6 @@ import React from 'react';
 import { createRoot } from 'react-dom/client';
 import { SmartChart, setSmartChartsPublicPath } from '@deriv-com/smartcharts-champion';
 import '@deriv-com/smartcharts-champion/dist/smartcharts.css';
-import '@deriv-com/quill-ui/dist/assets/quill-ui.css';
 import './deriv-smartchart.css';
 
 setSmartChartsPublicPath('/dist/');
