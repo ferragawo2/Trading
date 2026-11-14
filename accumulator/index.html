@@ -1250,6 +1250,12 @@ function drawNativeTradeChart(){
  const raw=nativeChartTicks[selectedSymbol]||[];
  const meta={symbol:selectedSymbol,precision:Math.max(0,Math.min(8,marketBySymbol[selectedSymbol]?.pipSize??2)),name:marketBySymbol[selectedSymbol]?.name||selectedSymbol};
  chart.setData(raw,null,meta);
+ const growthRate=Number($("tradeGrowth")?.value||0.01);
+ const derivBarriers=barrierData[growthRate];
+ const latestSpot=latestTicks[selectedSymbol]?.price;
+ chart.setBarrierWindow(derivBarriers&&Number.isFinite(derivBarriers.high)&&Number.isFinite(derivBarriers.low)?{
+  upper:derivBarriers.high,lower:derivBarriers.low,spot:latestSpot,tickId:tickCounts[selectedSymbol]||0
+ }:null);
  const state=chart.state();
  $("nativeChartEmpty").style.display=state.candleCount?"none":"grid";
  $("nativeChartConnection").textContent=chart.ready?(ws&&ws.readyState===WebSocket.OPEN?(latestTicks[selectedSymbol]?"LIVE TICKS":"CONNECTED · WAITING FOR TICKS"):"DISCONNECTED"):"LOADING OPENALGO CHART";
