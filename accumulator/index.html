@@ -381,18 +381,19 @@ body.trade-active #tradePage #manualTradeView #executionPanel::after{
 body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
   display:flex!important;
   align-items:center!important;
-  gap:clamp(8px,1.5vw,18px)!important;
+  justify-content:flex-start!important;
+  gap:12px!important;
   flex-wrap:wrap!important;
-  width:100vw!important;
-  max-width:none!important;
-  margin:0 0 0 calc(50% - 50vw)!important;
-  padding:9px max(18px, calc((100vw - 1128px)/2 + 18px))!important;
+  width:fit-content!important;
+  max-width:100%!important;
+  margin:0!important;
+  padding:8px 12px!important;
   box-sizing:border-box!important;
-  background:#101010!important;
+  background:#000000!important;
   border:0!important;
   border-radius:0!important;
   box-shadow:none!important;
-  min-height:42px;
+  min-height:0!important;
 }
 body.trade-active #tradePage .stats-strip-label{
   flex:0 0 auto;
@@ -411,14 +412,14 @@ body.trade-active #tradePage .stats-strip-current{
 body.trade-active #tradePage .stats-strip-history-preview{
   display:flex;
   align-items:center;
-  justify-content:flex-end;
-  gap:clamp(8px,1.25vw,16px);
-  flex:1 1 auto;
+  justify-content:flex-start;
+  gap:12px;
+  flex:0 1 auto;
   min-width:0;
-  overflow:hidden;
+  overflow:visible;
   white-space:nowrap;
-  color:#aaa;
-  font:500 11px ui-monospace,monospace;
+  color:#d0d0d0;
+  font:700 14px ui-monospace,monospace;
 }
 body.trade-active #tradePage .stats-strip-history-preview .stats-value{
   display:inline!important;
@@ -428,8 +429,9 @@ body.trade-active #tradePage .stats-strip-history-preview .stats-value{
   border:0!important;
   border-radius:0!important;
   background:transparent!important;
-  color:#bdbdbd!important;
+  color:#e0e0e0!important;
   font:inherit!important;
+  font-weight:750!important;
 }
 body.trade-active #tradePage .stats-strip-history-preview .stats-value.zero{color:#ff9999!important}
 body.trade-active #tradePage .stats-strip-history-preview .stats-empty{padding:0;color:#777}
@@ -464,7 +466,7 @@ body.trade-active #tradePage .stats-strip-history-values{
   max-height:220px;
   overflow-y:auto;
   color:#bdbdbd;
-  font:500 11px ui-monospace,monospace;
+  font:700 14px ui-monospace,monospace;
 }
 body.trade-active #tradePage .stats-strip-history-values .stats-value{
   display:inline!important;
@@ -473,19 +475,20 @@ body.trade-active #tradePage .stats-strip-history-values .stats-value{
   border:0!important;
   border-radius:0!important;
   background:transparent!important;
-  color:#bdbdbd!important;
+  color:#e0e0e0!important;
   font:inherit!important;
+  font-weight:750!important;
 }
 body.trade-active #tradePage .stats-strip-history-values .stats-value.zero{color:#ff9999!important}
 body.trade-active #tradePage #executionPanel{margin-top:0!important}
 @media(max-width:600px){
   body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
-    padding:8px 14px!important;
-    gap:8px!important;
+    padding:7px 10px!important;
+    gap:9px!important;
   }
   body.trade-active #tradePage .stats-strip-label{font-size:11px}
   body.trade-active #tradePage .stats-strip-current{font-size:14px}
-  body.trade-active #tradePage .stats-strip-history-preview{gap:8px;font-size:10px}
+  body.trade-active #tradePage .stats-strip-history-preview{gap:9px;font-size:12px}
 }
 
 </style>
