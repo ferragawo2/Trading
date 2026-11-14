@@ -628,8 +628,8 @@ body.trade-active #tradePage #executionPanel.contract-open{
   animation:contractEdgePulse 2.8s ease-in-out infinite!important;
 }
 @keyframes contractEdgePulse{
-  0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.35),0 0 9px rgba(130,255,170,.12),inset 0 0 12px rgba(255,255,255,.025)!important;border-color:rgba(255,255,255,.86)!important;}
-  50%{box-shadow:0 0 0 1px rgba(150,255,180,.35),0 0 16px rgba(120,255,160,.24),inset 0 0 16px rgba(255,255,255,.045)!important;border-color:rgba(170,255,190,.78)!important;}
+  0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.35),0 0 9px rgba(130,255,170,.12),inset 0 0 12px rgba(255,255,255,.025);border-color:rgba(255,255,255,.86);}
+  50%{box-shadow:0 0 0 1px rgba(150,255,180,.35),0 0 16px rgba(120,255,160,.24),inset 0 0 16px rgba(255,255,255,.045);border-color:rgba(170,255,190,.78);}
 }
 body.trade-active .wrap{padding-bottom:0!important}
 body.trade-active #tradePage{padding-bottom:0!important;margin-bottom:0!important}
@@ -1164,7 +1164,7 @@ function tradeSend(payload,kind){
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
   if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
-  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
+  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
   $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
   $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
   $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
