@@ -376,6 +376,117 @@ body.trade-active #tradePage #manualTradeView #executionPanel::after{
   }
 }
 
+
+/* Plain-text live stats rail between the chart and execution board */
+body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
+  display:flex!important;
+  align-items:center!important;
+  gap:clamp(8px,1.5vw,18px)!important;
+  width:100vw!important;
+  max-width:none!important;
+  margin:0 0 0 calc(50% - 50vw)!important;
+  padding:9px max(18px, calc((100vw - 1128px)/2 + 18px))!important;
+  box-sizing:border-box!important;
+  background:#101010!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  min-height:42px;
+}
+body.trade-active #tradePage .stats-strip-label{
+  flex:0 0 auto;
+  color:#f4f4f4;
+  font-size:12px;
+  font-weight:750;
+  letter-spacing:.02em;
+}
+body.trade-active #tradePage .stats-strip-current{
+  flex:0 0 auto;
+  color:#fff;
+  font-size:15px;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+body.trade-active #tradePage .stats-strip-history-preview{
+  display:flex;
+  align-items:center;
+  justify-content:flex-end;
+  gap:clamp(8px,1.25vw,16px);
+  flex:1 1 auto;
+  min-width:0;
+  overflow:hidden;
+  white-space:nowrap;
+  color:#aaa;
+  font:500 11px ui-monospace,monospace;
+}
+body.trade-active #tradePage .stats-strip-history-preview .stats-value{
+  display:inline!important;
+  min-width:0!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#bdbdbd!important;
+  font:inherit!important;
+}
+body.trade-active #tradePage .stats-strip-history-preview .stats-value.zero{color:#ff9999!important}
+body.trade-active #tradePage .stats-strip-history-preview .stats-empty{padding:0;color:#777}
+body.trade-active #tradePage .stats-strip-toggle{
+  flex:0 0 auto;
+  width:24px!important;
+  height:24px!important;
+  padding:0!important;
+  display:grid;
+  place-items:center;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#ddd!important;
+  font-size:18px!important;
+  line-height:1;
+  cursor:pointer;
+}
+body.trade-active #tradePage .stats-strip-full-history{
+  flex:0 0 100%;
+  width:100%;
+  padding:10px 0 2px;
+  border-top:1px solid rgba(255,255,255,.12);
+}
+body.trade-active #tradePage .stats-strip-full-history:not([hidden]){
+  display:block;
+}
+body.trade-active #tradePage .stats-strip-history-values{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 16px;
+  max-height:220px;
+  overflow-y:auto;
+  color:#bdbdbd;
+  font:500 11px ui-monospace,monospace;
+}
+body.trade-active #tradePage .stats-strip-history-values .stats-value{
+  display:inline!important;
+  min-width:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#bdbdbd!important;
+  font:inherit!important;
+}
+body.trade-active #tradePage .stats-strip-history-values .stats-value.zero{color:#ff9999!important}
+body.trade-active #tradePage #executionPanel{margin-top:0!important}
+@media(max-width:600px){
+  body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
+    padding:8px 14px!important;
+    gap:8px!important;
+  }
+  body.trade-active #tradePage .stats-strip-label{font-size:11px}
+  body.trade-active #tradePage .stats-strip-current{font-size:14px}
+  body.trade-active #tradePage .stats-strip-history-preview{gap:8px;font-size:10px}
+}
+
 </style>
 </head>
 <body><main class="wrap">
@@ -432,7 +543,6 @@ body.trade-active #tradePage #manualTradeView #executionPanel::after{
 <div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
 <div class="metrics"><div class="metric"><small>LIVE PRICE</small><strong id="price">—</strong></div><div class="metric"><small>LAST TICK</small><strong id="lastTick">—</strong></div><div class="metric"><small>TICKS RECEIVED</small><strong id="tickCount">0</strong></div></div>
 <div class="chart"><canvas id="chart"></canvas></div>
-<div class="stats-panel" id="statsPanel"><div class="stats-heading"><strong>Stats</strong><select id="statsGrowthRate" aria-label="Stats growth rate"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select><button type="button" class="stats-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsHistory"><span id="statsChevron">⌄</span></button></div><div class="stats-current"><span class="stats-current-label">CURRENT RUN · LIVE FROM DERIV</span><strong id="statsCurrentValue">—</strong><span id="statsCurrentCaption">Waiting for Deriv’s current tick count…</span></div><div class="stats-history"><div class="stats-history-title">PREVIOUS RUNS · DERIV HISTORY</div><div class="stats-values" id="statsValues"><span class="stats-empty">Waiting for Deriv Stats data…</span></div><div class="stats-history" id="statsHistory" hidden><div class="stats-history-title">Full history · newest first</div><div class="stats-history-values" id="statsHistoryValues"></div></div></div></div>
 <div class="row between" style="margin:15px 0 9px"><h2 style="margin:0">RECENT TICKS</h2><span class="muted" id="feedNote">Waiting for feed</span></div><div class="muted" id="tickHistory">No ticks received yet.</div>
 </section>
 <section class="card"><h2>MARKET DISCOVERY</h2><div class="metrics"><div class="metric"><small>SUPPORTED SYNTHETICS</small><strong id="marketCount">—</strong></div><div class="metric"><small>LIVE STREAMS</small><strong id="liveCount">0</strong></div><div class="metric"><small>API SOURCE</small><strong>Deriv</strong></div></div>
@@ -455,7 +565,16 @@ body.trade-active #tradePage #manualTradeView #executionPanel::after{
   <label class="trade-select-shell account-mode-shell"><select id="tradeAccountMode" aria-label="Trading account type"><option value="demo">DEMO</option><option value="real">REAL</option></select><span class="select-chevron">⌄</span></label>
  </div>
 </div>
-<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><span id="nativeChartDetail" hidden>Waiting for market ticks</span><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#000000;border:0;border-radius:0;overflow:hidden"><div id="nativeChartHost" style="position:absolute;inset:0"></div><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">OpenAlgo chart tools are powered by the live Deriv price stream. Chart studies and drawings are visual analysis tools, not trade signals.</p></section><section class="card full" id="executionPanel">
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card"><div class="row between"><h2 style="margin:0">LIVE PRICE CHART</h2><span class="pill" id="nativeChartConnection">WAITING FOR FEED</span></div><span id="nativeChartDetail" hidden>Waiting for market ticks</span><div id="nativeChartWrap" style="position:relative;width:100%;height:380px;min-height:260px;background:#000000;border:0;border-radius:0;overflow:hidden"><div id="nativeChartHost" style="position:absolute;inset:0"></div><div id="nativeChartEmpty" style="position:absolute;inset:0;display:grid;place-items:center;color:#9aa8ba;font-size:13px;pointer-events:none">Waiting for live price data…</div></div><p class="muted" style="font-size:11px;margin:9px 0 0">OpenAlgo chart tools are powered by the live Deriv price stream. Chart studies and drawings are visual analysis tools, not trade signals.</p></section><div class="stats-strip" id="statsPanel" aria-label="Live stats">
+  <span class="stats-strip-label">Stats</span>
+  <strong class="stats-strip-current" id="statsCurrentValue">—</strong>
+  <span id="statsCurrentCaption" hidden>Waiting for Deriv’s current tick count…</span>
+  <select id="statsGrowthRate" aria-label="Stats growth rate" hidden><option value="0.01" selected>1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select>
+  <div class="stats-strip-history-preview" id="statsValues"><span class="stats-empty">Waiting for stats…</span></div>
+  <button type="button" class="stats-strip-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsHistory" aria-label="Open full stat history"><span id="statsChevron">⌄</span></button>
+  <div class="stats-strip-full-history" id="statsHistory" hidden><div class="stats-strip-history-values" id="statsHistoryValues"></div></div>
+</div>
+<section class="card full" id="executionPanel">
   <div class="row between"><h2 style="margin:0">TRADE EXECUTION · MANUAL</h2><div class="row"><span class="pill" id="tradeConnectionState">Account not selected</span><button class="secondary" id="issueFinderOpen" type="button">Run issue finder</button></div></div>
   <p class="muted" style="font-size:12px;margin:8px 0 14px">Choose one of your authorized Deriv accounts. Balance and trading requests are scoped to that account.</p>
   <div class="row"><div class="field"><label>DERIV ACCOUNT</label><select id="tradeAccount" disabled><option>Connect Deriv first</option></select></div><div class="metric" style="min-width:170px;flex:1"><small>LIVE ACCOUNT BALANCE</small><strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small></div></div>
