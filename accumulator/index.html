@@ -243,6 +243,34 @@ body.trade-active #tradePage .deriv-chart-card{margin-top:0}
  #tradePage .trade-header-bottom .trade-select-shell{height:36px}
 }
 
+
+/* Cleaner, brand-style select indicators and slightly brighter outer pills */
+#tradePage .trade-header-bottom .instrument-shell,
+#tradePage .trade-header-bottom .account-mode-shell{
+ background:#0d0d0d!important;
+ border-color:#444!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.035),0 1px 3px rgba(0,0,0,.22);
+}
+#tradePage .trade-header-bottom .instrument-shell select,
+#tradePage .trade-header-bottom .account-mode-shell select{color:#f7f7f7}
+#tradePage .trade-header-bottom .select-chevron{
+ font-size:0!important;
+ width:7px;height:7px;right:13px;
+ border-right:1.6px solid #aeb4bd;
+ border-bottom:1.6px solid #aeb4bd;
+ border-radius:0 0 1px 0;
+ transform:translateY(-70%) rotate(45deg);
+ opacity:.9;
+}
+#tradePage .trade-header-bottom .growth-shell .select-chevron{
+ border-color:#242424;
+}
+#tradePage .trade-header-bottom .instrument-shell:focus-within,
+#tradePage .trade-header-bottom .account-mode-shell:focus-within{
+ border-color:#626a75!important;
+ background:#111!important;
+}
+
 </style>
 </head>
 <body><main class="wrap">
