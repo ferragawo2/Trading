@@ -802,6 +802,25 @@ let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, 
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null;
+const chartTickListeners=new Map();let chartActiveSymbols=[];
+window.__derivChartBridge={
+  getMetadata:()=>({activeSymbols:chartActiveSymbols,tradingTimes:{}}),
+  getHistory:async(symbol,count=1000)=>{
+    let rows=nativeChartTicks[symbol]||[];
+    if(!rows.length) await new Promise(resolve=>{
+      const timer=setTimeout(()=>{window.removeEventListener("deriv-chart-history",done);resolve();},9000);
+      function done(event){if(event.detail?.symbol!==symbol)return;clearTimeout(timer);window.removeEventListener("deriv-chart-history",done);resolve();}
+      window.addEventListener("deriv-chart-history",done);
+    });
+    rows=(nativeChartTicks[symbol]||[]).slice(-Math.max(1,Number(count)||1000));
+    return {history:{prices:rows.map(row=>Number(row.price)),times:rows.map(row=>Number(row.time))}};
+  },
+  subscribe:(symbol,callback)=>{
+    if(!chartTickListeners.has(symbol))chartTickListeners.set(symbol,new Set());
+    const listeners=chartTickListeners.get(symbol);listeners.add(callback);
+    return ()=>{listeners.delete(callback);if(!listeners.size)chartTickListeners.delete(symbol);};
+  }
+};
 const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
 function syncDerivAccumulatorChart(){
   const rate=Number($("tradeGrowth")?.value||0.01),item=barrierData[rate],tick=latestTicks[selectedSymbol];
@@ -886,6 +905,8 @@ function scheduleReconnect(){
   reconnectTimer=setTimeout(()=>{reconnectTimer=null;connect();},delay);
 }
 function handleSymbols(rows){
+  chartActiveSymbols=rows;
+  window.dispatchEvent(new CustomEvent("deriv-chart-metadata",{detail:window.__derivChartBridge.getMetadata()}));
   const found=rows.filter(s=>(s.market==="synthetic_index")&&(s.underlying_symbol||s.symbol))
     .map(s=>({symbol:s.underlying_symbol||s.symbol,name:s.underlying_symbol_name||s.display_name||s.underlying_symbol||s.symbol,pipSize:Number(s.pip_size??s.pip??2),submarket:s.submarket||"synthetics",suspended:Boolean(s.is_trading_suspended)}))
     .filter(s=>!s.suspended);
@@ -921,7 +942,7 @@ function handleMarketHistory24h(m){
 }
 function requestHistory(symbol){
   if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
-  try{send({ticks_history:symbol,count:80,end:"latest",style:"ticks"});}catch(e){log(e.message)}
+  try{send({ticks_history:symbol,count:1000,end:"latest",style:"ticks"});}catch(e){log(e.message)}
 }
 function handleHistory(m){
   const symbol=m.echo_req?.ticks_history||m.echo_req?.symbol||selectedSymbol;
@@ -929,6 +950,7 @@ function handleHistory(m){
   priceHistory[symbol]=m.history.prices.map(Number).filter(Number.isFinite).slice(-120);
   const times=m.history.times||[];nativeChartTicks[symbol]=times.map((time,i)=>({time:Number(time),price:Number(m.history.prices[i])})).filter(p=>Number.isFinite(p.time)&&Number.isFinite(p.price)).slice(-12000);
   drawChart();renderPurposeChartScaffold();
+  window.dispatchEvent(new CustomEvent("deriv-chart-history",{detail:{symbol}}));
 }
 function handleTick(t,m){
   const symbol=t.underlying_symbol||t.symbol||m.echo_req?.ticks;
@@ -938,6 +960,8 @@ function handleTick(t,m){
   const key=Array.isArray(symbol)?null:symbol;
   if(!key||!marketBySymbol[key])return;
   latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  const chartQuote={Date:String(epoch),Close:price,tick:t,DT:new Date(epoch*1000)};
+  chartTickListeners.get(key)?.forEach(callback=>{try{callback(chartQuote);}catch(error){console.error("SmartCharts shared tick callback:",error);}});
   if(!nativeChartTicks[key])nativeChartTicks[key]=[];nativeChartTicks[key].push({time:Number.isFinite(epoch)?epoch:Date.now()/1000,price});if(nativeChartTicks[key].length>12000)nativeChartTicks[key].splice(0,nativeChartTicks[key].length-12000);
   if(!priceHistory[key])priceHistory[key]=[];
   priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
