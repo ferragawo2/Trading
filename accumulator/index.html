@@ -813,7 +813,8 @@ window.__derivChartBridge={
       window.addEventListener("deriv-chart-history",done);
     });
     rows=(nativeChartTicks[symbol]||[]).slice(-Math.max(1,Number(count)||1000));
-    return {history:{prices:rows.map(row=>Number(row.price)),times:rows.map(row=>Number(row.time))}};
+    const quotes=rows.map(row=>({Date:String(Number(row.time)),Close:Number(row.price),DT:new Date(Number(row.time)*1000)}));
+    return {quotes,meta:{symbol,granularity:0}};
   },
   subscribe:(symbol,callback)=>{
     if(!chartTickListeners.has(symbol))chartTickListeners.set(symbol,new Set());
