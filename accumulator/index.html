@@ -1145,11 +1145,11 @@ async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
   if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
   activeTradeAccount=account;currentTradeProposal=null;activeContractId=null;activeTradeOverlay=null;updateTradeHeaderBalance();
-  $("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
+  $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
   $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
   $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
   $("tradeMarket").value=selectedSymbol||"Select a market above";
-  $("quoteAsk").textContent="—";$("quotePayout").textContent="—";$("tradeContractId").textContent="—";
+  $("quoteAsk").textContent="—";$("quotePayout").textContent="—";$("tradeTpValue").textContent="—";$("tradePnlValue").textContent="—";$("tradeContractId").textContent="—";
   $("tradeContractStatus").textContent="No contract purchased";
   try{
     const sid=sessionStorage.getItem("deriv_app_session");if(!sid)throw new Error("Reconnect your Deriv account first.");
@@ -1160,7 +1160,7 @@ async function connectTradeAccount(accountId){
     socket.onmessage=event=>{
       let m;try{m=JSON.parse(event.data)}catch{return}
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
-      if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=true}return}
+      if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell")$("confirmTradeBuy").disabled=false;return}
       if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
       if(m.msg_type==="proposal"&&m.proposal){const p=m.proposal;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeTpValue").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received.";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").textContent="CLOSE";$("confirmTradeBuy").disabled=!activeContractId;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
