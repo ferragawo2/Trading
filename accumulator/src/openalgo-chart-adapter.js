@@ -48,12 +48,6 @@
       if (!base.isKnownInterval(code)) base.registerInterval({ code, bucketing: { mode: "calendar", unit, count } });
     }
 
-    const timeframePreferences = widgetModule.createTimeframePreferences({
-      storage: (() => { try { return window.localStorage; } catch { return null; } })(),
-      key: "deriv-accumulator-openalgo-timeframes-v1",
-      defaults: DEFAULT_FAVORITES
-    });
-
     let workspaces = null;
     try {
       if (workspaceModule.WorkspaceRepository && workspaceModule.createIndexedDbWorkspaceStorage && window.indexedDB) {
@@ -70,8 +64,6 @@
       symbol: "R_10",
       exchange: "DERIV",
       interval: "T1",
-      intervals: ALL_INTERVALS,
-      timeframePreferences,
       ...(workspaces ? { workspaces } : {}),
       chartType: "area",
       theme: {
@@ -87,14 +79,14 @@
       },
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || "Africa/Lagos",
       mobile: "auto",
-      rail: true,
+      rail: false,
       topbar: false,
-      indicators: true,
-      statusline: true,
-      bottombar: true,
+      indicators: false,
+      statusline: false,
+      bottombar: false,
       persist: "deriv-accumulator-openalgo-area-white-v3",
       drawingScope: "instrument",
-      drawingToolbar: true,
+      drawingToolbar: false,
       navigation: { mousePan: "both", defaultVisibleBars: 120 },
       renderer: "auto"
     });
@@ -248,7 +240,6 @@
       destroy() {
         widget.layouts?.flush?.();
         widget.destroy();
-        timeframePreferences.destroy();
         lastCount = 0; lastRawCount = 0; tickState = null; lastSignature = "";
       }
     };
