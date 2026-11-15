@@ -14,3 +14,41 @@
   height: 100%;
   min-height: 0;
 }
+
+/* Load-stage diagnostic remains visible only until SmartCharts reports ready. */
+.deriv-smartchart-shell {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
+}
+.deriv-smartchart-diagnostic {
+  position: absolute;
+  z-index: 10000;
+  left: 8px;
+  right: 8px;
+  bottom: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid rgba(255,255,255,.2);
+  border-radius: 8px;
+  background: rgba(0,0,0,.82);
+  color: #e8e8e8;
+  font-size: 10px;
+  line-height: 1.35;
+  pointer-events: none;
+  overflow-wrap: anywhere;
+}
+.deriv-smartchart-diagnostic strong {
+  color: #fff;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+.deriv-smartchart-shell > .smartcharts {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+}
