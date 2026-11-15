@@ -1749,7 +1749,7 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
      if(tag==="svg")svgs.push(tag);
      if(tag.startsWith("flt-")||tag.includes("flutter"))flutterNodes.push(tag);
      if(/smartchart|chart|ciq-|cq-|flutter|flt-/i.test(tag+" "+className)&&chartNodes.length<12){
-       chartNodes.push(tag+(className?"."+className.trim().replace(/\\s+/g,".").slice(0,90):""));
+       chartNodes.push(tag+(className?"."+className.trim().replace(/\s+/g,".").slice(0,90):""));
      }
      if(element.shadowRoot)stack.push(...Array.from(element.shadowRoot.children||[]));
      stack.push(...Array.from(element.children||[]));
@@ -1759,7 +1759,7 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
      if(!flutterNodes.includes(tag))flutterNodes.push(tag);
    });
    const resources=performance.getEntriesByType("resource")
-     .filter(entry=>/\\/dist\\/|smartcharts|canvaskit|\\.wasm|flutter/i.test(entry.name))
+     .filter(entry=>/\/dist\/|smartcharts|canvaskit|\.wasm|flutter/i.test(entry.name))
      .slice(-24)
      .map(entry=>{
        let path=entry.name;try{path=new URL(entry.name,location.href).pathname;}catch{}
@@ -1785,7 +1785,7 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
    });
    await check("SmartCharts lazy-load chunks",async()=>{
      const snapshot=chartRuntimeSnapshot();
-     const chunks=snapshot.resources.filter(resource=>/\\.smartcharts\\./i.test(resource.path));
+     const chunks=snapshot.resources.filter(resource=>/\.smartcharts\./i.test(resource.path));
      if(!chunks.length){
        const seen=snapshot.resources.map(resource=>resource.path).slice(-10).join(", ")||"no matching runtime resources";
        throw Error("No *.smartcharts.* lazy chunk request was observed. The package documentation says these chunks load asynchronously from /dist/. Resources seen: "+seen);
