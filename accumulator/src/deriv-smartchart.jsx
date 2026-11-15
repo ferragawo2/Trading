@@ -140,7 +140,7 @@ function ChartApp() {
             chartData={chartData}
             feedCall={{ activeSymbols: false, tradingTimes: false }}
             getQuotes={request => bridge.getHistory(request)}
-            subscribeQuotes={(request, callback) => bridge.subscribe(request.symbol || symbol, callback)}
+            subscribeQuotes={(request, callback) => bridge.subscribe(request, callback)}
             unsubscribeQuotes={request => bridge.unsubscribe(request || { symbol, granularity: 0 })}
             accumulatorBarriers={accumulatorBarriers}
             contractInfo={contractInfo || undefined}
