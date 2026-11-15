@@ -1,0 +1,2310 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#080b12">
+<title>Accumulator Market Monitor · Deriv</title>
+
+
+<style>
+:root{color-scheme:dark;--bg:#000000;--panel:#000000;--panel2:#000000;--line:#000000;--line2:#000000;--text:#f7f7f7;--muted:#929292;--green:#d8f5e7;--red:#ff8585;--blue:#dedede;--radius:18px}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:18px;overflow-y:auto!important;min-height:100%;touch-action:pan-y}body{margin:0;min-height:100%;overflow-x:hidden;overflow-y:auto!important;overscroll-behavior-y:auto;touch-action:pan-y;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}.wrap{min-height:100vh;overflow:visible;touch-action:pan-y}
+.wrap{max-width:1180px;margin:auto;padding:26px 26px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding:4px 0}.app-toolbar{position:relative;min-height:48px}.toolbar-circle{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border:1px solid #383838;border-radius:50%;background:#000000;color:#fff;text-decoration:none;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.75),inset 0 0 0 1px rgba(255,255,255,.035);transition:background .18s,border-color .18s,transform .18s}.toolbar-circle:hover,.toolbar-circle:focus-visible{background:#000000;border-color:#686868;outline:none}.toolbar-circle:active{transform:scale(.96)}.toolbar-circle svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}.toolbar-menu{position:relative;z-index:40}.toolbar-menu summary{list-style:none}.toolbar-menu summary::-webkit-details-marker{display:none}.toolbar-dropdown{position:absolute;top:50px;left:0;min-width:180px;padding:7px;border:1px solid rgba(255,255,255,.15);border-radius:15px;background:rgba(12,12,12,.94);box-shadow:0 14px 36px #000b;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.toolbar-dropdown a{display:block;padding:11px 12px;border-radius:9px;color:#f5f5f5;text-decoration:none;font-size:12px;font-weight:650}.toolbar-dropdown a:hover{background:rgba(255,255,255,.1)}.toolbar-brand{position:absolute;left:50%;transform:translateX(-50%);padding:12px 25px;border:1px solid #383838;border-radius:999px;background:#000000;color:#fff;font-size:11px;font-weight:900;letter-spacing:.16em;white-space:nowrap;box-shadow:0 3px 14px rgba(0,0,0,.8),inset 0 0 0 1px rgba(255,255,255,.035)}.toolbar-actions{display:flex;align-items:center;gap:9px}.toolbar-account{margin-top:8px;padding:10px;border-top:1px solid #000000}.toolbar-account>strong{display:block;margin-bottom:8px;color:#fff;font-size:10px;letter-spacing:.12em}.toolbar-account .account-actions{display:flex;gap:7px}.toolbar-account .account-actions button{width:100%;padding:9px 12px;font-size:11px}.toolbar-account .account-message{font-size:11px;color:#ddd}.mode-switch{display:flex;justify-content:center;align-items:center;gap:10px;margin:-5px 0 20px}.mode-pill{min-width:104px;padding:11px 24px;border:1px solid #fff;border-radius:999px;background:#fff;color:#000000;font-size:11px;font-weight:900;letter-spacing:.12em;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.55)}.mode-pill[aria-pressed="true"]{background:#fff;color:#000;border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 4px 18px rgba(255,255,255,.1)}.brand{display:flex;align-items:center;gap:13px}.logo{width:42px;height:42px;border-radius:13px;background:#f5f5f5;display:grid;place-items:center;color:#000000;font-weight:900;font-size:21px;letter-spacing:-.06em}.brand h1{font-size:15px;letter-spacing:.13em;margin:0;font-weight:800}.brand p{margin:3px 0 0;color:var(--muted);font-size:11px;letter-spacing:.02em}.status{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);border-radius:999px;padding:8px 12px;color:#c8c8c8;background:#000000;font-size:11px}.dot{width:7px;height:7px;border-radius:50%;background:#666}.dot.on{background:#f5f5f5;box-shadow:0 0 10px #fff7}
+
+/* Purpose-built chart scaffold: restrained price and time axes only. */
+.purpose-chart-shell{position:relative;width:100%;height:380px;min-height:260px;background:#000;overflow:hidden}
+.purpose-chart-host{position:absolute;inset:0;display:grid;grid-template-columns:minmax(0,1fr) 66px;grid-template-rows:minmax(0,1fr) 29px;background:#000}
+.purpose-chart-plot{position:relative;grid-column:1;grid-row:1;min-width:0;overflow:hidden;touch-action:none;cursor:grab}.purpose-chart-plot:active{cursor:grabbing}.purpose-chart-price-scale{touch-action:none;cursor:ns-resize}
+.purpose-chart-price-area{position:absolute;z-index:1;inset:0;width:100%;height:100%;overflow:visible;pointer-events:none}.purpose-chart-area-fill{fill:rgba(57,201,138,.12);stroke:none}.purpose-chart-area-line{fill:none;stroke:#39c98a;stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linecap:round;stroke-linejoin:round}.purpose-chart-grid{position:absolute;z-index:0;inset:0;display:grid;grid-template-rows:repeat(7,minmax(0,1fr));pointer-events:none}
+.purpose-chart-grid span{border-top:1px solid rgba(150,160,175,.075)}
+.purpose-chart-barrier-layer{position:absolute;z-index:2;left:0;right:0;top:0;bottom:0;pointer-events:none;overflow:hidden}
+.purpose-chart-barrier-layer[hidden]{display:none}
+.purpose-chart-barrier-band{position:absolute;right:0;top:39%;width:calc(30% + 66px);height:22%;background:rgba(35,125,255,.14);border-left:1px solid rgba(55,145,255,.25);transition:top .45s cubic-bezier(.22,.61,.36,1),height .45s cubic-bezier(.22,.61,.36,1)}
+.purpose-chart-barrier-line{position:absolute;right:0;width:calc(30% + 46.2px);height:2px;background:#278bff;box-shadow:0 0 7px rgba(39,139,255,.55);transform:translateY(-50%);transition:top .45s cubic-bezier(.22,.61,.36,1)}
+.purpose-chart-barrier-line.upper{top:20%}
+.purpose-chart-barrier-line.lower{top:80%}
+.purpose-chart-price-scale{position:relative;z-index:3;background:transparent}
+.purpose-chart-price-labels{position:relative;z-index:4}
+.purpose-chart-price-labels span{position:relative;z-index:4;text-shadow:0 1px 3px #000}
+.purpose-chart-price-scale{grid-column:2;grid-row:1;display:flex;align-items:stretch;justify-content:flex-end;padding:0 8px 0 4px;border-left:1px solid rgba(150,160,175,.10);min-width:0}
+.purpose-chart-price-labels{width:100%;display:flex;flex-direction:column;justify-content:space-between;align-items:flex-end;padding:1px 0;color:rgba(180,190,205,.32);font:10px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;letter-spacing:.01em;white-space:nowrap}
+.purpose-chart-time-scale{grid-column:1 / 3;grid-row:2;border-top:1px solid rgba(150,160,175,.10);display:flex;align-items:center;min-width:0;padding:0 67px 0 2px}
+.purpose-chart-time-labels{width:100%;display:flex;justify-content:space-between;gap:4px;color:rgba(180,190,205,.30);font:9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;font-variant-numeric:tabular-nums;white-space:nowrap}
+.purpose-chart-time-labels span:last-child{text-align:right}
+@media(max-width:600px){.purpose-chart-host{grid-template-columns:minmax(0,1fr) 58px}.purpose-chart-price-labels{font-size:9px}.purpose-chart-time-scale{padding-right:59px}.purpose-chart-time-labels{font-size:8px}.purpose-chart-barrier-line,.purpose-chart-barrier-band{width:calc(30% + 40.6px)}}
+.grid{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(290px,.75fr);gap:16px}.card{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:20px;box-shadow:0 18px 48px #0008}.card h2{font-size:11px;margin:0 0 15px;letter-spacing:.14em;font-weight:800;color:#ededed}.muted{color:var(--muted)}.row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}.between{justify-content:space-between}.field{display:flex;flex-direction:column;gap:7px;min-width:0;flex:1}.field label{font-size:10px;color:#a2a2a2;letter-spacing:.1em;font-weight:700}select,input{width:100%;background:#000000;border:1px solid #000000;border-radius:11px;padding:12px 13px;color:var(--text);outline:none;font:inherit}select:focus,input:focus{border-color:#eee;box-shadow:0 0 0 2px #fff1}button{border:1px solid #f4f4f4;border-radius:11px;padding:11px 16px;font-weight:750;background:#f4f4f4;color:#000000;cursor:pointer;transition:background .15s,border-color .15s,transform .15s}button:hover:not(:disabled){background:#dcdcdc;transform:translateY(-1px)}button.secondary{background:#000000;color:#f5f5f5;border:1px solid #373737}button:disabled{opacity:.4;cursor:not-allowed}.controls{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}.metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.metric{background:#000000;border:1px solid #000000;border-radius:13px;padding:13px;min-width:0}.metric small{display:block;color:#999;font-size:9px;letter-spacing:.1em;font-weight:700}.metric strong{font-size:19px;display:block;margin-top:5px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere;letter-spacing:-.03em}.chart{height:260px;margin-top:13px;background:#000000;border:1px solid #000000;border-radius:14px;overflow:hidden}.chart canvas{width:100%;height:100%}.pill{font-size:10px;padding:6px 10px;border-radius:999px;background:#000000;color:#ddd;border:1px solid #000000;letter-spacing:.03em}.market-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin-top:16px}
+.market-card{position:relative;min-width:0;min-height:190px;background:#191b20;border:1px solid #24262c;border-radius:20px;padding:16px;cursor:pointer;display:flex;flex-direction:column;align-items:flex-start;transition:border-color .15s,background .15s}
+.market-card:hover,.market-card.selected{border-color:#777;background:#202228}
+.market-card .name{display:flex;align-items:center;gap:9px;font-size:14px;line-height:1.35;color:#f4f4f4;min-height:42px;margin:8px 0 4px}
+.market-card .name span:last-child{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
+.market-card .meta{font-size:10px;color:#929292}
+.market-card .symbol-meta{display:none}
+.market-card strong{display:block;font-size:21px;font-weight:750;font-variant-numeric:tabular-nums;margin:2px 0 9px;letter-spacing:-.02em}
+.market-card .market-sparkline{width:100%;height:34px;margin-top:auto;overflow:visible}
+.market-card .market-sparkline .area{stroke:none;fill:rgba(57,201,138,.045)}
+.market-card .market-sparkline .line{fill:none;stroke:#39c98a;stroke-width:2.6;stroke-linecap:round;stroke-linejoin:round}
+.market-card .market-sparkline.down .area{fill:rgba(239,100,119,.05)}
+.market-card .market-sparkline.down .line{stroke:#ef6477}
+.market-card .market-live{font-size:9px;color:#999;margin-top:4px}
+@media(min-width:760px){.market-grid{grid-template-columns:repeat(auto-fill,minmax(210px,1fr))}.market-card{min-height:205px;padding:18px}}
+.market-showcase{width:100%;margin:0;padding:0;background:#000}
+.market-card{position:relative;background:#000!important;
+  border:0!important;border-radius:20px;box-shadow:none!important;
+  isolation:isolate;overflow:visible;transition:transform .18s}
+.market-card:before{display:none!important;content:none!important}
+.market-card>*{position:relative;z-index:1}
+.market-card:hover,.market-card.selected{background:#000!important;box-shadow:none!important;transform:translateY(-1px)}
+.market-card .name{width:100%;font-size:13px;font-weight:750;letter-spacing:.015em;text-transform:uppercase;min-height:40px;gap:10px}
+.market-card .name .index-kind-icon{width:36px;height:36px;flex:0 0 36px;border-radius:50%;overflow:hidden}
+.market-card strong{color:#fff!important;font-size:21px;font-weight:750}
+.market-card .market-change{font-size:10px;font-weight:750;letter-spacing:.025em;margin:-5px 0 8px;color:#aaa}.market-card .market-change.up{color:#39c98a}.market-card .market-change.down{color:#ef6477}
+.market-card .market-sparkline{height:38px}
+.market-card .market-live{color:#777;font-size:9px}
+
+/* Show four market cards at a time; scroll sideways for the rest. */
+.market-grid{
+  display:grid;
+  grid-auto-flow:column;
+  grid-template-columns:none;
+  grid-template-rows:repeat(2,minmax(176px,auto));
+  grid-auto-columns:calc((100% - 12px)/2);
+  gap:12px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scroll-snap-type:x mandatory;
+  scrollbar-width:thin;
+  scrollbar-color:#444 #000;
+  padding:0 0 9px;
+  -webkit-overflow-scrolling:touch;
+}
+.market-grid>.market-card{width:100%;min-width:0;scroll-snap-align:start}
+@media(min-width:760px){
+  .market-grid{
+    grid-template-rows:minmax(205px,auto);
+    grid-auto-columns:calc((100% - 36px)/4);
+  }
+}
+.market-logo{width:38px;height:38px;flex:0 0 38px;border-radius:50%;object-fit:contain;display:block}.market-card .meta{font-size:10px;color:#929292}.log{height:150px;overflow:auto;background:#000000;border:1px solid #000000;border-radius:11px;padding:10px;font:11px/1.6 ui-monospace,monospace;color:#bcbcbc}.log div{border-bottom:1px solid #000000;padding:3px 0}.note{border:1px solid #333;background:#000000;color:#d2d2d2;padding:12px 14px;border-radius:12px;font-size:11px;margin:0 0 16px}.full{grid-column:1/-1}.foot{color:#777;font-size:10px;text-align:center;padding:24px 10px}.barrier-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.barrier-card{background:#000000;border:1px solid #000000;border-radius:13px;padding:14px;min-width:0}.barrier-card h3{font-size:11px;margin:0 0 10px;letter-spacing:.1em}.barrier-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}.barrier-value{font-size:14px;font-weight:750;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.barrier-label{font-size:9px;color:#929292;letter-spacing:.08em}.barrier-meta{font-size:10px;color:#888;margin-top:10px;line-height:1.7}.barrier-status{font-size:10px;color:#d6d6d6;margin-top:8px}.survival-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px;margin-top:14px}.survival-card{background:#000000;border:1px solid #000000;border-radius:13px;padding:14px;min-width:0}.survival-card h3{font-size:12px;margin:0 0 10px}.survival-rate{font-size:22px;font-weight:800;font-variant-numeric:tabular-nums}.survival-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:9px}.survival-stats strong{display:block;font-size:14px;font-variant-numeric:tabular-nums}.survival-stats small{color:#929292;font-size:10px}.survival-state{font-size:10px;color:#c9c9c9;margin-top:9px;line-height:1.5}.run-history-grid{display:grid;grid-template-columns:repeat(10,minmax(0,1fr));gap:4px;margin-top:10px}.run-history-cell{background:#000000;border:1px solid #000000;border-radius:5px;text-align:center;padding:5px 1px;font:11px ui-monospace,monospace;color:#eee;min-width:0}.run-history-cell.zero{color:#ff9999;background:#211414}.run-history-empty{grid-column:1/-1;color:var(--muted);font-size:11px;padding:8px 0}.stats-panel{margin-top:13px;padding:14px;background:#000000;border:1px solid #000000;border-radius:14px}.stats-current{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-top:12px;padding:14px;background:#000000;border:1px solid #000000;border-radius:11px}.stats-current-label{width:100%;font-size:9px;letter-spacing:.12em;color:#999;font-weight:700}.stats-current strong{font-size:30px;line-height:1.1;font-variant-numeric:tabular-nums;color:#fff}.stats-current span:last-child{font-size:10px;color:#999}.stats-heading{display:flex;align-items:center;gap:10px}.stats-heading>strong{font-size:12px;margin-right:auto}.stats-heading select{width:auto;min-width:58px;padding:6px 8px;font-size:10px}.stats-toggle{width:31px;height:29px;padding:0;border:1px solid #383838;background:#000000;color:#fff;border-radius:8px;font-size:17px;line-height:1}.stats-values,.stats-history-values{display:flex;gap:7px;overflow-x:auto;white-space:nowrap;padding:10px 0 2px;scrollbar-width:thin}.stats-value{display:inline-flex;align-items:center;justify-content:center;min-width:34px;padding:7px 9px;border-radius:8px;background:#000000;border:1px solid #000000;color:#eee;font:600 12px ui-monospace,monospace}.stats-value.zero{color:#ff9999}.stats-empty{font-size:10px;color:#888;padding:7px 0}.stats-history{border-top:1px solid #000000;margin-top:10px;padding-top:9px}.stats-history-title{font-size:9px;color:#999;letter-spacing:.1em;font-weight:700}.stats-history-values{flex-wrap:wrap;white-space:normal;max-height:240px;overflow-y:auto}.stats-history-values .stats-value{min-width:38px}@media(max-width:520px){.run-history-grid{grid-template-columns:repeat(5,minmax(0,1fr))}}.account-panel{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:#000000;border:1px solid #282828;border-radius:16px;padding:15px 16px;margin:0 0 14px}.account-copy{min-width:180px;flex:1}.account-copy strong{display:block;font-size:13px}.account-copy span{display:block;color:#999;font-size:10px;margin-top:4px}.account-actions{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.account-actions button{font-size:11px}.account-message{font-size:10px;color:#d0d0d0;margin-top:5px}
+#executionPanel{margin-bottom:16px}#executionPanel>.row:first-child{margin-bottom:2px}#executionPanel .note{margin-top:13px;margin-bottom:0;background:#000000;border-color:#333;color:#ccc}#marketView{min-width:0}#marketView .chart{position:relative}
+.mobile-nav{display:none}
+@media(max-width:800px){body{padding-bottom:78px}.wrap{padding:16px 13px 24px}.grid{grid-template-columns:1fr;gap:12px}.card{padding:16px;border-radius:16px}.top{align-items:center;margin-bottom:17px}.app-toolbar{min-height:44px}.toolbar-circle{width:40px;height:40px;flex-basis:40px}.toolbar-circle svg{width:20px;height:20px}.toolbar-brand{padding:10px 18px;font-size:10px}.mode-switch{margin:-4px 0 16px;gap:8px}.mode-pill{min-width:94px;padding:10px 20px}.toolbar-actions{gap:7px}.metrics{gap:7px}.metric{padding:10px}.metric strong{font-size:16px}.controls{grid-template-columns:1fr}.controls button{width:100%}.chart{height:220px}.account-panel{padding:13px}.account-actions{width:100%}.account-actions button{flex:1}.market-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.market-card{padding:11px}.barrier-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.foot{padding-bottom:8px}.mobile-nav{position:fixed;z-index:30;left:12px;right:auto;bottom:12px;width:67vw;max-width:420px;min-width:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:7px;background:rgba(5,5,5,.16);border:1px solid rgba(255,255,255,.24);border-radius:999px;box-shadow:0 0 0 1px rgba(255,255,255,.045),0 0 14px rgba(255,255,255,.13),0 0 34px rgba(255,255,255,.075),0 10px 36px rgba(0,0,0,.16),inset 0 0 14px rgba(255,255,255,.055);backdrop-filter:blur(15px) saturate(115%);-webkit-backdrop-filter:blur(15px) saturate(115%)}.mobile-nav a{display:flex;flex-direction:row;align-items:center;justify-content:center;gap:8px;min-width:0;padding:11px 6px;border-radius:999px;color:rgba(255,255,255,.9);text-decoration:none;font-size:11px;font-weight:800;letter-spacing:.015em;transition:background .18s,color .18s}.mobile-nav a svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:2.5;stroke-linecap:round;stroke-linejoin:round;flex:none}.mobile-nav a:active,.mobile-nav a:focus-visible{background:rgba(255,255,255,.14);color:#fff;outline:none}}
+@media(max-width:390px){.brand p{display:none}.status{font-size:9px}.metrics{grid-template-columns:repeat(3,minmax(0,1fr))}.metric strong{font-size:14px}.barrier-grid{grid-template-columns:1fr 1fr}}
+
+/* Current balance-card and toolbar refinements */
+
+:root{color-scheme:dark;--bg:#000000;--panel:#000000;--panel2:#000000;--line:#000000;--line2:#000000;--text:#f7f7f7;--muted:#929292;--green:#d8f5e7;--red:#ff8585;--blue:#dedede;--radius:18px}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:18px}body{margin:0;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}
+.wrap{max-width:1180px;margin:auto;padding:26px 26px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding:4px 0}.app-toolbar{position:relative;min-height:48px}.toolbar-circle{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border:1px solid #383838;border-radius:50%;background:#000000;color:#fff;text-decoration:none;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.75),inset 0 0 0 1px rgba(255,255,255,.035);transition:background .18s,border-color .18s,transform .18s}.toolbar-circle:hover,.toolbar-circle:focus-visible{background:#000000;border-color:#686868;outline:none}.toolbar-circle:active{transform:scale(.96)}.toolbar-circle svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}.toolbar-menu{position:relative;z-index:40}.toolbar-menu summary{list-style:none}.toolbar-menu summary::-webkit-details-marker{display:none}.toolbar-dropdown{position:absolute;top:50px;left:0;min-width:180px;padding:7px;border:1px solid rgba(255,255,255,.15);border-radius:15px;background:rgba(12,12,12,.94);box-shadow:0 14px 36px #000b;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.toolbar-dropdown a{display:block;padding:11px 12px;border-radius:9px;color:#f5f5f5;text-decoration:none;font-size:12px;font-weight:650}.toolbar-dropdown a:hover{background:rgba(255,255,255,.1)}.toolbar-brand{position:absolute;left:50%;transform:translateX(-50%);padding:12px 25px;border:1px solid #383838;border-radius:999px;background:#000000;color:#fff;font-size:11px;font-weight:900;letter-spacing:.16em;white-space:nowrap;box-shadow:0 3px 14px rgba(0,0,0,.8),inset 0 0 0 1px rgba(255,255,255,.035)}.toolbar-actions{display:flex;align-items:center;gap:9px}.toolbar-account{margin-top:8px;padding:10px;border-top:1px solid #000000}.toolbar-account>strong{display:block;margin-bottom:8px;color:#fff;font-size:10px;letter-spacing:.12em}.toolbar-account .account-actions{display:flex;gap:7px}.toolbar-account .account-actions button{width:100%;padding:9px 12px;font-size:11px}.toolbar-account .account-message{font-size:11px;color:#ddd}.mode-switch{display:flex;justify-content:center;align-items:center;gap:10px;margin:-5px 0 20px}.mode-pill{min-width:104px;padding:11px 24px;border:1px solid #fff;border-radius:999px;background:#fff;color:#000000;font-size:11px;font-weight:900;letter-spacing:.12em;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.55)}.mode-pill[aria-pressed="true"]{background:#fff;color:#000;border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 4px 18px rgba(255,255,255,.1)}
+.balance-hero{position:relative;isolation:isolate;overflow:visible;width:100vw;margin:0 0 22px calc(50% - 50vw);height:222px;padding:24px max(24px,calc((100vw - 1128px)/2 + 26px));background:#000;border:0;border-radius:0 0 64px 64px;box-shadow:0 14px 30px #000a}
+.balance-hero:before{content:"";position:absolute;inset:0;z-index:-2;background:#000}
+.balance-hero:after{content:"";position:absolute;z-index:1;left:0;right:0;bottom:-1px;height:64px;background:transparent;border:0;border-radius:0 0 64px 64px;box-shadow:0 15px 20px -13px rgba(255,255,255,.78);pointer-events:none}
+.balance-content{position:relative;z-index:2;width:58%;max-width:520px}.balance-chart{position:absolute;z-index:0;right:20px;top:24px;width:40%;height:112px;opacity:.62;pointer-events:none}
+.balance-chart path.area{fill:url(#balanceFill)}.balance-chart path.line{fill:none;stroke:rgba(255,255,255,.58);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.balance-chart circle{fill:#fff;opacity:.82}
+.balance-head{display:flex;align-items:center;justify-content:flex-start;gap:12px;position:relative}.balance-label{font-size:10px;font-weight:800;letter-spacing:.18em;color:#c8c8c8}
+.balance-value-row{display:flex;align-items:center;gap:12px;margin-top:8px}.balance-visibility{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid #555;border-radius:50%;background:#000;color:#fff;padding:0;box-shadow:none}.balance-visibility:hover:not(:disabled){background:#111;transform:none}.balance-visibility svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.balance-amount{position:relative;margin:0;font-size:clamp(27px,5vw,36px);line-height:1.12;font-weight:750;letter-spacing:-.045em;color:#fff;font-variant-numeric:tabular-nums}.balance-foot{position:relative;margin-top:7px;font-size:9px;letter-spacing:.09em;color:#929292;text-transform:uppercase}
+.balance-cta{position:absolute;z-index:3;left:50%;transform:translateX(-50%);bottom:20px;min-width:154px;padding:11px 22px;border:1px solid #fff;border-radius:999px;background:#fff;color:#000;font-size:10px;font-weight:900;letter-spacing:.1em;box-shadow:0 4px 16px #fff1}
+.balance-cta:hover:not(:disabled){background:#e9e9e9;transform:translateX(-50%) translateY(-1px)}
+@media(max-width:800px){.balance-hero{height:210px;margin-top:0;margin-bottom:18px;padding:22px 20px 20px;border-radius:0 0 54px 54px}.balance-hero:after{height:54px;border-radius:0 0 54px 54px;box-shadow:0 14px 19px -13px rgba(255,255,255,.78)}.balance-content{width:61%}.balance-chart{top:25px;right:18px;width:39%;height:106px;opacity:.62}.balance-value-row{gap:10px;margin-top:8px}.balance-amount{font-size:31px}.balance-visibility{width:32px;height:32px;flex-basis:32px}.balance-foot{font-size:8px;letter-spacing:.06em;max-width:100%}.balance-cta{left:50%;bottom:19px;min-width:150px;padding:11px 20px}}
+
+/* Moving synthetic-index pills below the balance card */
+.index-ticker{width:100%;margin:0 0 22px;overflow:hidden}
+.index-ticker-heading{display:flex;align-items:center;justify-content:space-between;margin:0 3px 9px;color:#a9a9a9;font-size:9px;font-weight:850;letter-spacing:.16em}
+.index-ticker-heading span:last-child{color:#777;font-size:8px;letter-spacing:.1em}
+.index-ticker-window{width:100%;overflow:hidden;position:relative;mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent);-webkit-mask-image:linear-gradient(90deg,transparent,#000 3%,#000 97%,transparent)}
+.index-ticker-track{display:flex;width:max-content;animation:indexTickerMove 48s linear infinite;will-change:transform}
+.index-ticker-window:hover .index-ticker-track{animation-play-state:paused}
+.index-ticker-group{display:flex;flex:0 0 auto;align-items:center;gap:9px;padding:2px 9px 8px 0}
+/* Keep the seamless duplicate group beyond the initial viewport so it doesn't show as extra pills at the right edge. */
+#indexTickerPrimary{min-width:100vw;box-sizing:border-box}
+.index-market-pill{display:inline-flex;align-items:center;gap:9px;min-height:48px;padding:7px 15px 7px 9px;border:1px solid #303030;border-radius:999px;background:#080808;color:#fff;white-space:nowrap;cursor:pointer;box-shadow:0 5px 16px #0008;transition:border-color .18s,background .18s,transform .18s}
+.index-market-pill:hover,.index-market-pill:focus-visible{border-color:#888;background:#111;outline:none;transform:translateY(-1px)}
+.index-market-pill img,.index-market-fallback{width:31px;height:31px;flex:0 0 31px;border-radius:50%;object-fit:contain;display:grid;place-items:center}.index-kind-icon{display:inline-grid;place-items:center;flex:0 0 auto;width:31px;height:31px;border-radius:50%;overflow:hidden}.index-kind-icon.card{width:38px;height:38px}.index-kind-icon{background-position:center;background-repeat:no-repeat;background-size:100% 100%}
+.index-market-fallback{background:#191919;border:1px solid #444;color:#fff;font-size:10px;font-weight:900;letter-spacing:-.04em}
+.index-market-pill span:last-child{font-size:11px;font-weight:750;letter-spacing:.01em}
+@keyframes indexTickerMove{from{transform:translateX(0)}to{transform:translateX(-50%)}}
+@media(prefers-reduced-motion:reduce){.index-ticker-track{animation:none}}
+@media(max-width:800px){.index-ticker{margin:0 0 17px}.index-ticker-heading{margin-bottom:7px}.index-market-pill{min-height:44px;padding:6px 12px 6px 7px;gap:8px}.index-market-pill img,.index-market-fallback{width:29px;height:29px;flex-basis:29px}.index-market-pill span:last-child{font-size:10px}}
+
+
+/* Accumulator promotional banner */
+.accu-promo{position:relative;margin:22px 0 28px;border:1px solid rgba(255,255,255,.2);border-radius:22px;overflow:hidden;background:#000;box-shadow:0 10px 34px rgba(255,255,255,.045)}
+.accu-promo img{display:block;width:100%;height:auto;object-fit:cover}
+.accu-promo-cta{position:absolute;right:clamp(12px,3vw,28px);bottom:clamp(12px,3vw,26px);display:inline-flex;align-items:center;justify-content:center;min-height:46px;padding:0 25px;border:1px solid rgba(255,255,255,.95);border-radius:999px;background:rgba(0,0,0,.88);color:#fff;text-decoration:none;font-size:13px;font-weight:800;letter-spacing:.06em;box-shadow:0 0 18px rgba(255,255,255,.12);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);transition:background .18s,box-shadow .18s,transform .18s}
+.accu-promo-cta:hover{background:#111;box-shadow:0 0 22px rgba(255,255,255,.2);transform:translateY(-1px)}
+@media(max-width:520px){.accu-promo{margin:16px 0 22px;border-radius:17px}.accu-promo-cta{min-height:38px;padding:0 17px;font-size:11px;right:11px;bottom:11px}}
+
+/* Dedicated Trade page */
+.app-page[hidden],[hidden]{display:none!important}
+.trade-page-heading{display:flex;align-items:center;justify-content:space-between;margin:8px 2px 18px}.trade-page-heading>span:first-child{font-size:15px;font-weight:900;letter-spacing:.16em}.trade-page-caption{font-size:9px;color:#888;font-weight:750;letter-spacing:.12em}
+.trade-tabs{display:flex;gap:9px;padding:5px;margin:0 0 17px;border:1px solid #292929;border-radius:999px;background:#080808}.trade-tab{flex:1;min-height:43px;padding:10px 18px;border:1px solid transparent;border-radius:999px;background:transparent;color:#aaa;font-size:11px;font-weight:900;letter-spacing:.12em;box-shadow:none}.trade-tab:hover:not(:disabled){background:#151515;color:#fff;transform:none}.trade-tab.is-active{background:#fff;color:#000;border-color:#fff;box-shadow:0 0 16px rgba(255,255,255,.12)}.trade-tab.is-active:hover:not(:disabled){background:#eee}
+.algo-panel{display:grid;gap:12px;padding:0 0 18px}
+.algo-control-card,.algo-section{background:#050505;border:1px solid #262626;border-radius:15px;padding:14px;min-width:0}
+.algo-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.algo-card-heading strong{font-size:11px;letter-spacing:.12em}
+.algo-muted{font-size:10px;color:#929292;line-height:1.55}
+.algo-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.algo-field{display:grid;gap:7px;min-width:0;color:#999;font-size:9px;font-weight:850;letter-spacing:.1em}
+.algo-field input,.algo-field select{width:100%;min-width:0;height:42px;padding:0 11px;border:1px solid #383838;border-radius:10px;background:#0b0b0b;color:#fff;font-size:13px;font-weight:750}
+.algo-action-row{display:flex;gap:9px;margin-top:12px}
+.algo-action-row button{flex:1;min-height:44px;border-radius:10px;font-size:11px;font-weight:900;letter-spacing:.1em}
+.algo-start-button{background:#fff;color:#000;border:1px solid #fff}
+.algo-stop-button{background:#090909;color:#fff;border:1px solid #777}
+.algo-start-button:disabled,.algo-stop-button:disabled{opacity:.4;cursor:not-allowed}
+.algo-live-state{display:flex;align-items:center;gap:8px;margin-top:11px;color:#aaa;font-size:10px}
+.algo-live-dot{width:7px;height:7px;border-radius:50%;background:#777;flex:0 0 7px}
+.algo-live-state.is-running .algo-live-dot{background:#35d07f;box-shadow:0 0 10px #35d07f}
+.algo-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.algo-summary-item{padding:11px 9px;border:1px solid #242424;border-radius:11px;background:#080808;min-width:0}
+.algo-summary-item span{display:block;color:#888;font-size:8px;font-weight:850;letter-spacing:.1em}
+.algo-summary-item strong{display:block;margin-top:6px;color:#fff;font-size:17px;font-weight:850;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.algo-tracker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.algo-tracker-card{padding:12px;border:1px solid #2a2a2a;border-radius:11px;background:#080808;min-width:0}
+.algo-tracker-top{display:flex;align-items:center;justify-content:space-between;gap:8px}
+.algo-tracker-rate{font-size:15px;font-weight:900;font-variant-numeric:tabular-nums}
+.algo-tracker-status{color:#bdbdbd;font-size:8px;font-weight:850;letter-spacing:.08em;text-align:right}
+.algo-tracker-numbers{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.algo-tracker-numbers span{display:block;color:#888;font-size:8px;letter-spacing:.08em}
+.algo-tracker-numbers strong{display:block;margin-top:4px;color:#fff;font-size:20px;font-weight:900;font-variant-numeric:tabular-nums}
+.algo-tracker-message{margin-top:9px;color:#999;font-size:9px;line-height:1.5;min-height:27px}
+.algo-position-list,.algo-event-list{display:grid;gap:7px}
+.algo-position-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid #1d1d1d;font-size:10px}
+.algo-position-row:last-child{border-bottom:0}
+.algo-position-row strong{font-size:10px;font-variant-numeric:tabular-nums}
+.algo-event-row{display:flex;gap:9px;color:#aaa;font-size:9px;line-height:1.5}
+.algo-event-time{color:#666;white-space:nowrap;font-variant-numeric:tabular-nums}
+#tradePage #executionPanel{margin:0}
+body.trade-active #tradePage.algo-mode-active #algoTradeView{padding:0 10px 18px}
+body.trade-active #tradePage.algo-mode-active .growth-shell{display:none}
+@media(max-width:560px){
+ .algo-form-grid{grid-template-columns:1fr 1fr}
+ .algo-tracker-grid{gap:7px}
+ .algo-tracker-card{padding:10px}
+ .algo-tracker-numbers strong{font-size:18px}
+ .algo-summary-item strong{font-size:15px}
+}
+@media(max-width:800px){.trade-page-heading{margin:7px 2px 16px}.trade-page-caption{font-size:8px}.trade-tabs{margin-bottom:14px}.trade-tab{min-height:42px}}
+
+/* Tighten Trade mode selector */
+#tradePage .trade-tabs{display:flex;width:max-content;max-width:100%;margin-left:auto;margin-right:auto;padding:4px;gap:5px;background:#000000!important;border-color:#000000!important;box-shadow:none!important;}
+#tradePage .trade-tab{flex:0 0 auto;min-width:104px;padding-left:18px;padding-right:18px;}
+
+#tradePage .trade-tabs{
+ position:sticky;top:0;z-index:50;margin:0 auto 8px;padding:8px 4px;
+ background:#000!important;
+}
+body.trade-active #home{display:none!important}
+body.trade-active #tradePage{padding-top:0}
+body.trade-active .wrap{
+ max-width:none;width:100%;height:100vh;height:100dvh;min-height:0;
+ padding:0 12px 28px;overflow:auto;overscroll-behavior-y:contain;
+ -webkit-overflow-scrolling:touch;touch-action:pan-y
+}
+body.trade-active #tradePage .trade-tabs{width:max-content;max-width:100%;margin-left:auto;margin-right:auto}
+body.trade-active #tradePage .deriv-chart-card{
+ position:relative;height:80vh;height:80dvh;min-height:440px;max-height:1000px;
+ margin:0;padding:0;border:0;border-radius:0;background:transparent;box-shadow:none;overflow:hidden
+}
+body.trade-active #tradePage .deriv-chart-card> .row:first-child{display:none}
+body.trade-active #tradePage #nativeChartWrap{
+ position:absolute!important;inset:0;width:100%!important;height:100%!important;min-height:0!important;
+ border:0!important;border-radius:0!important
+}
+body.trade-active #tradePage #nativeChartHost{position:absolute;inset:0;background:#000000}
+body.trade-active #tradePage #nativeChartHost{width:100%;height:100%;min-height:0;background:#000000}\nbody.trade-active #tradePage #nativeChartEmpty{z-index:1;background:transparent}
+body.trade-active #tradePage .deriv-chart-card>p{display:none}
+body.trade-active #tradePage #executionPanel{margin-top:18px}
+@media(max-width:600px){
+ body.trade-active .wrap{padding-left:0;padding-right:0;overflow:auto}
+ body.trade-active #tradePage .trade-tabs{margin-bottom:6px}
+ body.trade-active #tradePage .deriv-chart-card{height:80vh;height:80dvh;min-height:420px}
+ body.trade-active #tradePage .deriv-chart-card>.row:nth-of-type(2){left:6px;right:6px;top:6px}
+}
+#tradePage .trade-tab:not(.is-active){background:#000000;color:#aaa;border-color:#292929}
+#tradePage .trade-tab:not(.is-active):hover{background:#000000;color:#fff}
+ 
+.trade-control-header{position:relative;z-index:5;padding:8px 14px 12px;background:#000}
+.trade-header-top{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:44px}
+.trade-tabs{display:flex;gap:9px;padding:0;margin:0;border:0;border-radius:0;background:transparent;flex:0 0 auto}
+.trade-tab{min-width:112px;min-height:42px;padding:9px 20px;border:1px solid #424242;border-radius:9px;background:#090909;color:#aaa;font-size:11px;font-weight:850;letter-spacing:.1em;box-shadow:none}
+.trade-tab.is-active{background:#fff;color:#000;border-color:#fff;box-shadow:none}
+.trade-balance{display:flex;align-items:center;justify-content:flex-end;gap:9px;min-width:0;color:#fff;font-variant-numeric:tabular-nums}
+.currency-logo{width:27px;height:27px;flex:0 0 27px;border:1px solid #777;border-radius:50%;display:grid;place-items:center;font-size:8px;font-weight:900;letter-spacing:-.04em;color:#fff}
+.trade-balance-value{font-size:17px;font-weight:750;white-space:nowrap}
+.trade-header-bottom{display:flex;align-items:center;gap:9px;margin-top:11px;min-width:0}
+.trade-select-shell{position:relative;display:flex;align-items:center;height:43px;min-width:0;border:1px solid #343434;border-radius:12px;background:#090909;color:#fff}
+.trade-select-shell select{height:100%;width:100%;min-width:0;appearance:none;-webkit-appearance:none;border:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:#f7f7f7;padding:0 29px 0 12px;font-size:12px;font-weight:750;white-space:nowrap;text-overflow:ellipsis}
+.trade-select-shell select option{background:#111;color:#fff}
+.instrument-shell{flex:1 1 48%;max-width:52%;gap:7px;padding-left:9px}
+.instrument-mark{display:grid;place-items:center;flex:0 0 24px;width:24px;height:24px;border-radius:50%;background:#1b1b1b;color:#fff;font-size:11px;font-weight:850}
+.instrument-shell select{padding-left:0}
+.select-chevron{position:absolute;right:10px;top:50%;transform:translateY(-55%);pointer-events:none;color:#bcbcbc;font-size:17px;line-height:1}
+.growth-shell{flex:0 0 104px;border-radius:8px}
+.account-mode-shell{flex:0 0 92px}
+.account-mode-shell select{text-align:center;padding-left:10px}
+body.trade-active #tradePage .deriv-chart-card{height:calc(100dvh - 190px);height:calc(100vh - 190px);min-height:340px;max-height:none}
+body.trade-active #tradePage #nativeChartHost,body.trade-active #tradePage #nativeChartWrap{background:#000!important}
+body.trade-active #tradePage .deriv-chart-card{margin-top:0}
+@media(max-width:600px){
+ .trade-control-header{padding:7px 10px 10px}
+ .trade-tab{min-width:91px;min-height:39px;padding:8px 13px}
+ .trade-header-bottom{gap:7px;margin-top:9px}
+ .trade-select-shell{height:40px}
+ .instrument-shell{max-width:none;flex:1 1 auto}
+ .growth-shell{flex-basis:76px}
+ .account-mode-shell{flex-basis:76px}
+ .trade-balance-value{font-size:15px}
+ .currency-logo{width:25px;height:25px;flex-basis:25px}
+ body.trade-active #tradePage .deriv-chart-card{height:calc(100dvh - 180px);height:calc(100vh - 180px);min-height:330px}
+}
+
+/* Trade header alignment and matched selector pills */
+#tradePage .trade-header-top{justify-content:space-between}
+#tradePage .trade-tabs{margin:0 auto 0 0!important;padding:0!important;gap:8px!important;flex:0 0 auto}
+#tradePage .trade-tab{width:clamp(112px,25vw,172px);min-width:0;min-height:42px;border-radius:999px!important}
+#tradePage .trade-header-bottom{display:grid!important;grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);gap:10px!important;align-items:center}
+#tradePage .trade-select-shell{width:100%;height:43px;min-width:0;background:#000;border:1px solid #343434;border-radius:999px}
+#tradePage .instrument-shell,#tradePage .growth-shell,#tradePage .account-mode-shell{width:100%;max-width:none;min-width:0;flex:auto;border-radius:999px}
+#tradePage .instrument-shell{padding-left:9px}
+#tradePage .growth-shell{background:#fff;border-color:#fff;border-radius:8px!important}
+#tradePage .growth-shell select{color:#000!important;text-align:center;padding:0 20px 0 8px;font-weight:850}
+#tradePage .growth-shell .select-chevron{color:#000}
+#tradePage .account-mode-shell select{text-align:center;padding:0 25px 0 10px}
+#tradePage .trade-select-shell select{font-size:12px}
+#tradePage .index-kind-icon.trade-instrument-icon{width:24px;height:24px;flex:0 0 24px;border-radius:50%;display:block;background-size:100% 100%;background-position:center;background-repeat:no-repeat}
+#tradePage .currency-logo{font-size:17px;letter-spacing:0;border:0;background:transparent}
+@media(max-width:600px){
+ #tradePage .trade-control-header{padding:7px 10px 10px}
+ #tradePage .trade-header-top{gap:8px}
+ #tradePage .trade-tab{width:clamp(91px,25vw,150px);min-height:39px;padding:8px 10px}
+ #tradePage .trade-header-bottom{grid-template-columns:minmax(0,1fr) 76px minmax(0,1fr);gap:7px!important}
+ #tradePage .trade-select-shell{height:40px}
+ #tradePage .instrument-shell{max-width:none;flex:auto}
+ #tradePage .growth-shell{flex:auto}
+ #tradePage .account-mode-shell{flex:auto}
+ #tradePage .trade-balance-value{font-size:15px}
+ #tradePage .currency-logo{width:25px;height:25px;flex-basis:25px;font-size:16px}
+}
+
+
+/* Float the compact instrument controls over the chart instead of reserving a header row */
+#tradePage .trade-control-header{position:relative;padding-bottom:0!important;margin-bottom:0!important;background:#000}
+#tradePage .trade-header-top{position:relative;z-index:7}
+#tradePage .trade-header-bottom{
+ position:absolute!important;z-index:12;top:calc(100% + 8px);left:50%;transform:translateX(-50%);
+ display:grid!important;width:calc(55vw + 10px);max-width:calc(55vw + 10px);min-width:0;
+ grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr);
+ gap:7px!important;margin:0!important;padding:0!important;
+ background:transparent!important;border:0!important;box-shadow:none!important;
+ pointer-events:none
+}
+#tradePage .trade-header-bottom .trade-select-shell{pointer-events:auto}
+#tradePage .trade-header-bottom .instrument-shell,
+#tradePage .trade-header-bottom .account-mode-shell{width:100%;min-width:0;max-width:none;flex:none}
+#tradePage .trade-header-bottom .growth-shell{width:100%;min-width:0;flex:none}
+#tradePage .trade-header-bottom .trade-select-shell{height:38px;background:#000;border-radius:999px}
+#tradePage .trade-header-bottom .growth-shell{background:#fff;border-radius:8px!important}
+#tradePage .deriv-chart-card{margin-top:0!important;padding-top:0!important}
+#tradePage .deriv-chart-card>.row:first-child{position:relative;z-index:1}
+@media(max-width:600px){
+ #tradePage .trade-header-bottom{width:calc(55vw + 10px);max-width:calc(55vw + 10px);grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr);gap:5px!important;top:calc(100% + 7px)}
+ #tradePage .trade-header-bottom .trade-select-shell{height:36px}
+}
+
+
+/* Restore original black finish and give each outer selector 5px more room */
+#tradePage .trade-header-bottom .instrument-shell,
+#tradePage .trade-header-bottom .account-mode-shell{
+ background:#000!important;
+ border-color:#343434!important;
+ box-shadow:none!important;
+}
+#tradePage .trade-header-bottom{grid-template-columns:minmax(0,1fr) 58px minmax(0,1fr)!important}
+#tradePage .trade-header-bottom .select-chevron{
+ font-size:0!important;
+ width:7px;height:7px;right:13px;
+ border-right:1.6px solid #aeb4bd;
+ border-bottom:1.6px solid #aeb4bd;
+ border-radius:0 0 1px 0;
+ transform:translateY(-70%) rotate(45deg);
+ opacity:.9;
+}
+#tradePage .trade-header-bottom .growth-shell .select-chevron{
+ border-color:#242424;
+}
+#tradePage .trade-header-bottom .instrument-shell:focus-within,
+#tradePage .trade-header-bottom .account-mode-shell:focus-within{
+ border-color:#626a75!important;
+ background:#111!important;
+}
+
+
+/* Increase the Trade chart by five percentage points from its bottom edge. */
+body.trade-active #tradePage .deriv-chart-card{
+ height:calc(85vh - 161.5px)!important;
+ height:calc(85dvh - 161.5px)!important;
+ min-height:289px!important;
+}
+@media(max-width:600px){
+ body.trade-active #tradePage .deriv-chart-card{
+  height:calc(85vh - 153px)!important;
+  height:calc(85dvh - 153px)!important;
+  min-height:280px!important;
+ }
+}
+
+/* Full-width execution board beneath the Trade chart */
+body.trade-active #tradePage #manualTradeView #executionPanel{
+  position:relative!important;
+  display:block!important;
+  width:100vw!important;
+  max-width:none!important;
+  margin:0 0 0 calc(50% - 50vw)!important;
+  padding:28px  max(18px, calc((100vw - 1128px)/2 + 18px)) 34px!important;
+  box-sizing:border-box!important;
+  overflow:visible!important;
+  background:#000000!important;
+  border:0!important;
+  border-top:1px solid rgba(255,255,255,.11)!important;
+  border-radius:30px 30px 0 0!important;
+  box-shadow:0 -8px 26px rgba(255,255,255,.035),0 -20px 58px rgba(255,255,255,.025)!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel::before{
+  content:"";
+  position:absolute;
+  top:-2px;
+  left:9%;
+  right:9%;
+  height:3px;
+  border-radius:50%;
+  pointer-events:none;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.72) 22%,rgba(255,255,255,.95) 50%,rgba(255,255,255,.72) 78%,transparent);
+  box-shadow:0 0 7px rgba(255,255,255,.48),0 0 19px rgba(255,255,255,.24),0 0 38px rgba(255,255,255,.12);
+}
+body.trade-active #tradePage #manualTradeView #executionPanel::after{
+  content:"";
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  height:34px;
+  border-radius:30px 30px 0 0;
+  pointer-events:none;
+  background:linear-gradient(180deg,rgba(255,255,255,.035),transparent);
+}
+body.trade-active #tradePage #manualTradeView #executionPanel>*{
+  position:relative;
+  z-index:1;
+}
+@media(max-width:600px){
+  body.trade-active #tradePage #manualTradeView #executionPanel{
+    padding:24px 14px 30px!important;
+    border-radius:24px 24px 0 0!important;
+  }
+  body.trade-active #tradePage #manualTradeView #executionPanel::after{
+    border-radius:24px 24px 0 0;
+  }
+}
+
+
+/* Improve execution board corner definition and top-edge glow */
+body.trade-active #tradePage #manualTradeView{
+  background:#101010!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel{
+  margin-top:12px!important;
+  border:1px solid rgba(255,255,255,.19)!important;
+  border-top:1px solid rgba(255,255,255,.42)!important;
+  border-radius:40px 40px 0 0!important;
+  box-shadow:
+    0 -2px 9px rgba(255,255,255,.16),
+    0 -10px 30px rgba(255,255,255,.09),
+    0 -24px 64px rgba(255,255,255,.045)!important;
+  background:#000000!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel::before{
+  top:-2px;
+  left:7%;
+  right:7%;
+  height:4px;
+  background:linear-gradient(90deg,transparent,rgba(255,255,255,.78) 18%,#fff 50%,rgba(255,255,255,.78) 82%,transparent);
+  box-shadow:0 0 9px rgba(255,255,255,.62),0 0 24px rgba(255,255,255,.34),0 0 46px rgba(255,255,255,.18);
+}
+body.trade-active #tradePage #manualTradeView #executionPanel::after{
+  border-radius:40px 40px 0 0;
+  background:linear-gradient(180deg,rgba(255,255,255,.065),transparent 85%);
+}
+@media(max-width:600px){
+  body.trade-active #tradePage #manualTradeView #executionPanel{
+    margin-top:10px!important;
+    border-radius:30px 30px 0 0!important;
+  }
+  body.trade-active #tradePage #manualTradeView #executionPanel::after{
+    border-radius:30px 30px 0 0;
+  }
+}
+
+
+/* Plain-text live stats rail between the chart and execution board */
+body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
+  display:grid!important;
+  grid-template-columns:auto auto minmax(0,1fr) 24px!important;
+  align-items:center!important;
+  column-gap:14px!important;
+  row-gap:8px!important;
+  position:relative!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:100vw!important;
+  max-width:100vw!important;
+  margin:0!important;
+  padding:10px 18px!important;
+  box-sizing:border-box!important;
+  background:#000000!important;
+  border:0!important;
+  border-radius:0!important;
+  box-shadow:none!important;
+  min-height:0!important;
+}
+body.trade-active #tradePage .stats-strip-label{
+  flex:0 0 auto;
+  color:#f4f4f4;
+  font-size:12px;
+  font-weight:750;
+  letter-spacing:.02em;
+}
+body.trade-active #tradePage .stats-strip-current{
+  flex:0 0 auto;
+  color:#fff;
+  font-size:17px;
+  font-weight:850;
+  line-height:1;
+  font-variant-numeric:tabular-nums;
+}
+body.trade-active #tradePage .stats-strip-history-preview{
+  display:flex!important;
+  flex-flow:row nowrap!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:clamp(9px,1.15vw,14px)!important;
+  width:100%;
+  min-width:0;
+  overflow-x:auto!important;
+  overflow-y:hidden!important;
+  white-space:nowrap!important;
+  scrollbar-width:none!important;
+  -ms-overflow-style:none!important;
+  color:#e5e5e5;
+  font:800 14px ui-monospace,monospace;
+}
+body.trade-active #tradePage .stats-strip-history-preview::-webkit-scrollbar{
+  display:none!important;
+  width:0!important;
+  height:0!important;
+}
+body.trade-active #tradePage .stats-strip-history-preview .stats-value{
+  display:inline-block!important;
+  flex:0 0 auto!important;
+  width:auto!important;
+  min-width:0!important;
+  text-align:center!important;
+  padding:0!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#e0e0e0!important;
+  font:inherit!important;
+  font-weight:850!important;
+}
+body.trade-active #tradePage .stats-strip-history-preview .stats-value.zero{color:#ff9999!important}
+body.trade-active #tradePage .stats-strip-history-preview .stats-empty{padding:0;color:#777}
+body.trade-active #tradePage .stats-strip-toggle{
+  grid-column:4;
+  grid-row:1;
+  width:24px!important;
+  height:24px!important;
+  padding:0!important;
+  display:grid;
+  place-items:center;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#ddd!important;
+  font-size:18px!important;
+  line-height:1;
+  cursor:pointer;
+}
+body.trade-active #tradePage .stats-strip-full-history{
+  grid-column:1 / -1;
+  flex:0 0 100%;
+  width:100%;
+  padding:10px 0 2px;
+  border-top:1px solid rgba(255,255,255,.12);
+}
+body.trade-active #tradePage .stats-strip-full-history:not([hidden]){
+  display:block;
+}
+body.trade-active #tradePage .stats-strip-history-values{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px 16px;
+  max-height:220px;
+  overflow-y:auto;
+  color:#bdbdbd;
+  font:700 14px ui-monospace,monospace;
+}
+body.trade-active #tradePage .stats-strip-history-values .stats-value{
+  display:inline!important;
+  min-width:0!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#e0e0e0!important;
+  font:inherit!important;
+  font-weight:750!important;
+}
+body.trade-active #tradePage .stats-strip-history-values .stats-value.zero{color:#ff9999!important}
+/* Butt the execution panel directly against the stats rail: no vertical gap. */
+body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
+  margin-bottom:0!important;
+  padding-bottom:0!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel{
+  margin-top:0!important;
+}
+@media(max-width:600px){
+  body.trade-active #tradePage #manualTradeView #statsPanel.stats-strip{
+    padding:9px 12px!important;
+    column-gap:9px!important;
+    row-gap:8px!important;
+    grid-template-columns:auto auto minmax(0,1fr) 22px!important;
+  }
+  body.trade-active #tradePage .stats-strip-label{font-size:11px}
+  body.trade-active #tradePage .stats-strip-current{font-size:16px}
+  body.trade-active #tradePage .stats-strip-history-preview{gap:9px!important;font-size:13px!important}
+}
+
+/* Keep the execution panel start pure black with only a crisp edge line. */
+body.trade-active #tradePage #manualTradeView{
+  background:#000000!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel{
+  background:#000000!important;
+  box-shadow:none!important;
+  border:0!important;
+  border-top:1px solid rgba(255,255,255,.38)!important;
+}
+body.trade-active #tradePage #manualTradeView #executionPanel::before,
+body.trade-active #tradePage #manualTradeView #executionPanel::after{
+  content:none!important;
+  display:none!important;
+}
+@media(max-width:600px){
+  body.trade-active #tradePage #manualTradeView #executionPanel{
+    margin-top:0!important;
+  }
+}
+
+
+/* Three evenly spaced summary pills above the manual trade controls. */
+body.trade-active #tradePage #executionPanel .trade-summary-pills{
+  display:grid!important;
+  grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  align-items:center!important;
+  gap:14px!important;
+  width:100%!important;
+  margin:0 0 10px!important;
+}
+body.trade-active #tradePage #executionPanel .trade-summary-pill{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  min-width:0!important;
+  min-height:62px!important;
+  padding:8px 12px!important;
+  box-sizing:border-box!important;
+  border:1px solid #fff!important;
+  border-radius:14px!important;
+  background:#000!important;
+  color:#fff!important;
+  font-size:12px!important;
+  font-weight:800!important;
+  letter-spacing:.04em!important;
+}
+body.trade-active #tradePage #executionPanel .trade-summary-pill strong{
+  color:#fff!important;font-size:16px!important;font-weight:850!important;letter-spacing:0!important;
+}
+body.trade-active #tradePage #executionPanel .trade-summary-tp input{
+  width:100%!important;max-width:112px!important;min-width:0!important;padding:2px 0!important;border:0!important;outline:none!important;background:transparent!important;color:#fff!important;text-align:center!important;font-size:15px!important;font-weight:850!important;box-shadow:none!important;
+}
+body.trade-active #tradePage #executionPanel .trade-summary-tp input::placeholder{color:#777!important;font-size:11px!important;font-weight:650!important;}
+body.trade-active #tradePage #executionPanel .trade-summary-tp input:focus{border:0!important;box-shadow:none!important;}
+body.trade-active #tradePage #executionPanel .trade-summary-stake{gap:5px!important}
+body.trade-active #tradePage #executionPanel .trade-summary-stake input{
+  width:min(90px,75%)!important;
+  min-width:0!important;
+  padding:2px!important;
+  border:0!important;
+  outline:none!important;
+  background:transparent!important;
+  color:#fff!important;
+  text-align:center!important;
+  font-size:16px!important;
+  font-weight:850!important;
+}
+body.trade-active #tradePage #executionPanel .trade-quote-panel{
+  display:flex!important;flex-direction:column!important;gap:0!important;width:100%!important;margin:0 0 7px!important;
+}
+body.trade-active #tradePage #executionPanel .trade-quote-row{
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:16px!important;
+  min-height:25px!important;padding:3px 2px!important;border-bottom:1px solid rgba(255,255,255,.12)!important;
+  color:#cfcfcf!important;font-size:12px!important;font-weight:750!important;letter-spacing:.025em!important;
+}
+body.trade-active #tradePage #executionPanel .trade-quote-row strong{
+  color:#fff!important;font-size:14px!important;font-weight:850!important;text-align:right!important;
+  font-variant-numeric:tabular-nums!important;overflow-wrap:anywhere!important;
+}
+body.trade-active #tradePage #executionPanel .trade-action-row{
+  display:grid!important;grid-template-columns:minmax(0,auto) minmax(160px,1fr)!important;align-items:center!important;justify-content:stretch!important;gap:16px!important;width:100%!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control{
+  display:flex!important;align-items:center!important;gap:10px!important;color:#ddd!important;
+  font-size:11px!important;font-weight:800!important;letter-spacing:.04em!important;cursor:pointer!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control input{
+  appearance:none!important;width:38px!important;height:21px!important;border-radius:20px!important;
+  background:#333!important;border:1px solid #666!important;position:relative!important;cursor:pointer!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control input::after{
+  content:"";position:absolute;top:2px;left:2px;width:15px;height:15px;border-radius:50%;
+  background:#fff!important;transition:transform .18s ease!important;
+}
+body.trade-active #tradePage #executionPanel .one-tap-control input:checked{background:#fff!important;border-color:#fff!important}
+body.trade-active #tradePage #executionPanel .one-tap-control input:checked::after{background:#000!important;transform:translateX(17px)}
+body.trade-active #tradePage #executionPanel .trade-buy-pill{
+  width:100%!important;min-width:0!important;min-height:48px!important;padding:10px 28px!important;border-radius:12px!important;
+  border:1px solid rgba(255,255,255,.35)!important;background:#fff!important;color:#000!important;
+  font-size:14px!important;font-weight:900!important;letter-spacing:.08em!important;cursor:pointer!important;
+}
+body.trade-active #tradePage #executionPanel .trade-buy-pill:disabled{opacity:.38!important;cursor:not-allowed!important}
+body.trade-active #tradePage #executionPanel.contract-open{
+  border:1px solid rgba(255,255,255,.92)!important;background:#000!important;
+  animation:contractEdgePulse 2.8s ease-in-out infinite!important;
+}
+@keyframes contractEdgePulse{
+  0%,100%{box-shadow:0 0 0 1px rgba(255,255,255,.35),0 0 9px rgba(130,255,170,.12),inset 0 0 12px rgba(255,255,255,.025);border-color:rgba(255,255,255,.86);}
+  50%{box-shadow:0 0 0 1px rgba(150,255,180,.35),0 0 16px rgba(120,255,160,.24),inset 0 0 16px rgba(255,255,255,.045);border-color:rgba(170,255,190,.78);}
+}
+body.trade-active .wrap{padding-bottom:0!important}
+body.trade-active #tradePage{padding-bottom:0!important;margin-bottom:0!important}
+body.trade-active #tradePage #manualTradeView{padding-bottom:0!important;margin-bottom:0!important}
+body.trade-active #tradePage #manualTradeView #executionPanel{padding-bottom:12px!important;margin-bottom:0!important}
+body.trade-active{padding-bottom:0!important}
+
+@media(max-width:600px){
+  body.trade-active #tradePage #executionPanel .trade-summary-pills{gap:8px!important;margin-bottom:8px!important}
+  body.trade-active #tradePage #executionPanel .trade-summary-pill{min-height:58px!important;padding:7px 5px!important;font-size:11px!important}
+  body.trade-active #tradePage #executionPanel .trade-summary-pill strong{font-size:14px!important}
+  body.trade-active #tradePage #executionPanel .trade-action-row{grid-template-columns:minmax(0,1fr) minmax(0,1.15fr)!important;gap:8px!important}
+  body.trade-active #tradePage #executionPanel .trade-buy-pill{width:100%!important;min-width:0!important;padding:9px 16px!important}
+  body.trade-active #tradePage #executionPanel .trade-summary-tp input{font-size:13px!important}
+}
+/* One consistent mobile scroll container for Home, Trade and Markets. */
+@media(max-width:800px){
+ html,body{height:100%;min-height:0;overflow:hidden!important}
+ body{padding-bottom:0!important}
+ main.wrap{
+  height:100dvh;height:100vh;min-height:0;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  padding-bottom:96px
+ }
+}
+</style>
+<link rel="stylesheet" href="/dist/deriv-smartchart.css">
+</head>
+<body><main class="wrap">
+<header class="top app-toolbar" id="home">
+  <details class="toolbar-menu">
+    <summary class="toolbar-circle" aria-label="Open menu" title="Menu"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/></svg></summary>
+    <div class="toolbar-dropdown">
+      <a href="#accountPanel">Deriv account</a>
+      <a href="#tradePage" data-page="trade">Trade execution</a>
+      <a href="#marketView">Markets</a>
+      <a href="https://deriv.com/help-centre/" target="_blank" rel="noopener noreferrer">Help center</a>
+    <section class="toolbar-account" id="accountPanel"><strong id="accountTitle">ACCOUNT</strong><span id="accountDetail" hidden></span><div class="account-message" id="accountMessage" aria-live="polite"></div><div class="account-actions"><button id="derivLogin" type="button">Connect</button><button id="derivLogout" class="secondary" type="button" hidden>Disconnect</button></div></section>
+    </div>
+  </details>
+  <div class="toolbar-brand" aria-label="Accumulator">ACCUMULATOR</div>
+  <div class="toolbar-actions">
+    <button class="toolbar-circle" id="toolbarSearch" type="button" aria-label="Search markets" title="Search markets"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.2"/><path d="m14.6 14.6 4.4 4.4"/></svg></button>
+    <a class="toolbar-circle" href="#accountPanel" aria-label="Notifications and account alerts" title="Notifications"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M18 9a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9M10 21h4"/></svg></a>
+  </div>
+  <span hidden id="dot" class="dot"></span><span hidden id="connection">Disconnected</span>
+</header>
+<div id="homePage" class="app-page">
+<div class="mode-switch" role="group" aria-label="Trading account mode"><button type="button" class="mode-pill" data-mode="real" aria-pressed="false">REAL</button><button type="button" class="mode-pill" data-mode="demo" aria-pressed="true">DEMO</button></div>
+<section class="balance-hero" aria-label="Total account balance">
+  <div class="balance-content">
+    <div class="balance-head"><span class="balance-label">TOTAL BALANCE</span></div>
+    <div class="balance-value-row"><div class="balance-amount" id="heroBalance" aria-live="polite">—</div><button class="balance-visibility" id="balanceVisibility" type="button" aria-label="Hide balance" aria-pressed="false" title="Hide balance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    <div class="balance-foot" id="heroBalanceCaption">Connect your Deriv account to see your live balance</div>
+  </div>
+  <svg class="balance-chart" viewBox="0 0 420 120" preserveAspectRatio="none" aria-hidden="true">
+    <defs><linearGradient id="balanceFill" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".13"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>
+    <path class="area" d="M24 90 C58 86 70 64 103 70 S151 82 181 57 S228 64 258 45 S304 55 335 30 S374 34 396 16 L396 120 L24 120Z"/>
+    <path class="line" d="M24 90 C58 86 70 64 103 70 S151 82 181 57 S228 64 258 45 S304 55 335 30 S374 34 396 16"/>
+    <circle cx="396" cy="16" r="3.5"/>
+  </svg>
+  <button class="balance-cta" id="balanceCta" type="button">LOGIN / SIGN UP</button>
+</section>
+<section class="index-ticker" aria-label="Accumulator synthetic indices">
+  <div class="index-ticker-heading"><span>ACCUMULATOR MARKETS</span><span id="tickerMarketCount">LIVE INDICES</span></div>
+  <div class="index-ticker-window">
+    <div class="index-ticker-track" id="indexTickerTrack">
+      <div class="index-ticker-group" id="indexTickerPrimary"></div>
+      <div class="index-ticker-group" id="indexTickerClone" aria-hidden="true"></div>
+    </div>
+  </div>
+</section>
+<section class="market-showcase"><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
+<section class="accu-promo" aria-label="Accumulator introduction"><img src="../file_00000000209c820a84bade880d8fefc1.png" alt="Accumulators — grow your potential payout exponentially while the spot price stays within the trade barriers"><a class="accu-promo-cta" href="#tradePage" data-page="trade">TRADE NOW</a></section>
+
+
+
+<div class="grid">
+<section class="card" id="marketView"><div class="row between"><h2>LIVE MARKET VIEW</h2><span class="pill" id="selectedMarketLabel">Select a market</span></div>
+<div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
+<div class="metrics"><div class="metric"><small>LIVE PRICE</small><strong id="price">—</strong></div><div class="metric"><small>LAST TICK</small><strong id="lastTick">—</strong></div><div class="metric"><small>TICKS RECEIVED</small><strong id="tickCount">0</strong></div></div>
+<div class="chart"><canvas id="chart"></canvas></div>
+<div class="row between" style="margin:15px 0 9px"><h2 style="margin:0">RECENT TICKS</h2><span class="muted" id="feedNote">Waiting for feed</span></div><div class="muted" id="tickHistory">No ticks received yet.</div>
+</section>
+<section class="card"><h2>MARKET DISCOVERY</h2><div class="metrics"><div class="metric"><small>SUPPORTED SYNTHETICS</small><strong id="marketCount">—</strong></div><div class="metric"><small>LIVE STREAMS</small><strong id="liveCount">0</strong></div><div class="metric"><small>API SOURCE</small><strong>Deriv</strong></div></div>
+<p class="muted" style="font-size:12px;margin:14px 0 0">The market list is requested from Deriv at connection time and filtered for the synthetic-index market with Accumulator (ACCU) availability. Newly supported instruments can appear automatically.</p>
+<div style="margin-top:16px"><h2>CONNECTION EVENTS</h2><div class="log" id="log" aria-live="polite"><div>Ready to discover Accumulator markets.</div></div></div>
+</section>
+
+</div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><div class="foot">Market data, quotes, account balances and contract status are supplied by Deriv. Trading involves risk; review every quote and account before confirming a purchase.</div>
+
+</div>
+<section id="tradePage" class="app-page" hidden aria-label="Trade">
+<div class="trade-control-header">
+ <div class="trade-header-top">
+  <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
+  <div class="trade-balance" aria-live="polite"><span class="currency-logo" id="tradeCurrencyLogo">—</span><span class="trade-balance-value" id="tradeHeaderBalance">—</span></div>
+ </div>
+ <div class="trade-header-bottom">
+  <label class="trade-select-shell instrument-shell"><span class="instrument-mark" id="tradeInstrumentMark">◈</span><select id="tradeInstrumentSelect" aria-label="Select instrument" disabled><option>Loading instruments…</option></select><span class="select-chevron">⌄</span></label>
+  <label class="trade-select-shell growth-shell"><select id="tradeGrowth" aria-label="Growth rate"><option value="0.01">1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select><span class="select-chevron">⌄</span></label>
+  <label class="trade-select-shell account-mode-shell"><select id="tradeAccountMode" aria-label="Trading account type"><option value="demo">DEMO</option><option value="real">REAL</option></select><span class="select-chevron">⌄</span></label>
+ </div>
+</div>
+<div id="manualTradeView" role="tabpanel" aria-labelledby="manualTab"><section class="card full deriv-chart-card" aria-label="Deriv SmartCharts Accumulator chart workspace"><div id="nativeChartWrap" class="purpose-chart-shell" aria-label="Deriv native chart">
+ <div id="nativeChartHost" class="purpose-chart-host deriv-smartchart-mount" aria-label="Deriv DTrader-style Accumulator chart">
+  <div id="derivSmartChartRoot" aria-label="Live Deriv Accumulator chart"></div>
+ </div>
+</div></section><div class="stats-strip" id="statsPanel" aria-label="Live stats">
+  <span class="stats-strip-label">Stats</span>
+  <strong class="stats-strip-current" id="statsCurrentValue">—</strong>
+  <span id="statsCurrentCaption" hidden>Waiting for Deriv’s current tick count…</span>
+  <select id="statsGrowthRate" aria-label="Stats growth rate" hidden><option value="0.01" selected>1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select>
+  <div class="stats-strip-history-preview" id="statsValues"><span class="stats-empty">Waiting for stats…</span></div>
+  <button type="button" class="stats-strip-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsHistory" aria-label="Open full stat history"><span id="statsChevron">⌄</span></button>
+  <div class="stats-strip-full-history" id="statsHistory" hidden><div class="stats-strip-history-values" id="statsHistoryValues"></div></div>
+</div>
+<section class="card full" id="executionPanel">
+  <div class="trade-summary-pills" aria-label="Trade summary">
+    <div class="trade-summary-pill trade-summary-stake"><span>STAKE</span><input id="tradeStake" type="number" min="0.35" step="0.01" value="1" aria-label="Stake amount"></div>
+    <div class="trade-summary-pill trade-summary-tp"><span>TP</span><input id="tradeTpTarget" type="number" min="0" step="0.01" placeholder="Set profit" aria-label="Take profit target"></div>
+    <div class="trade-summary-pill"><span>PnL</span><strong id="tradePnlValue">—</strong></div>
+  </div>
+  <div hidden aria-hidden="true">
+    <span id="tradeConnectionState">Account not selected</span>
+    <select id="tradeAccount" disabled><option>Connect Deriv first</option></select>
+    <strong id="tradeBalance">—</strong><small id="tradeBalanceTime">Waiting for account connection</small>
+  </div>
+  <div class="trade-quote-panel" aria-label="Trade quote details">
+    <div class="trade-quote-row"><span>QUOTED PRICE / STAKE</span><strong id="quoteAsk">—</strong></div>
+    <div class="trade-quote-row"><span>CONTRACT ID</span><strong id="tradeContractId">—</strong></div>
+  </div>
+  <div class="trade-action-row">
+    <label class="one-tap-control"><span>ONE TAP TRADING</span><input id="oneTapTrading" type="checkbox" aria-label="Enable one tap trading"><i aria-hidden="true"></i></label>
+    <button id="confirmTradeBuy" class="trade-buy-pill" type="button" disabled>BUY</button>
+  </div>
+  <div hidden aria-hidden="true">
+    <input id="tradeMarket" value="Select a market above" disabled>
+    <button id="getTradeQuote" type="button" disabled>Get trade quote</button>
+    <span id="quotePayout">—</span>
+    <span id="tradeContractStatus">No contract purchased</span>
+    <span id="tradeContractDetail"></span>
+    <span id="tradeMessage" aria-live="polite">Connect Deriv and select a trading account.</span>
+  </div>
+</section></div>
+<section id="algoTradeView" class="algo-panel" role="tabpanel" aria-labelledby="algoTab" hidden>
+ <div class="algo-control-card">
+  <div class="algo-card-heading"><strong>ACCUMULATOR STAT-MATCH STRATEGY</strong><span class="algo-muted" id="algoMarketLabel">No market</span></div>
+  <div class="algo-form-grid">
+   <label class="algo-field">STAKE PER CONTRACT<input id="algoStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal"></label>
+   <label class="algo-field">RISK MODE<select id="algoRiskMode"><option value="normal">NORMAL · 1%–4%</option><option value="aggressive">AGGRESSIVE · 1%–5%</option></select></label>
+  </div>
+  <div class="algo-muted" style="margin-top:9px">Each active growth rate learns a completed stat from 16–44, then watches for the next matching run. The bot requests a valid Accumulator quote and asks Deriv to close after two post-entry ticks, as soon as the contract is sellable. The actual exit can be delayed by market/API timing, and a barrier breach can settle it earlier.</div>
+  <div class="algo-action-row">
+   <button id="algoStart" class="algo-start-button" type="button">START ALGO</button>
+   <button id="algoStop" class="algo-stop-button" type="button" disabled>STOP NEW ENTRIES</button>
+  </div>
+  <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic trades</span></div>
+  <div class="algo-muted" id="algoAccountNote" style="margin-top:7px">Connect a Deriv account to activate the strategy.</div>
+ </div>
+ <div class="algo-summary-grid">
+  <div class="algo-summary-item"><span>ACTIVE TRACKERS</span><strong id="algoActiveTrackers">4</strong></div>
+  <div class="algo-summary-item"><span>OPEN CONTRACTS</span><strong id="algoOpenContracts">0</strong></div>
+  <div class="algo-summary-item"><span>MAXIMUM STAKE EXPOSURE</span><strong id="algoMaxExposure">—</strong></div>
+ </div>
+ <div class="algo-section">
+  <div class="algo-card-heading"><strong>INDEPENDENT GROWTH TRACKERS</strong><span class="algo-muted">Live stats · separate watch values</span></div>
+  <div class="algo-tracker-grid" id="algoTrackerGrid">
+   <div class="algo-muted">Start Algo to initialise its growth-rate trackers.</div>
+  </div>
+ </div>
+ <div class="algo-section">
+  <div class="algo-card-heading"><strong>OPEN ALGO CONTRACTS</strong><span class="algo-muted">Deriv-confirmed positions</span></div>
+  <div class="algo-position-list" id="algoPositionList"><div class="algo-muted">No open Algo contracts.</div></div>
+ </div>
+ <div class="algo-section">
+  <div class="algo-card-heading"><strong>ACTIVITY</strong><span class="algo-muted">Latest strategy events</span></div>
+  <div class="algo-event-list" id="algoEventList"><div class="algo-muted">Strategy events will appear here.</div></div>
+ </div>
+</section>
+</section>
+<nav class="mobile-nav" aria-label="Main navigation">
+<a href="#homePage" data-page="home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
+<a href="#tradePage" data-page="trade" aria-label="Trade"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/><path d="M5 4h5M4 9v10a1 1 0 0 0 1 1h10"/></svg><span>Trade</span></a>
+<a href="#marketView" data-page="markets" aria-label="Markets"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/></svg><span>Markets</span></a>
+</nav>
+</main>
+<script src="/algo-engine.js"></script>
+<script>
+(() => {
+const $ = id => document.getElementById(id);
+const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
+const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
+let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
+let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
+let algoQuoteRequests={},algoBuyRequests={},algoSellRequests={},algoContractsById={};
+const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_open_contracts_v1";
+let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
+const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
+function publishTradeChartOverlay(){
+  const position=activeTradeOverlay;
+  const snapshot={
+    position:position?{
+      contractId:position.contractId,
+      symbol:position.symbol,
+      rate:position.rate,
+      entrySpot:position.entrySpot,
+      entrySpotTime:position.entrySpotTime,
+      barrier:position.barrier,
+      highBarrier:position.highBarrier,
+      lowBarrier:position.lowBarrier,
+      spot:position.spot,
+      spotEpoch:position.spotEpoch,
+      barrierEpoch:position.barrierEpoch,
+      currentSpot:position.currentSpot,
+      currentSpotTime:position.currentSpotTime,
+      profit:position.profit,
+      currency:position.currency,
+      fractionalDigits:position.fractionalDigits,
+      isSold:position.isSold,
+      status:position.status,
+      dateStart:position.dateStart,
+      dateExpiry:position.dateExpiry
+    }:null,
+    contractInfo:window.__derivAccumulatorContractInfo||null,
+    closedBarrier:window.__derivAccumulatorClosedBarriers||null
+  };
+  window.__derivAccumulatorOpenPosition=snapshot;
+  window.dispatchEvent(new CustomEvent("deriv-accumulator-open-position",{detail:snapshot}));
+}
+const chartTickListeners=new Map();
+const chartSubscriptionDisposers=new Map();
+const chartHistoryRequests=new Map();
+const chartStreamRequests=new Map();
+const chartStreamIds=new Map();
+const chartCandleListeners=new Map();
+const chartCandleSubscriptionDisposers=new Map();
+const chartCandleStreamRequests=new Map();
+const chartCandleStreamIds=new Map();
+const chartCandleStreams=new Map();
+let chartActiveSymbols=[],chartTradingTimes={};
+
+function publishChartDiagnostic(stage,detail=""){
+  const state={stage,detail:String(detail||""),timestamp:Date.now()};
+  window.__derivChartDiagnostic=state;
+  const events=window.__derivChartDiagnosticEvents||(window.__derivChartDiagnosticEvents=[]);
+  events.push(state);
+  if(events.length>100)events.splice(0,events.length-100);
+  window.dispatchEvent(new CustomEvent("deriv-chart-diagnostic",{detail:state}));
+}
+window.__publishDerivChartDiagnostic=publishChartDiagnostic;
+
+function normalizeChartActiveSymbols(rows){
+  return (Array.isArray(rows)?rows:[]).map(item=>{
+    const symbol=item.underlying_symbol||item.symbol;
+    return {
+      display_name:item.display_name||item.underlying_symbol_name||symbol,
+      market:item.market||"",
+      market_display_name:item.market_display_name||"",
+      subgroup:item.subgroup||"",
+      subgroup_display_name:item.subgroup_display_name||"",
+      submarket:item.submarket||"",
+      submarket_display_name:item.submarket_display_name||"",
+      symbol,
+      symbol_type:item.underlying_symbol_type||item.symbol_type||"",
+      pip:Number(item.pip||item.pip_size||0.01),
+      exchange_is_open:Number(item.exchange_is_open||0)?1:0,
+      is_trading_suspended:Number(item.is_trading_suspended||0)?1:0
+    };
+  }).filter(item=>item.symbol);
+}
+function fallbackChartTradingTimes(rows){
+  const result={};
+  (Array.isArray(rows)?rows:[]).forEach(item=>{
+    const symbol=item.underlying_symbol||item.symbol;
+    if(symbol)result[symbol]={
+      isOpen:Number(item.exchange_is_open||0)===1,
+      openTime:"--",
+      closeTime:"--"
+    };
+  });
+  return result;
+}
+function publishChartMetadata(){
+  window.dispatchEvent(new CustomEvent("deriv-chart-metadata",{
+    detail:window.__derivChartBridge.getMetadata()
+  }));
+}
+function handleChartTradingTimes(data){
+  const result={};
+  const markets=Array.isArray(data?.markets)?data.markets:[];
+  markets.forEach(market=>{
+    (market.submarkets||[]).forEach(submarket=>{
+      (submarket.symbols||[]).forEach(item=>{
+        const symbol=item.underlying_symbol||item.symbol;
+        if(!symbol)return;
+        const open=Array.isArray(item.times?.open)?item.times.open:[];
+        const close=Array.isArray(item.times?.close)?item.times.close:[];
+        result[symbol]={
+          isOpen:open.length>0&&close.length>0&&open[0]!=="--"&&close[0]!=="--",
+          openTime:open[0]||"--",
+          closeTime:close[0]||"--"
+        };
+      });
+    });
+  });
+  if(Object.keys(result).length)chartTradingTimes=result;
+  publishChartMetadata();
+}
+function toSmartChartCandle(candle){
+  const epoch=Number(candle?.epoch);
+  const open=Number(candle?.open),high=Number(candle?.high),low=Number(candle?.low),close=Number(candle?.close);
+  if(!Number.isFinite(epoch)||![open,high,low,close].every(Number.isFinite))return null;
+  return {Date:String(epoch),Open:open,High:high,Low:low,Close:close,DT:new Date(epoch*1000),ohlc:candle};
+}
+function handleSmartChartCandleMessage(message){
+  const pending=chartHistoryRequests.get(message.req_id);
+  const historyRequest=pending&&Number(pending.granularity)>0?pending:null;
+  const streamEntry=chartCandleStreamRequests.get(message.req_id);
+  const subscriptionId=message.subscription?.id;
+  const subscriptionEntry=subscriptionId?chartCandleStreamIds.get(String(subscriptionId)):null;
+  const entry=streamEntry||subscriptionEntry;
+  const rawCandles=message.ohlc?[message.ohlc]:(message.candles||message.history?.candles);
+  const hasCandles=Array.isArray(rawCandles);
+
+  if(historyRequest){
+    clearTimeout(historyRequest.timer);
+    chartHistoryRequests.delete(message.req_id);
+    if(!hasCandles){
+      historyRequest.reject(new Error("Deriv returned an invalid candle-history response for "+historyRequest.symbol));
+    }else{
+      const candles=rawCandles.map(c=>({
+        epoch:Number(c.epoch),open:Number(c.open),high:Number(c.high),low:Number(c.low),close:Number(c.close)
+      })).filter(c=>Number.isFinite(c.epoch)&&[c.open,c.high,c.low,c.close].every(Number.isFinite));
+      historyRequest.resolve({candles});
+      publishChartDiagnostic("history_received",historyRequest.symbol+" · "+candles.length+" candles at "+historyRequest.granularity+"s");
+    }
+  }
+
+  if(streamEntry){
+    chartCandleStreamRequests.delete(message.req_id);
+    if(subscriptionId){
+      streamEntry.subscriptionId=subscriptionId;
+      const current=chartCandleStreams.get(streamEntry.key);
+      if(current===streamEntry&&!streamEntry.cancelled)chartCandleStreamIds.set(String(subscriptionId),streamEntry);
+      else{try{send({forget:subscriptionId});}catch(error){console.warn("Late SmartCharts candle subscription cleanup failed:",error);}}
+    }
+  }
+
+  if(entry&&hasCandles){
+    const listeners=chartCandleListeners.get(entry.key);
+    if(listeners){
+      rawCandles.map(toSmartChartCandle).filter(Boolean).forEach(quote=>{
+        listeners.forEach(callback=>{try{callback(quote);}catch(error){console.error("SmartCharts candle callback:",error);}});
+      });
+    }
+  }
+  return Boolean(historyRequest||streamEntry||subscriptionEntry||message.msg_type==="ohlc");
+}
+function subscribeSmartChartCandles(request,callback){
+  const symbol=request?.symbol||selectedSymbol;
+  const granularity=Number(request?.granularity)||0;
+  if(!symbol||granularity<=0)return ()=>{};
+  const key=String(symbol)+"-"+granularity;
+  if(!chartCandleListeners.has(key))chartCandleListeners.set(key,new Set());
+  const listeners=chartCandleListeners.get(key);
+  listeners.add(callback);
+  if(!chartCandleSubscriptionDisposers.has(key))chartCandleSubscriptionDisposers.set(key,new Set());
+  const disposers=chartCandleSubscriptionDisposers.get(key);
+  let entry=chartCandleStreams.get(key);
+  if(!entry){
+    entry={key,symbol,granularity,requestId:null,subscriptionId:null,cancelled:false};
+    chartCandleStreams.set(key,entry);
+    try{
+      entry.requestId=send({
+        ticks_history:symbol,style:"candles",granularity,subscribe:1,
+        adjust_start_time:1,count:1,end:"latest"
+      });
+      chartCandleStreamRequests.set(entry.requestId,entry);
+    }catch(error){
+      chartCandleStreams.delete(key);
+      console.error("SmartCharts candle stream failed:",error);
+    }
+  }
+  let active=true;
+  const cleanup=()=>{
+    if(!active)return;
+    active=false;
+    listeners.delete(callback);
+    disposers.delete(cleanup);
+    if(!listeners.size){
+      chartCandleListeners.delete(key);
+      chartCandleSubscriptionDisposers.delete(key);
+      const current=chartCandleStreams.get(key);
+      chartCandleStreams.delete(key);
+      if(current){
+        current.cancelled=true;
+        if(current.requestId!==null)chartCandleStreamRequests.delete(current.requestId);
+        if(current.subscriptionId){
+          chartCandleStreamIds.delete(String(current.subscriptionId));
+          try{send({forget:current.subscriptionId});}catch(error){console.warn("SmartCharts candle forget failed:",error);}
+        }
+      }
+    }
+  };
+  disposers.add(cleanup);
+  return cleanup;
+}
+window.__derivChartBridge={
+  isConnected:()=>!!ws&&ws.readyState===WebSocket.OPEN,
+  getMetadata:()=>({activeSymbols:chartActiveSymbols,tradingTimes:chartTradingTimes}),
+  getHistory:request=>new Promise((resolve,reject)=>{
+    const symbol=request?.symbol||selectedSymbol;
+    const granularity=Number(request?.granularity)||0;
+    if(!symbol){reject(new Error("SmartCharts requested history without a symbol"));return;}
+    const style=granularity>0?"candles":"ticks";
+    publishChartDiagnostic("requesting_history",symbol+" · "+(granularity>0?granularity+"s candles":"tick history"));
+    const payload={
+      ticks_history:symbol,
+      style,
+      end:request?.end??"latest",
+      count:Math.max(1,Number(request?.count)||1000),
+      adjust_start_time:1
+    };
+    if(granularity>0)payload.granularity=granularity;
+    if(request?.start!==undefined&&request?.start!==null&&request?.start!==""){
+      payload.start=Number(request.start);
+      delete payload.count;
+    }
+    let reqId;
+    try{reqId=send(payload);}catch(error){reject(error);return;}
+    const timer=setTimeout(()=>{
+      chartHistoryRequests.delete(reqId);
+      const error="No "+style+" history response for "+symbol+" within 12 seconds";
+      publishChartDiagnostic("history_timeout",error);
+      reject(new Error(error));
+    },12000);
+    chartHistoryRequests.set(reqId,{symbol,granularity,resolve,reject,timer});
+  }),
+  subscribe:(request,callback)=>{
+    const symbol=typeof request==="string"?request:(request?.symbol||selectedSymbol);
+    const granularity=Number(request?.granularity)||0;
+    if(granularity>0){
+      publishChartDiagnostic("subscribing_candles",symbol+" · "+granularity+"s candle stream");
+      return subscribeSmartChartCandles({symbol,granularity},callback);
+    }
+    publishChartDiagnostic("subscribing_ticks",symbol+" · requesting live tick stream");
+    if(!chartTickListeners.has(symbol))chartTickListeners.set(symbol,new Set());
+    const listeners=chartTickListeners.get(symbol);
+    listeners.add(callback);
+    const key=String(symbol)+"-0";
+    if(!chartSubscriptionDisposers.has(key))chartSubscriptionDisposers.set(key,new Set());
+    const disposers=chartSubscriptionDisposers.get(key);
+    let entry=chartStreamIds.get("symbol:"+symbol);
+    if(!entry){
+      entry={symbol,requestId:null,subscriptionId:null,cancelled:false};
+      chartStreamIds.set("symbol:"+symbol,entry);
+      try{
+        entry.requestId=send({
+          ticks_history:symbol,
+          style:"ticks",
+          subscribe:1,
+          adjust_start_time:1,
+          count:1,
+          end:"latest"
+        });
+        chartStreamRequests.set(entry.requestId,entry);
+      }catch(error){
+        chartStreamIds.delete("symbol:"+symbol);
+        console.error("SmartCharts live subscription failed:",error);
+      }
+    }
+    let active=true;
+    const cleanup=()=>{
+      if(!active)return;
+      active=false;
+      listeners.delete(callback);
+      disposers.delete(cleanup);
+      if(!listeners.size){
+        chartTickListeners.delete(symbol);
+        chartSubscriptionDisposers.delete(key);
+        const current=chartStreamIds.get("symbol:"+symbol);
+        chartStreamIds.delete("symbol:"+symbol);
+        if(current){
+          current.cancelled=true;
+          if(current.subscriptionId){
+            chartStreamIds.delete(String(current.subscriptionId));
+            try{send({forget:current.subscriptionId});}catch(error){console.warn("SmartCharts forget failed:",error);}
+          }
+        }
+      }
+    };
+    disposers.add(cleanup);
+    return cleanup;
+  },
+  unsubscribe:request=>{
+    const symbol=typeof request==="string"?request:(request?.symbol||request?.ticks_history);
+    const granularity=Number(request?.granularity)||0;
+    if(!symbol)return;
+    const key=String(symbol)+"-"+granularity;
+    if(granularity>0){
+      [...(chartCandleSubscriptionDisposers.get(key)||[])].forEach(cleanup=>cleanup());
+      return;
+    }
+    [...(chartSubscriptionDisposers.get(key)||[])].forEach(cleanup=>cleanup());
+  }
+};
+const growthRates=[0.01,0.02,0.03,0.04,0.05];let barrierRequests={},barrierSubscriptions=[],barrierData={};
+function syncDerivAccumulatorChart(){
+  const rate=Number($("tradeGrowth")?.value||0.01),item=barrierData[rate],tick=latestTicks[selectedSymbol];
+  const high=Number(item?.high),low=Number(item?.low),valid=Number.isFinite(high)&&Number.isFinite(low)&&high>low;
+  const spot=Number(tick?.price??item?.spot),epoch=Number(tick?.epoch??item?.spotTime??item?.lastTickEpoch);
+  const barrierEpoch=Number(item?.lastTickEpoch??item?.spotTime??epoch);
+  const state={symbol:selectedSymbol,rate,barrier:valid&&Number.isFinite(spot)&&Number.isFinite(epoch)?{
+    high:item.highDisplay||String(item.high),low:item.lowDisplay||String(item.low),
+    barrierEpoch:Number.isFinite(barrierEpoch)?barrierEpoch:epoch,spot,spotEpoch:epoch
+  }:null};
+  window.__derivAccumulatorChartState=state;
+  window.dispatchEvent(new CustomEvent("deriv-accumulator-chart-state",{detail:state}));
+
+  if(activeTradeOverlay&&activeTradeOverlay.symbol===selectedSymbol){
+    const tradeRate=Number(activeTradeOverlay.rate),tradeBarrier=barrierData[tradeRate];
+    const tradeHigh=Number(tradeBarrier?.high),tradeLow=Number(tradeBarrier?.low);
+    const tradeSpot=Number(tick?.price??tradeBarrier?.spot);
+    const tradeEpoch=Number(tick?.epoch??tradeBarrier?.spotTime??tradeBarrier?.lastTickEpoch);
+    if(Number.isFinite(tradeHigh)&&Number.isFinite(tradeLow)&&tradeHigh>tradeLow&&Number.isFinite(tradeSpot)&&Number.isFinite(tradeEpoch)){
+      activeTradeOverlay.highBarrier=tradeBarrier.highDisplay||String(tradeBarrier.high);
+      activeTradeOverlay.lowBarrier=tradeBarrier.lowDisplay||String(tradeBarrier.low);
+      activeTradeOverlay.spot=tradeSpot;
+
+      activeTradeOverlay.spotEpoch=tradeEpoch;
+
+      activeTradeOverlay.currentSpot=tradeSpot;
+
+      activeTradeOverlay.currentSpotTime=tradeEpoch;
+      activeTradeOverlay.barrierEpoch=Number(tradeBarrier.lastTickEpoch??tradeBarrier.spotTime??tradeEpoch);
+      publishTradeChartOverlay();
+    }
+  }
+}
+const DERIV_STATS_STORAGE_KEY="deriv_native_accumulator_stats_v1";
+["deriv_accumulator_survival_v2","deriv_accumulator_survival_v3","deriv_accumulator_survival_v4","deriv_accumulator_survival_v5"].forEach(key=>{try{localStorage.removeItem(key);}catch(e){}});
+const nativeStatsByKey={},nativeStatsLiveKeys=new Set();
+function loadNativeStats(){try{const saved=JSON.parse(localStorage.getItem(DERIV_STATS_STORAGE_KEY)||"{}");if(saved&&typeof saved==="object")Object.assign(nativeStatsByKey,saved);}catch(e){console.warn("Could not load saved Deriv Stats history",e);}}
+function saveNativeStats(){try{localStorage.setItem(DERIV_STATS_STORAGE_KEY,JSON.stringify(nativeStatsByKey));}catch(e){console.warn("Could not save Deriv Stats history",e);}}
+function nativeStatsKey(symbol,rate){return symbol+"|"+Number(rate).toFixed(2);}
+function updateNativeStats(symbol,rate,raw){
+  if(!Array.isArray(raw))return;
+  const values=raw.map(value=>{if(typeof value==="number")return value;if(typeof value==="string"&&value.trim()!=="")return Number(value);return NaN;}).filter(value=>Number.isInteger(value)&&value>=0);
+  if(!values.length)return;
+  const key=nativeStatsKey(symbol,rate),previous=nativeStatsByKey[key]||{};
+  nativeStatsLiveKeys.add(key);
+  const current=values[0],nativeHistory=values.slice(1,101);
+  let history=Array.isArray(previous.history)?previous.history.slice(0,100):[];
+  // Some Deriv proposal updates provide only the live counter, not the
+  // completed-run array. Detect the native counter rolling over and save
+  // the last completed in-barrier count before showing the new run.
+  if(Number.isInteger(previous.current)&&previous.current>0&&current<previous.current){
+    const alreadyInNativeHistory=nativeHistory.length>0&&nativeHistory[0]===previous.current;
+    if(!alreadyInNativeHistory)history.unshift(previous.current);
+  }
+  // When Deriv includes its completed history, prefer that authoritative list.
+  if(nativeHistory.length)history=nativeHistory;
+  nativeStatsByKey[key]={current,history:history.slice(0,100),updatedAt:Date.now()};
+  saveNativeStats();
+  if(window.DerivAccumulatorAlgoEngine?.isRunning()){
+    window.DerivAccumulatorAlgoEngine.onStats({symbol,rate,current});
+    cleanupStaleAlgoQuotesForRate(rate);
+  }
+  if(symbol===selectedSymbol&&Number($("statsGrowthRate")?.value||0.01)===Number(rate))renderNativeStats();
+}
+loadNativeStats();
+const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
+const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
+const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
+function connect(){
+  manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
+  if(ws){const previous=ws;previous.onclose=null;previous.onerror=null;previous.onmessage=null;try{previous.close(1000,"Refreshing market feed")}catch{}}
+  manualClose=false; markets=[];marketBySymbol={};subscriptions={};priceHistory={};marketHistory24h={};marketHistoryReqs={};tickCounts={};latestTicks={};
+  $("symbol").disabled=true;$("symbol").innerHTML="<option>Connecting to Deriv…</option>";
+  $("marketGrid").innerHTML='<div class="metric"><small>MARKET DISCOVERY</small><strong>Requesting live catalogue…</strong></div>';
+  $("marketCount").textContent="—";$("liveCount").textContent="0";$("price").textContent="—";$("lastTick").textContent="—";$("tickCount").textContent="0";
+  setStatus("Connecting…"); log("Opening Deriv public market-data WebSocket.");
+  try{ws=new WebSocket(PUBLIC_WS);}catch(e){setStatus("Connection failed");log("Could not create WebSocket: "+e.message);scheduleReconnect();return;}
+  ws.onopen=()=>{
+    reconnectDelay=1500;setStatus("Connected · loading markets",true);log("Connected to Deriv public endpoint.");
+    window.dispatchEvent(new CustomEvent("deriv-chart-connection",{detail:{connected:true}}));
+    try{send({active_symbols:"brief",contract_type:["ACCU"]});}catch(e){log(e.message)}
+    try{send({trading_times:"today"});}catch(e){log("Chart trading-times request failed: "+e.message)}
+    pingTimer=setInterval(()=>{try{send({ping:1})}catch{}},25000);
+  };
+  ws.onmessage=event=>{
+    let m;try{m=JSON.parse(event.data)}catch{log("Received an unreadable message from Deriv.");return;}
+    if(m.error){
+      const chartHistory=chartHistoryRequests.get(m.req_id);
+      if(chartHistory){
+        clearTimeout(chartHistory.timer);chartHistoryRequests.delete(m.req_id);
+        const error=m.error.message||m.error.code||"Deriv chart history request failed";
+        publishChartDiagnostic("history_error",error);
+        chartHistory.reject(new Error(error));
+      }
+      const chartStream=chartStreamRequests.get(m.req_id);
+      if(chartStream){
+        chartStreamRequests.delete(m.req_id);
+        if(chartStreamIds.get("symbol:"+chartStream.symbol)===chartStream)chartStreamIds.delete("symbol:"+chartStream.symbol);
+        console.error("SmartCharts live stream rejected:",m.error.message||m.error.code||"Unknown error");
+      }
+      const candleStream=chartCandleStreamRequests.get(m.req_id);
+      if(candleStream){
+        chartCandleStreamRequests.delete(m.req_id);
+        if(chartCandleStreams.get(candleStream.key)===candleStream)chartCandleStreams.delete(candleStream.key);
+        console.error("SmartCharts candle stream rejected:",m.error.message||m.error.code||"Unknown error");
+      }
+      const failedHistorySymbol=marketHistoryReqs[m.req_id];
+      if(failedHistorySymbol){delete marketHistoryReqs[m.req_id];const card=document.querySelector('.market-card[data-market="'+failedHistorySymbol+'"]');const status=card?.querySelector(".market-live");if(status)status.textContent="24H HISTORY UNAVAILABLE";log("24h chart unavailable for "+failedHistorySymbol+": "+(m.error.message||m.error.code||"Unknown error"));}
+      const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
+    if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
+    if(m.msg_type==="trading_times"&&m.trading_times){handleChartTradingTimes(m.trading_times);return;}
+    if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
+    if(handleSmartChartCandleMessage(m))return;
+    if(m.msg_type==="candles"||m.candles||m.history?.candles){handleMarketHistory24h(m);return;}
+    if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
+    if(m.msg_type==="proposal"&&m.proposal){handleAccumulatorProposal(m);return;}
+    if(m.msg_type==="ping")return;
+  };
+  ws.onerror=()=>{setStatus("Transport error");log("WebSocket transport error. The browser could not complete or maintain the public data connection.");};
+  ws.onclose=e=>{
+    clearInterval(pingTimer);
+    chartHistoryRequests.forEach((request,requestId)=>{
+      clearTimeout(request.timer);request.reject(new Error("Deriv market connection closed during chart history request"));
+      chartHistoryRequests.delete(requestId);
+    });
+    window.dispatchEvent(new CustomEvent("deriv-chart-connection",{detail:{connected:false}}));
+    publishChartDiagnostic("market_socket_closed","Deriv public market-data socket closed");
+    setStatus("Disconnected");
+    log("WebSocket closed (code "+e.code+(e.reason?"; "+e.reason:"")+").");
+    if(!manualClose)scheduleReconnect();
+  };
+}
+function scheduleReconnect(){
+  if(manualClose||reconnectTimer)return;
+  const delay=reconnectDelay;reconnectDelay=Math.min(reconnectDelay*2,20000);
+  setStatus("Reconnecting…");log("Retrying public market connection in "+Math.round(delay/1000)+"s.");
+  reconnectTimer=setTimeout(()=>{reconnectTimer=null;connect();},delay);
+}
+// Recover chart and contract overlays after the browser/app has been backgrounded.
+let lastChartResumeAt=0;
+function resumeDerivChart(reason){
+  if(document.visibilityState==="hidden")return;
+  const now=Date.now();
+  if(now-lastChartResumeAt<1800)return;
+  lastChartResumeAt=now;
+  publishChartDiagnostic("app_resumed",reason||"page became active");
+  if(ws&&ws.readyState===WebSocket.OPEN){
+    if(selectedSymbol){
+      requestHistory(selectedSymbol);
+      requestAccumulatorQuotes(selectedSymbol);
+      const latest=latestTicks[selectedSymbol];
+      if(latest&&activeTradeOverlay&&activeTradeOverlay.symbol===selectedSymbol){
+        activeTradeOverlay.currentSpot=latest.price;
+        activeTradeOverlay.spot=latest.price;
+        activeTradeOverlay.currentSpotTime=latest.epoch;
+        activeTradeOverlay.spotEpoch=latest.epoch;
+      }
+      syncDerivAccumulatorChart();
+      drawChart();
+    }
+  }else if(!manualClose){
+    scheduleReconnect();
+  }
+  // Ask Deriv for an authoritative snapshot of the still-open contract.
+  // This is deliberately a one-shot request, so it cannot create a duplicate stream.
+  if(activeContractId&&tradingSocket&&tradingSocket.readyState===WebSocket.OPEN){
+    try{tradeSend({proposal_open_contract:1,contract_id:activeContractId},"contract_resume");}
+    catch(error){log("Could not refresh open contract after app resume: "+error.message);}
+  }
+  publishTradeChartOverlay();
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible")resumeDerivChart("visibilitychange");
+});
+window.addEventListener("pageshow",()=>resumeDerivChart("pageshow"));
+window.addEventListener("focus",()=>resumeDerivChart("window focus"));
+
+
+function handleSymbols(rows){
+  chartActiveSymbols=normalizeChartActiveSymbols(rows);
+  chartTradingTimes=fallbackChartTradingTimes(rows);
+  publishChartMetadata();
+  const found=rows.filter(s=>(s.market==="synthetic_index")&&(s.underlying_symbol||s.symbol))
+    .map(s=>({symbol:s.underlying_symbol||s.symbol,name:s.underlying_symbol_name||s.display_name||s.underlying_symbol||s.symbol,pipSize:Number(s.pip_size??s.pip??2),submarket:s.submarket||"synthetics",suspended:Boolean(s.is_trading_suspended)}))
+    .filter(s=>!s.suspended);
+  const unique=[...new Map(found.map(s=>[s.symbol,s])).values()].sort((a,b)=>a.name.localeCompare(b.name));
+  markets=unique;marketBySymbol=Object.fromEntries(unique.map(m=>[m.symbol,m]));
+  $("marketCount").textContent=String(markets.length);
+  if(!markets.length){$("symbol").innerHTML="<option>No Accumulator synthetic markets returned</option>";$("listStatus").textContent="No markets returned";$("marketGrid").innerHTML='<div class="metric"><small>NO MATCHES</small><strong>Deriv returned no active synthetic indices for ACCU.</strong></div>';log("No synthetic indices matched the ACCU availability filter.");return;}
+  $("symbol").innerHTML="";
+  markets.forEach(m=>{const o=document.createElement("option");o.value=m.symbol;o.textContent=m.name+" ("+m.symbol+")";$("symbol").append(o);});
+  $("symbol").disabled=false;selectedSymbol=markets[0].symbol;$("symbol").value=selectedSymbol;
+  const listStatus=$("listStatus");if(listStatus)listStatus.textContent="";
+  renderMarketCards();renderTickerMarkets();renderTradeInstrumentOptions();log("Loaded "+markets.length+" active synthetic indices from Deriv's ACCU-filtered catalogue.");
+  const symbols=markets.map(m=>m.symbol);
+  markets.forEach((m,i)=>setTimeout(()=>requestMarketHistory24h(m.symbol),i*250));
+  try{
+    send({ticks:symbols,subscribe:1});
+    log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
+  }catch(e){log("Could not subscribe to markets: "+e.message)}
+  requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);renderNativeStats();syncDerivAccumulatorChart();
+}
+function requestMarketHistory24h(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  try{const id=send({ticks_history:symbol,count:25,end:"latest",style:"candles",granularity:3600});marketHistoryReqs[id]=symbol;}catch(e){log("24h history request failed for "+symbol+": "+e.message);}
+}
+function handleMarketHistory24h(m){
+  const symbol=marketHistoryReqs[m.req_id]||m.echo_req?.ticks_history;
+  const candles=m.candles||m.history?.candles;
+  if(!symbol||!marketBySymbol[symbol]||!Array.isArray(candles))return false;
+  marketHistory24h[symbol]=candles.map(c=>({epoch:Number(c.epoch),open:Number(c.open),close:Number(c.close)})).filter(c=>Number.isFinite(c.epoch)&&Number.isFinite(c.open)&&Number.isFinite(c.close)).slice(-25);
+  delete marketHistoryReqs[m.req_id];
+  updateMarketCard(symbol);
+  return true;
+}
+function requestHistory(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  try{send({ticks_history:symbol,count:1000,end:"latest",style:"ticks"});}catch(e){log(e.message)}
+}
+function handleHistory(m){
+  const pending=chartHistoryRequests.get(m.req_id);
+  const streamEntry=chartStreamRequests.get(m.req_id);
+  const symbol=pending?.symbol||streamEntry?.symbol||m.echo_req?.ticks_history||m.echo_req?.symbol||selectedSymbol;
+  if(streamEntry){
+    chartStreamRequests.delete(m.req_id);
+    const subscriptionId=m.subscription?.id;
+    const current=chartStreamIds.get("symbol:"+streamEntry.symbol);
+    if(subscriptionId){
+      streamEntry.subscriptionId=subscriptionId;
+      if(current===streamEntry&&!streamEntry.cancelled)chartStreamIds.set(String(subscriptionId),streamEntry);
+      else{try{send({forget:subscriptionId});}catch(error){console.warn("Late SmartCharts subscription cleanup failed:",error);}}
+    }
+  }
+  if(!m.history||!Array.isArray(m.history.prices)||!Array.isArray(m.history.times)){
+    if(pending){
+      clearTimeout(pending.timer);chartHistoryRequests.delete(m.req_id);
+      pending.reject(new Error("Deriv returned an invalid tick-history response for "+symbol));
+    }
+    return;
+  }
+  const rows=m.history.times.map((time,i)=>({time:Number(time),price:Number(m.history.prices[i])}))
+    .filter(point=>Number.isFinite(point.time)&&Number.isFinite(point.price));
+  if(pending){
+    clearTimeout(pending.timer);chartHistoryRequests.delete(m.req_id);
+    pending.resolve({
+      history:{
+        prices:rows.map(point=>point.price),
+        times:rows.map(point=>point.time)
+      }
+    });
+    publishChartDiagnostic("history_received",symbol+" · "+rows.length+" ticks");
+  }
+  if(symbol===selectedSymbol){
+    priceHistory[symbol]=rows.map(point=>point.price).slice(-120);
+    nativeChartTicks[symbol]=rows.slice(-12000);
+    drawChart();renderPurposeChartScaffold();
+  }
+  window.dispatchEvent(new CustomEvent("deriv-chart-history",{detail:{symbol}}));
+}
+function handleTick(t,m){
+  const chartStream=chartStreamIds.get(String(m.subscription?.id||""));
+  const symbol=t.underlying_symbol||t.symbol||m.echo_req?.ticks||chartStream?.symbol;
+  const price=Number(t.quote),epoch=Number(t.epoch);
+  if(!Number.isFinite(price))return;
+  // When the API responds to an array subscription, the tick payload identifies its own symbol.
+  const key=Array.isArray(symbol)?null:symbol;
+  if(!key||!marketBySymbol[key])return;
+  latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
+  const quoteEpoch=Number.isFinite(epoch)?epoch:Date.now()/1000;
+  const chartQuote={Date:String(quoteEpoch),Close:price,tick:t,DT:new Date(quoteEpoch*1000)};
+  const chartEntry=chartStreamIds.get("symbol:"+key);
+  const ownsChartStream=chartEntry?.subscriptionId&&String(chartEntry.subscriptionId)===String(m.subscription?.id);
+  const canUseSharedStream=chartEntry&&!chartEntry.subscriptionId&&!m.echo_req?.ticks_history;
+  if(ownsChartStream||canUseSharedStream){
+    chartTickListeners.get(key)?.forEach(callback=>{try{callback(chartQuote);}catch(error){console.error("SmartCharts shared tick callback:",error);}});
+    if(chartTickListeners.has(key))publishChartDiagnostic("live_tick_received",key+" · "+price);
+  }
+  if(!nativeChartTicks[key])nativeChartTicks[key]=[];nativeChartTicks[key].push({time:Number.isFinite(epoch)?epoch:Date.now()/1000,price});if(nativeChartTicks[key].length>12000)nativeChartTicks[key].splice(0,nativeChartTicks[key].length-12000);
+  if(!priceHistory[key])priceHistory[key]=[];
+  priceHistory[key].push(price);priceHistory[key]=priceHistory[key].slice(-120);
+  $("liveCount").textContent=String(Object.keys(latestTicks).length);
+  updateMarketCard(key);
+  if(key===selectedSymbol){
+    if(activeTradeOverlay&&activeTradeOverlay.symbol===key)activeTradeOverlay.currentSpot=price;
+    $("price").textContent=price.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)));
+    $("lastTick").textContent=Number.isFinite(epoch)?new Date(epoch*1000).toLocaleTimeString():"—";
+    $("tickCount").textContent=String(tickCounts[key]);
+    $("tickHistory").textContent=priceHistory[key].slice(-12).reverse().map(v=>v.toFixed(Math.max(0,Math.min(8,marketBySymbol[key].pipSize)))).join("  ·  ");
+    $("feedNote").textContent="Live · "+(tickCounts[key]||0)+" ticks";
+    renderPurposeChartScaffold();
+    drawChart();syncDerivAccumulatorChart();
+  }
+}
+
+function renderPurposeChartBarriers(){
+ const layer=$("purposeChartBarrierLayer");if(!layer)return;
+ const rate=Number($("tradeGrowth")?.value||0.01),item=barrierData[rate];
+ const high=Number(item?.high),low=Number(item?.low);
+ const valid=Number.isFinite(high)&&Number.isFinite(low)&&high>low;
+ layer.hidden=!valid;
+ if(!valid)return;
+ const domain=purposeChartPriceDomain(purposeChartVisibleHistory()),visibleRange=domain.range,min=domain.min,max=domain.max;
+ const upper=((max-high)/visibleRange)*100,lower=((max-low)/visibleRange)*100;
+ const band=layer.querySelector(".purpose-chart-barrier-band"),upperLine=layer.querySelector(".purpose-chart-barrier-line.upper"),lowerLine=layer.querySelector(".purpose-chart-barrier-line.lower");
+ upperLine.style.top=upper+"%";lowerLine.style.top=lower+"%";band.style.top=upper+"%";band.style.height=(lower-upper)+"%";
+ layer.setAttribute("aria-label","Live Deriv upper and lower barriers for "+Math.round(rate*100)+" percent growth");
+}
+
+const purposeChartView={count:120,end:null,zoom:1,shift:0,drag:null};
+function purposeChartVisibleHistory(){
+ const all=nativeChartTicks[selectedSymbol]||[],end=purposeChartView.end===null?all.length:Math.max(2,Math.min(all.length,purposeChartView.end));
+ const count=Math.max(12,Math.min(1200,purposeChartView.count));
+ return all.slice(Math.max(0,end-count),end);
+}
+function purposeChartPriceDomain(history){
+ const rate=Number($("tradeGrowth")?.value||0.01),barrier=barrierData[rate];
+ const high=Number(barrier?.high),low=Number(barrier?.low),hasBarrier=Number.isFinite(high)&&Number.isFinite(low)&&high>low;
+ const spot=Number(latestTicks[selectedSymbol]?.price)||Number(history[history.length-1]?.price)||1;
+ const recent=history.slice(-60).map(p=>p.price).filter(Number.isFinite);
+ const recentSpread=recent.length>1?Math.max(...recent)-Math.min(...recent):0;
+ const barrierRange=hasBarrier?(high-low)/0.22:0;
+ const baseRange=Math.max(barrierRange,recentSpread*1.35,Math.abs(spot)*0.0003,1e-10);
+ const range=baseRange/Math.max(.2,Math.min(12,purposeChartView.zoom));
+ const center=spot+purposeChartView.shift;
+ return {min:center-range/2,max:center+range/2,range};
+}
+function renderPurposeChartPriceArea(){
+ const svg=$("purposeChartPriceArea"),line=$("purposeChartAreaLine"),fill=$("purposeChartAreaFill");
+ if(!svg||!line||!fill)return;
+ const history=purposeChartVisibleHistory();
+ if(history.length<2){line.setAttribute("d","");fill.setAttribute("d","");return;}
+ const domain=purposeChartPriceDomain(history),span=domain.range;
+ const tipX=700,startX=55,livePrice=Number(latestTicks[selectedSymbol]?.price)||history[history.length-1].price;
+ const visible=history.slice(-1200);
+ const points=visible.map((p,i)=>({x:startX+(tipX-startX)*i/Math.max(1,visible.length),y:Math.max(8,Math.min(92,100-(p.price-domain.min)/span*100))}));
+ const tipY=Math.max(8,Math.min(92,100-(livePrice-domain.min)/span*100));
+ if(points.length)points.push({x:tipX,y:tipY});
+ const d=points.map((p,i)=>(i?"L":"M")+p.x.toFixed(2)+" "+p.y.toFixed(2)).join(" ");
+ line.setAttribute("d",d);fill.setAttribute("d",d+" L"+tipX+" 100 L"+startX+" 100 Z");
+ const liveLine=$("purposeChartLiveLine"),liveDot=$("purposeChartLiveDot");
+ if(liveLine){liveLine.setAttribute("y1",tipY);liveLine.setAttribute("y2",tipY);}
+ if(liveDot){liveDot.setAttribute("cy",tipY);liveDot.setAttribute("cx",tipX);}
+}
+function renderPurposeChartScaffold(){
+ const priceBox=$("purposeChartPriceLabels"),timeBox=$("purposeChartTimeLabels"),grid=$("purposeChartGrid");
+ if(!priceBox||!timeBox||!grid)return;
+ const market=marketBySymbol[selectedSymbol],tick=latestTicks[selectedSymbol],all=nativeChartTicks[selectedSymbol]||[],history=purposeChartVisibleHistory();
+ const precision=Math.max(0,Math.min(8,Number(market?.pipSize??2))),domain=purposeChartPriceDomain(history);
+ const priceLabels=[];
+ for(let i=0;i<7;i++)priceLabels.push((domain.max-domain.range*i/6).toFixed(precision));
+ priceBox.replaceChildren(...priceLabels.map(value=>{const el=document.createElement("span");el.textContent=value;return el;}));
+ grid.replaceChildren(...Array.from({length:7},()=>document.createElement("span")));
+ const last=Number(history[history.length-1]?.time)||Number(tick?.epoch)||Date.now()/1000;
+ const first=Number(history[0]?.time)||last-240;
+ const labels=[];
+ for(let i=0;i<5;i++){
+  const stamp=first+(last-first)*(i/4);
+  labels.push(new Date(stamp*1000).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",hour12:false}));
+ }
+ timeBox.replaceChildren(...labels.map(value=>{const el=document.createElement("span");el.textContent=value;return el;}));
+ renderPurposeChartBarriers();
+ renderPurposeChartPriceArea();
+}
+function setupPurposeChartInteractions(){
+ const plot=$("purposeChartPriceArea")?.parentElement,scale=$("purposeChartPriceLabels")?.parentElement;
+ if(!plot||!scale||plot.dataset.interactive)return;
+ plot.dataset.interactive="true";scale.dataset.interactive="true";
+ const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
+ const redraw=()=>renderPurposeChartScaffold();
+ const begin=(kind,event)=>{
+  if(event.button!==undefined&&event.button!==0)return;
+  event.preventDefault();
+  const history=nativeChartTicks[selectedSymbol]||[];
+  if(purposeChartView.end===null)purposeChartView.end=history.length;
+  event.currentTarget.setPointerCapture?.(event.pointerId);
+  purposeChartView.drag={kind,x:event.clientX,y:event.clientY,end:purposeChartView.end,count:purposeChartView.count,shift:purposeChartView.shift,zoom:purposeChartView.zoom};
+ };
+ const move=event=>{
+  const drag=purposeChartView.drag;if(!drag)return;
+  if(drag.kind==="time"){
+   const width=Math.max(1,plot.clientWidth),delta=Math.round((event.clientX-drag.x)/width*drag.count);
+   purposeChartView.end=clamp(drag.end-delta,Math.min(12,(nativeChartTicks[selectedSymbol]||[]).length), (nativeChartTicks[selectedSymbol]||[]).length);
+  }else{
+   const domain=purposeChartPriceDomain(purposeChartVisibleHistory());
+   const dy=event.clientY-drag.y;
+   if(event.shiftKey)purposeChartView.shift=drag.shift+dy/Math.max(1,scale.clientHeight)*domain.range;
+   else purposeChartView.zoom=clamp(drag.zoom*Math.exp(-dy*.012),.2,12);
+  }
+  redraw();
+ };
+ const end=()=>{purposeChartView.drag=null;};
+ plot.addEventListener("pointerdown",e=>begin("time",e));
+ plot.addEventListener("pointermove",e=>{if(purposeChartView.drag?.kind==="time")move(e);});
+ plot.addEventListener("pointerup",end);plot.addEventListener("pointercancel",end);
+ plot.addEventListener("wheel",e=>{e.preventDefault();const factor=Math.exp(Math.sign(e.deltaY)*Math.min(1.5,Math.abs(e.deltaY)/240)*.22);purposeChartView.count=clamp(Math.round(purposeChartView.count*factor),12,1200);if(purposeChartView.end===null)purposeChartView.end=(nativeChartTicks[selectedSymbol]||[]).length;redraw();},{passive:false});
+ scale.addEventListener("pointerdown",e=>begin("price",e));
+ scale.addEventListener("pointermove",e=>{if(purposeChartView.drag?.kind==="price")move(e);});
+ scale.addEventListener("pointerup",end);scale.addEventListener("pointercancel",end);
+ scale.addEventListener("wheel",e=>{e.preventDefault();purposeChartView.zoom=clamp(purposeChartView.zoom*Math.exp(-e.deltaY*.002),.2,12);redraw();},{passive:false});
+ scale.title="Drag vertically to expand or compress the price scale; hold Shift while dragging to move the price range. Scroll to zoom.";
+ plot.title="Drag to pan through time; scroll to zoom in or out.";
+ const reset=()=>{purposeChartView.count=120;purposeChartView.end=null;purposeChartView.zoom=1;purposeChartView.shift=0;redraw();};
+ plot.addEventListener("dblclick",reset);scale.addEventListener("dblclick",reset);
+}
+
+function updateSelectedLabel(){const m=marketBySymbol[selectedSymbol];$("selectedMarketLabel").textContent=m?m.name+" ("+m.symbol+")":"Select a market";if($("tradeMarket"))$("tradeMarket").value=m?m.name+" ("+m.symbol+")":"Select a market";}
+const TRADINGVIEW_INDEX_ICONS={crash:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA4KCw0LCQ4NDA0QDw4RFiQXFhQUFiwgIRokNC43NjMuMjI6QVNGOj1OPjIySGJJTlZYXV5dOEVmbWVabFNbXVn/2wBDAQ8QEBYTFioXFypZOzI7WVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVn/wAARCAA6ADoDASIAAhEBAxEB/8QAGwAAAgIDAQAAAAAAAAAAAAAAAAYEBQECAwf/xAAyEAACAQQABAQEAwkAAAAAAAABAgMABAUREiExQQYTUWEyQlKBFCIjNVNxg5GhweHw/8QAGgEAAgMBAQAAAAAAAAAAAAAAAgQAAwUGAf/EAB8RAAICAgIDAQAAAAAAAAAAAAECAAMEERIxEyEiUf/aAAwDAQACEQMRAD8A83qyxmHmvvzn9OH6j3/hRhcd+OuduD5Sc29/anNVVFCoAFA0AO1VO+vQmlh4fl+36kG2w9lbLyiEjfU/OpqoqjSqqj0ArailyxM21qRRoCcJrO2mBEkEbb78PP8ArVJkPDo4S9kx3+7b/BpioogxHUrtxq7BoiedOjRuUdSrDkQaxTdnsYtzAbiNdTINnXzClHVMqwYTn8jHal+Jjrg7YW+Mi5fmkHG336f2qxrSJQkSKOgUAVbYrGi43cXJ4LWPmSfm9qW0WadAGWioblaQfSrTG4Z7yIyyP5MfRSR8RqwF7i7/AGlwgiSE7TtxD/u1VeTyb3koEe44I/gUcvvRcVX33KPNbb8qOJ/ZMscMIJjLkCFjRgFX6zUfxHGkeT1GoUcA5Aarh+OuLu5tlnkLBHXQ+9SfE37U/liodFfUFBYL18h7BlRS/L4d4pXZZVVSxIGugpgo1QqdRm+pbNcpGx0wnx8Em9koNn3HI1PNzMbYW/GfJB2FpU8M3wQtaSHQY7Qn19KZajAqYOM63Vg/kKKKKCNS/wAYtrkIYYSFhuoSCCPm0asclb2tvctf3ZDhVCpH6mlGN2jcOhKsp2CK7Xd5PeurTuWIGh6CrRYNdTOfDY2bDepynkEszyBQoYk8I6Cob5C1R2VplDKdEe9YyF4llaNK2uLWlHqaRnlZ3ZmYkk7NRF37nmXkinSCaIxRgykgjmCKasVnI5kWK6YJKOQY9G/3SpWavZQ3cyKMh6W2s9GGiNg7FFK3h+WTzuDzH4NfDxHVNQ7UsV1Ohpu8i71MVFvb+3soy0rji7IOprnl5Hjsi0bsh11U6pKlZmcliST3JokTfcXystqh8iSclkJb+bjfkg5Ko7CoVFFMgamA7lzyM//Z",boom:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA4KCw0LCQ4NDA0QDw4RFiQXFhQUFiwgIRokNC43NjMuMjI6QVNGOj1OPjIySGJJTlZYXV5dOEVmbWVabFNbXVn/2wBDAQ8QEBYTFioXFypZOzI7WVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVn/wAARCAA6ADoDASIAAhEBAxEB/8QAGwAAAgIDAQAAAAAAAAAAAAAAAAQFBgECAwf/xAAyEAACAgECAggDCAMAAAAAAAABAgADBAUREjEGEyEiMkFRYVKhwRQkNUJicYGxgpHh/8QAGQEAAwEBAQAAAAAAAAAAAAAAAgMFBAEG/8QAIBEAAgICAwEAAwAAAAAAAAAAAQIAEQMEEiExEyIyUf/aAAwDAQACEQMRAD8AoOnYT52UtS9g5sfQS7YuNVi0iqlQqj5yP6O4go08WEd+3tP7eUlpmyNZqeh0dcY05n0whzhCKlCEPbnH9L02zULtvDUp7z/SSGs6GMevrsQEoo768yPeGENXMzbWNXGMnueea/pKqpysddgPGo/uV3snorKroVYbqw2I9ZU7dCyha4rrJQMeE78xG436oybu6n58kHstOOnVY9VY/KoHykxh6dVnYDGh/vaEkofMSFw7euw6bPiQH5RvHvsxr1tqYq6xV0e5TZWbGPmanTHwMnJNgqpYmvxDlsfT94uwKsQwII5j0k3kdIbCqfZ6xU5PFYdvEZ3fEo1xVyMdlqu32tU/3C4g/rEjYyIbyrQiFOp2GrFxKlFaBl4yp8XbH9V1G3B1jiTvI1Y4kPI85h9Kx3euzTrOsalwLF3337ecV6Tfin+A+sLsLM6jFlygAf25F3uLbndVCBjvwjynOEN/cD+YoXKL8VABkF0azBZjnFZu+navuJOzz3HvsxrltrbZlO4l003U6s+sbELaB3kP0jMiUbmDQ2gy/NvRHpvXa9RJrdkJGx2O280hEymQCO4xhZduFeLaT2jmPIib6nmnPyuuKcHdA233ik0ssSpC9jBVHMmFZqos40DfQjuYyL0x6HusOyoN/wDko9uddZa79Yw4mJ2Bjmtaqc1+rq3FCns/UfWRG8eiUO5E3Nvm9J4ITZHatgyMVYciJrMxsng1JnG6Q5VIC2hbgPi5/wC4+vSekjvY7g+zAyrzEAopmpN3MooGWK/pM5G1FAX3c7yHy87IzG3usLDyHID+ItMToUDyLybOTJ0xhCEIURP/2Q==",volatility:"data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAA4KCw0LCQ4NDA0QDw4RFiQXFhQUFiwgIRokNC43NjMuMjI6QVNGOj1OPjIySGJJTlZYXV5dOEVmbWVabFNbXVn/2wBDAQ8QEBYTFioXFypZOzI7WVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVlZWVn/wAARCAA6ADoDASIAAhEBAxEB/8QAGwAAAgIDAQAAAAAAAAAAAAAABQYABAIDBwH/xAAvEAACAQMDAQcDAwUAAAAAAAABAgMABBEFEiExBhMiQVFhkTKBoSMkM0JScZLB/8QAGgEAAwADAQAAAAAAAAAAAAAAAgMEAQUGAP/EACIRAAICAgEDBQAAAAAAAAAAAAECAAMEERIhQVEFIjFhof/aAAwDAQACEQMRAD8A5tWSRtI4VFLMegArZbW8lzOsUQyzGnPTdMhsIxtAaU/U5/5QO4WV42K15+oAteztzKA0zLCD5Hk/FX17MQBfFO5PqABR6pSDY03CYFKjqNxbm7MEAmG4B9nXH5oNd2FxZtiaMqD0byP3p9rCWNJUKSKGU9QayLSPmLt9OrYezoZzvFSi+s6SbJ+9iyYGP+p9KE1QCCNiaSytq24tGrszZiO2a5ceKThfYUcrTZx9zZwx/wBqAUbsNHkvLKWfByB+ngjxHnNSnbNOirKY1Q5SjHayyWslwoHdxnDHNaPtTnp1tANFCOicr4x6mg5sSujRSi3YSibJO05288/4ojXEpnAkg+dSu+kslnbT5fMrbWXb9NWdR0FbKye4E5fbjjb70x37CPT5HPRVzx7UL1y/ik0eMKG/cAFeOmMHmjKKAZJXlXWMuvMUJ4UuIHikGVcYpHlsZo5XTYx2sRkCnypgeg+KWjal+VjC7Rmu3cS28cg6MoP4pk0jWEtdNkicLvjGUBP1kkmkns7di4sBESN8PH28qLV7ZUmFwTJqXcNWz79Bvm6bpM4+KPTTINDZg6/xEA588UlLNIsTRq5CN1XPBrcbyQ2K2hC92rbs+eaIWSe3CLHY8/kMaheTt2ftmMhLSkhz6jmg095JPbwwvt2wjC4HNW7q7hk0a1t1bMkZywx060MoXaPxqQB1HcyVOPf4rF3VEZ3ICqMk0py69dGVyj4Qsdox0FeRSZnJvWrQMo6devY3SypyOjD1FO1rcxXUAlhbKn8e1c+HWjHZx2GoBQxCkHIzwabYoI3NVg5DI3DsY31KnrUFTToJKlShuvMyaYxViueuDisgbgWPwUtBmv6sHBtbdsr/AFsPP2pdzXp6GvKrVQBOXvua1+TT/9k="};
+function createIndexKindIcon(symbol,size){
+  const value=String(symbol||"").toUpperCase();
+  const kind=value.startsWith("CRASH")?"crash":value.startsWith("BOOM")?"boom":"volatility";
+  const icon=document.createElement("span");
+  icon.className="index-kind-icon "+size;
+  icon.setAttribute("aria-hidden","true");
+  icon.style.backgroundImage="url("+TRADINGVIEW_INDEX_ICONS[kind]+")";
+  icon.style.backgroundSize="100% 100%";
+  return icon;
+}
+function renderTickerMarkets(){
+  const primary=$("indexTickerPrimary"),clone=$("indexTickerClone"),track=$("indexTickerTrack");
+  if(!primary||!clone||!track)return;
+  primary.replaceChildren();clone.replaceChildren();
+  const makePill=m=>{
+    const button=document.createElement("button");button.type="button";button.className="index-market-pill";button.title="Open "+m.name+" Accumulator market";button.setAttribute("aria-label","Select "+m.name);
+    button.append(createIndexKindIcon(m.symbol,"ticker"));
+    const label=document.createElement("span");label.textContent=m.name;button.append(label);
+    button.addEventListener("click",()=>{selectMarket(m.symbol);$("marketView").scrollIntoView({behavior:"smooth",block:"start"});});
+    return button;
+  };
+  markets.forEach(m=>primary.append(makePill(m)));
+  markets.forEach(m=>{const pill=makePill(m);pill.tabIndex=-1;clone.append(pill);});
+  const count=$("tickerMarketCount");if(count)count.textContent=markets.length+" INDICES";
+  track.style.animationDuration=Math.max(28,markets.length*3.2)+"s";
+  track.style.animationPlayState=markets.length>1?"running":"paused";
+}
+function marketSparkPath(values){
+  const data=(values||[]).slice(-36).map(Number).filter(Number.isFinite);
+  if(data.length<2)return "";
+  const lo=Math.min(...data),hi=Math.max(...data),span=hi-lo||Math.max(Math.abs(hi)*0.000001,1e-8);
+  return data.map((v,i)=>((i/(data.length-1))*100).toFixed(1)+","+((30-((v-lo)/span)*25)).toFixed(1)).join(" ");
+}
+function updateMarketCard(symbol){
+  const m=marketBySymbol[symbol],card=document.querySelector('.market-card[data-market="'+symbol+'"]');
+  if(!m||!card)return;
+  const tick=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize)),price=card.querySelector("strong"),spark=card.querySelector(".market-sparkline"),path=spark?.querySelector(".line"),status=card.querySelector(".market-live"),changeEl=card.querySelector(".market-change");
+  if(price)price.textContent=tick?tick.price.toFixed(dp):"Waiting for tick…";
+  const candles=marketHistory24h[symbol]||[];
+  const history=candles.map(c=>c.close);
+  if(tick&&history.length)history[history.length-1]=tick.price;
+  const first=candles.length?Number(candles[0].open):NaN;
+  const last=tick?.price??(history.length?history[history.length-1]:NaN);
+  const pct=Number.isFinite(first)&&first!==0&&Number.isFinite(last)?((last-first)/first)*100:NaN;
+  if(changeEl){
+    changeEl.textContent=Number.isFinite(pct)?(pct>0?"+":"")+pct.toFixed(2)+"% · 24H":"24H CHANGE —";
+    changeEl.classList.toggle("up",Number.isFinite(pct)&&pct>=0);
+    changeEl.classList.toggle("down",Number.isFinite(pct)&&pct<0);
+  }
+  const points=marketSparkPath(history);
+  const lineD=points?"M"+points.replace(/ /g," L"):"";
+  if(path)path.setAttribute("d",lineD);
+  const area= spark?.querySelector(".area");
+  if(area){
+    const coords=points?points.split(" ").map(p=>p.split(",").map(Number)):[];
+    const areaD=coords.length>1?"M"+coords[0][0]+",34 L"+points.replace(/ /g," L")+" L"+coords[coords.length-1][0]+",34 Z":"";
+    area.setAttribute("d",areaD);
+  }
+  if(spark)spark.classList.toggle("down",Number.isFinite(pct)?pct<0:(history.length>1&&history[history.length-1]<history[0]));
+  if(status)status.textContent="";
+}
+function renderMarketCards(){
+  const box=$("marketGrid");box.replaceChildren();
+  markets.forEach(m=>{
+    const card=document.createElement("button");card.type="button";card.className="market-card"+(m.symbol===selectedSymbol?" selected":"");card.dataset.market=m.symbol;card.setAttribute("aria-label","Select "+m.name);card.onclick=()=>selectMarket(m.symbol);
+    const name=document.createElement("div");name.className="name";name.append(createIndexKindIcon(m.symbol,"card"));const title=document.createElement("span");title.textContent=m.name.toUpperCase();name.append(title);
+    const sym=document.createElement("div");sym.className="meta symbol-meta";sym.textContent=m.symbol+" · ACCU";
+    const price=document.createElement("strong");price.textContent="Waiting for tick…";
+    const change=document.createElement("div");change.className="market-change";change.textContent="24H CHANGE —";
+    const spark=document.createElementNS("http://www.w3.org/2000/svg","svg");spark.setAttribute("viewBox","0 0 100 34");spark.setAttribute("preserveAspectRatio","none");spark.setAttribute("class","market-sparkline");const area=document.createElementNS("http://www.w3.org/2000/svg","path");area.setAttribute("class","area");const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("class","line");spark.append(area,path);
+    const status=document.createElement("div");status.className="market-live";status.textContent="WAITING FOR TICKS";
+    card.append(name,sym,price,change,spark,status);box.append(card);updateMarketCard(m.symbol);
+  });
+}
+function selectMarket(symbol){
+  if(!marketBySymbol[symbol])return;
+  if(symbol!==selectedSymbol&&window.DerivAccumulatorAlgoEngine?.isRunning())stopAccumulatorAlgo();
+  selectedSymbol=symbol;window.__derivChartSetSymbol?.(symbol);$("symbol").value=symbol;updateTradeInstrumentMark();document.querySelectorAll(".market-card").forEach(card=>card.classList.toggle("selected",card.dataset.market===symbol));
+  const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
+  $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
+  $("lastTick").textContent=t?new Date(t.epoch*1000).toLocaleTimeString():"—";
+  $("tickCount").textContent=String(tickCounts[symbol]||0);
+  $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
+  $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
+  updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();syncDerivAccumulatorChart();if(activeTradeAccount&&tradingSocket?.readyState===WebSocket.OPEN)requestTradeQuote();
+}
+
+function clearAccumulatorQuotes(){
+  barrierSubscriptions.forEach(id=>{try{send({forget:id})}catch{}});
+  barrierSubscriptions=[];barrierRequests={};barrierData={};
+}
+function requestAccumulatorQuotes(symbol){
+  if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
+  clearAccumulatorQuotes();
+  $("barrierStatus").textContent="Requesting 1%–5% quotes";
+  $("barrierGrid").replaceChildren();
+  growthRates.forEach(rate=>barrierData[rate]={rate,status:"Requesting Deriv quote"});
+  renderBarrierCards();
+  growthRates.forEach(rate=>{
+    try{
+      const id=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:"USD",growth_rate:rate,underlying_symbol:symbol,subscribe:1});
+      barrierRequests[id]={rate,symbol};
+    }catch(e){barrierData[rate].status="Request failed: "+e.message;renderBarrierCards();}
+  });
+  log("Requested Deriv live Accumulator barrier streams for "+symbol+" at 1%, 2%, 3%, 4% and 5%.");
+}
+function requestAccumulatorRateQuote(rate){
+  const selectedRate=Number(rate);
+  if(!selectedSymbol||!growthRates.includes(selectedRate)||!ws||ws.readyState!==WebSocket.OPEN)return;
+  try{
+    const id=send({
+      proposal:1,
+      amount:1,
+      basis:"stake",
+      contract_type:"ACCU",
+      currency:"USD",
+      growth_rate:selectedRate,
+      underlying_symbol:selectedSymbol
+    });
+    barrierData[selectedRate]=barrierData[selectedRate]||{rate:selectedRate,status:"Refreshing selected growth-rate barrier"};
+    barrierRequests[id]={rate:selectedRate,symbol:selectedSymbol};
+    publishChartDiagnostic("growth_rate_quote_requested",selectedSymbol+" · "+Math.round(selectedRate*100)+"%");
+  }catch(error){
+    log("Could not refresh "+Math.round(selectedRate*100)+"% Accumulator barrier: "+error.message);
+  }
+}
+function handleAccumulatorProposal(message){
+  const proposal=message.proposal||{};
+  if(!Object.prototype.hasOwnProperty.call(barrierRequests,message.req_id))return;
+  const requestContext=barrierRequests[message.req_id];
+  const rate=typeof requestContext==="object"?requestContext.rate:requestContext;
+  const symbol=typeof requestContext==="object"?requestContext.symbol:selectedSymbol;
+  const details=proposal.contract_details||{};
+  const numberOrNull=value=>{if(value===null||value===undefined||value==="")return null;const n=Number(value);return Number.isFinite(n)?n:null;};
+  updateNativeStats(symbol,rate,details.ticks_stayed_in);
+  if(symbol!==selectedSymbol)return;
+  const item=barrierData[rate];if(!item)return;
+  item.askPrice=numberOrNull(proposal.ask_price);item.payout=numberOrNull(proposal.payout);
+  item.spot=numberOrNull(proposal.spot);item.spotTime=numberOrNull(proposal.spot_time);
+  item.high=numberOrNull(details.high_barrier);item.low=numberOrNull(details.low_barrier);item.highDisplay=details.high_barrier==null?null:String(details.high_barrier);item.lowDisplay=details.low_barrier==null?null:String(details.low_barrier);
+  item.barrierPct=numberOrNull(details.tick_size_barrier_percentage);item.barrierSize=numberOrNull(details.tick_size_barrier);
+  item.lastTickEpoch=numberOrNull(details.last_tick_epoch);item.maximumTicks=numberOrNull(details.maximum_ticks);
+  item.maximumPayout=numberOrNull(details.maximum_payout);
+  item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
+  const subscriptionId=message.subscription?.id;
+  if(subscriptionId){
+    item.subscriptionId=subscriptionId;
+    if(!barrierSubscriptions.includes(subscriptionId))barrierSubscriptions.push(subscriptionId);
+  }
+  item.status=(item.high!==null&&item.low!==null&&item.high>item.low)?"Live Deriv barrier received":(item.high!==null&&item.low!==null?"Invalid barrier range returned":"Quote received; barrier fields not present");
+  item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderPurposeChartScaffold();renderNativeStats();syncDerivAccumulatorChart();
+}
+function renderNativeStats(){
+  const rate=Number($("statsGrowthRate")?.value||0.01);
+  const data=nativeStatsByKey[nativeStatsKey(selectedSymbol,rate)];
+  const current=$("statsCurrentValue"),caption=$("statsCurrentCaption");
+  const values=$("statsValues"),history=$("statsHistoryValues");
+  const makeValue=n=>{const el=document.createElement("span");el.className="stats-value"+(n===0?" zero":"");el.textContent=String(n);el.title=n+" ticks in the previous Deriv run";return el;};
+  values.replaceChildren();history.replaceChildren();
+  if(!data||!Number.isInteger(data.current)){
+    current.textContent="—";caption.textContent="Waiting for Deriv’s live Stats stream…";
+    const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="No previous runs received yet.";values.append(empty);
+    const full=document.createElement("span");full.className="stats-empty";full.textContent="Deriv history will appear here when supplied by its proposal stream.";history.append(full);return;
+  }
+  current.textContent=String(data.current);
+  caption.textContent=data.current===0?"Deriv reports zero ticks in the current run.":"Consecutive ticks currently inside Deriv’s live barrier.";
+  const runs=Array.isArray(data.history)?data.history.slice(0,100):[];
+  if(!runs.length){const empty=document.createElement("span");empty.className="stats-empty";empty.textContent="No previous completed runs returned yet.";values.append(empty);history.append(empty.cloneNode(true));}
+  else{runs.slice(0,18).forEach(n=>values.append(makeValue(n)));runs.forEach(n=>history.append(makeValue(n)));}
+}
+function saveAlgoContractRecords(){
+  try{localStorage.setItem(ALGO_CONTRACTS_STORAGE_KEY,JSON.stringify(Object.values(algoContractsById)))}catch(error){console.warn("Could not persist Algo contract IDs",error)}
+}
+function loadAlgoContractRecords(){
+  try{
+    const rows=JSON.parse(localStorage.getItem(ALGO_CONTRACTS_STORAGE_KEY)||"[]");
+    if(Array.isArray(rows))rows.forEach(item=>{if(item?.contractId)algoContractsById[String(item.contractId)]=item;});
+  }catch(error){console.warn("Could not restore Algo contract IDs",error)}
+}
+function renderAlgoDashboard(snapshot){
+  const state=snapshot||window.DerivAccumulatorAlgoEngine?.getSnapshot();
+  if(!state)return;
+  const $id=id=>document.getElementById(id);
+  const running=state.running===true;
+  const acct=activeTradeAccount;
+  const market=state.config?.symbol||selectedSymbol||"No market";
+  $id("algoMarketLabel").textContent=market;
+  $id("algoActiveTrackers").textContent=String(state.activeRates?.length|| (state.config?.aggressive?5:4));
+  $id("algoOpenContracts").textContent=String(state.openContractCount||0);
+  const maxExposure=Number(state.maxConcurrentExposure);
+  $id("algoMaxExposure").textContent=Number.isFinite(maxExposure)&&state.config?.currency?maxExposure.toFixed(2)+" "+state.config.currency:"—";
+  $id("algoStart").disabled=running||!acct||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN||(state.openContractCount||0)>0||Object.keys(algoBuyRequests).length>0;
+  $id("algoStop").disabled=!running;
+  $id("algoRiskMode").disabled=running;
+  $id("algoStake").disabled=running;
+  $id("algoLiveState").classList.toggle("is-running",running);
+  $id("algoLiveText").textContent=running?"Running · "+(state.config?.aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%"):"Stopped · no new automatic entries";
+  $id("algoAccountNote").textContent=acct
+    ? (acct.is_virtual?"Demo account":"REAL account")+" · "+acct.account_id+" · "+(state.openContractCount?"Existing contracts are still being monitored.":"Each active rate can place one contract at a time.")
+    : "Connect a Deriv account to activate the strategy.";
+
+  const grid=$id("algoTrackerGrid");grid.replaceChildren();
+  const statusLabels={LEARNING:"LEARNING",WAIT_MATCH:"WATCHING",WAITING_QUOTE:"QUOTE PENDING",ENTRY_PENDING:"ENTRY SENT",OPEN:"CONTRACT OPEN",WAIT_RUN_END:"WAITING FOR CUT",MISSED_ENTRY:"ENTRY SKIPPED",STOPPED:"PAUSED"};
+  (state.trackers||[]).forEach(tracker=>{
+    const card=document.createElement("div");card.className="algo-tracker-card";
+    const top=document.createElement("div");top.className="algo-tracker-top";
+    const rate=document.createElement("strong");rate.className="algo-tracker-rate";rate.textContent=Math.round(tracker.rate*100)+"%";
+    const status=document.createElement("span");status.className="algo-tracker-status";status.textContent=statusLabels[tracker.status]||tracker.status;
+    top.append(rate,status);
+    const numbers=document.createElement("div");numbers.className="algo-tracker-numbers";
+    const current=document.createElement("div");current.innerHTML="<span>LIVE COUNT</span><strong></strong>";current.querySelector("strong").textContent=Number.isInteger(tracker.current)?String(tracker.current):"—";
+    const watch=document.createElement("div");watch.innerHTML="<span>WATCH STAT</span><strong></strong>";watch.querySelector("strong").textContent=Number.isInteger(tracker.watchStat)?String(tracker.watchStat):"—";
+    numbers.append(current,watch);
+    const message=document.createElement("div");message.className="algo-tracker-message";message.textContent=tracker.message||"Waiting for live statistics";
+    card.append(top,numbers,message);
+    if(tracker.activeContractId){const id=document.createElement("div");id.className="algo-muted";id.textContent="Contract #"+tracker.activeContractId;card.append(id);}
+    if(tracker.lastProfit!==null&&tracker.lastProfit!==undefined){const pnl=document.createElement("div");pnl.className="algo-muted";pnl.textContent="Last settled P/L: "+Number(tracker.lastProfit).toFixed(2);card.append(pnl);}
+    grid.append(card);
+  });
+  if(!state.trackers?.length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="Start Algo to initialise its growth-rate trackers.";grid.append(empty);}
+
+  const positions=$id("algoPositionList");positions.replaceChildren();
+  (state.contracts||[]).forEach(position=>{
+    const row=document.createElement("div");row.className="algo-position-row";
+    const left=document.createElement("span");left.textContent=Math.round(position.rate*100)+"% · "+position.symbol+" · #"+position.contractId;
+    const right=document.createElement("strong");right.textContent=(Number(position.ticksAfterEntry)||0)+"/2 ticks · "+(position.profit===null||position.profit===undefined?"OPEN":Number(position.profit).toFixed(2)+" "+(state.config?.currency||""));
+    row.append(left,right);positions.append(row);
+  });
+  if(!(state.contracts||[]).length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="No open Algo contracts.";positions.append(empty);}
+
+  const events=$id("algoEventList");events.replaceChildren();
+  (state.eventHistory||[]).slice(0,8).forEach(event=>{
+    const row=document.createElement("div");row.className="algo-event-row";
+    const time=document.createElement("span");time.className="algo-event-time";time.textContent=new Date(event.time).toLocaleTimeString([], {hour:"2-digit",minute:"2-digit",second:"2-digit"});
+    const message=document.createElement("span");message.textContent=(event.rate?Math.round(event.rate*100)+"% · ":"")+event.message;
+    row.append(time,message);events.append(row);
+  });
+  if(!(state.eventHistory||[]).length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="Strategy events will appear here.";events.append(empty);}
+}
+function forgetAlgoSubscription(subscriptionId){
+  if(!subscriptionId||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)return;
+  try{tradeSend({forget:subscriptionId},"algo-forget")}catch(error){console.warn("Could not forget Algo quote subscription",error);}
+}
+function forgetAlgoQuoteRequest(requestId){
+  const meta=algoQuoteRequests[requestId];
+  if(!meta)return;
+  forgetAlgoSubscription(meta.subscriptionId);
+  delete algoQuoteRequests[requestId];
+}
+function cleanupStaleAlgoQuotesForRate(rate){
+  const state=window.DerivAccumulatorAlgoEngine?.getSnapshot();
+  const tracker=state?.trackers?.find(item=>Number(item.rate)===Number(rate));
+  Object.entries(algoQuoteRequests).forEach(([requestId,meta])=>{
+    if(Number(meta.rate)!==Number(rate))return;
+    const waiting=tracker&&["WAIT_MATCH","WAITING_QUOTE"].includes(tracker.status);
+    if(!waiting||meta.runNumber!==tracker.runNumber)forgetAlgoQuoteRequest(requestId);
+  });
+}
+function forgetAllAlgoQuoteRequests(){
+  Object.keys(algoQuoteRequests).forEach(forgetAlgoQuoteRequest);
+}
+function requestAlgoQuote(rate,config,context){
+  if(!activeTradeAccount||activeTradeAccount.account_id!==config.accountId||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)throw new Error("The selected Deriv account is not connected.");
+  Object.entries(algoQuoteRequests).forEach(([requestId,meta])=>{if(Number(meta.rate)===Number(rate))forgetAlgoQuoteRequest(requestId);});
+  const requestId=tradeSend({
+    proposal:1,amount:config.stake,basis:"stake",contract_type:"ACCU",currency:config.currency,
+    growth_rate:rate,underlying_symbol:config.symbol,duration:45,duration_unit:"t",subscribe:1
+  },"algo-proposal");
+  algoQuoteRequests[requestId]={requestId,rate,symbol:config.symbol,accountId:config.accountId,stake:config.stake,runNumber:context?.runNumber,watchStat:context?.watchStat,quoteAttempt:context?.quoteAttempt,subscriptionId:null};
+}
+function requestAlgoBuy(rate,quote,context){
+  if(!activeTradeAccount||activeTradeAccount.account_id!==context.accountId||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)throw new Error("The selected Deriv account disconnected before the entry.");
+  if(!quote?.id||!Number.isFinite(Number(quote.askPrice)))throw new Error("No fresh valid Accumulator proposal is available.");
+  const requestId=tradeSend({buy:quote.id,price:Number(quote.askPrice)},"algo-buy");
+  algoBuyRequests[requestId]={rate,symbol:context.symbol,accountId:context.accountId,stake:context.stake,expectedEntryStat:context.expectedEntryStat,signalCount:context.signalCount,subscriptionId:quote.subscriptionId||null,quoteRequestId:quote.requestId||null};
+  if(quote.requestId)delete algoQuoteRequests[quote.requestId];
+}
+function requestAlgoSell(contractId,context){
+  if(!activeTradeAccount||activeTradeAccount.account_id!==context.accountId||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)throw new Error("Account connection is unavailable for the automatic close.");
+  const requestId=tradeSend({sell:Number(contractId),price:0},"algo-sell");
+  algoSellRequests[requestId]={contractId:String(contractId),rate:context.rate,accountId:context.accountId};
+}
+function restoreAlgoContractsForAccount(accountId){
+  loadAlgoContractRecords();
+  Object.values(algoContractsById).filter(item=>String(item.accountId)===String(accountId)).forEach(item=>{
+    window.DerivAccumulatorAlgoEngine?.restoreContract(item);
+    try{tradeSend({proposal_open_contract:1,contract_id:Number(item.contractId),subscribe:1},"algo-contract");}
+    catch(error){console.warn("Could not reconcile Algo contract "+item.contractId,error);}
+  });
+  renderAlgoDashboard();
+}
+function handleAlgoContractUpdate(contract, message){
+  const id=String(contract?.contract_id||"");
+  const record=algoContractsById[id];
+  if(!record)return;
+  if(message?.subscription?.id)record.subscriptionId=message.subscription.id;
+  const settled=window.DerivAccumulatorAlgoEngine?.onContractUpdate(id,contract);
+  const engineContract=window.DerivAccumulatorAlgoEngine?.getSnapshot().contracts.find(item=>String(item.contractId)===id);
+  if(engineContract){
+    record.entrySpotTime=engineContract.entrySpotTime;
+    record.lastContractSpotTime=engineContract.lastContractSpotTime;
+    record.ticksAfterEntry=engineContract.ticksAfterEntry;
+    record.closeRequested=engineContract.closeRequested;
+    record.closeWhenSellable=engineContract.closeWhenSellable;
+    record.lastProfit=engineContract.profit;
+  }
+  if(settled){
+    if(record.subscriptionId){try{tradeSend({forget:record.subscriptionId},"algo-forget")}catch{}}
+    delete algoContractsById[id];
+    saveAlgoContractRecords();
+  }else{
+    record.lastProfit=Number.isFinite(Number(contract?.profit))?Number(contract.profit):record.lastProfit;
+    record.status=contract?.status||"OPEN";
+    saveAlgoContractRecords();
+  }
+}
+function startAccumulatorAlgo(){
+  const engine=window.DerivAccumulatorAlgoEngine;
+  const stake=Number($("algoStake").value);
+  const aggressive=$("algoRiskMode").value==="aggressive";
+  const rates=aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04];
+  if(Object.keys(algoBuyRequests).length){$("algoLiveText").textContent="An Algo purchase is still being confirmed; wait for Deriv before restarting.";return;}
+  if(!activeTradeAccount||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN){$("algoLiveText").textContent="Connect a Deriv account first";return;}
+  if(!selectedSymbol||!marketBySymbol[selectedSymbol]){$("algoLiveText").textContent="Select a supported market first";return;}
+  if(!Number.isFinite(stake)||stake<0.35){$("algoLiveText").textContent="Enter a valid stake of at least 0.35";return;}
+  const maxExposure=stake*rates.length;
+  if(!activeTradeAccount.is_virtual){
+    const accepted=window.confirm("REAL ACCOUNT · AUTOMATED ACCUMULATOR TRADING\n\n"+selectedSymbol+"\nGrowth rates: "+rates.map(rate=>Math.round(rate*100)+"%").join(", ")+"\nStake per contract: "+stake.toFixed(2)+" "+activeTradeAccount.currency+"\nMaximum simultaneous stake exposure: "+maxExposure.toFixed(2)+" "+activeTradeAccount.currency+"\n\nEach contract can lose its full stake. Start Algo?");
+    if(!accepted)return;
+  }
+  const initialStats={};
+  rates.forEach(rate=>{const key=nativeStatsKey(selectedSymbol,rate);initialStats[rate.toFixed(2)]=nativeStatsLiveKeys.has(key)?(nativeStatsByKey[key]||null):null;});
+  const result=engine.start({
+    symbol:selectedSymbol,accountId:activeTradeAccount.account_id,
+    accountMode:activeTradeAccount.is_virtual?"demo":"real",
+    currency:activeTradeAccount.currency,stake,aggressive
+  },initialStats,{
+    onChange:renderAlgoDashboard,
+    onLog:()=>{},
+    onQuoteRequest:requestAlgoQuote,
+    onBuyRequest:requestAlgoBuy,
+    onSellRequest:requestAlgoSell
+  });
+  if(!result.ok){$("algoLiveText").textContent=result.error;return;}
+  renderAlgoDashboard(result.snapshot);
+}
+function stopAccumulatorAlgo(){
+  forgetAllAlgoQuoteRequests();
+  window.DerivAccumulatorAlgoEngine?.stop("New Algo entries paused by user; open contracts will settle normally.");
+}
+
+function renderBarrierCards(){
+  const box=$("barrierGrid");box.replaceChildren();
+  const fmt=(v,d=6)=>v===null||v===undefined?"Not supplied":Number(v).toFixed(d);
+  growthRates.forEach(rate=>{
+    const item=barrierData[rate]||{status:"Waiting"};
+    const card=document.createElement("div");card.className="barrier-card";
+    const heading=document.createElement("h3");heading.textContent=Math.round(rate*100)+"% GROWTH";
+    const pair=document.createElement("div");pair.className="barrier-pair";
+    const high=document.createElement("div");high.innerHTML='<div class="barrier-label">UPPER BARRIER</div><div class="barrier-value"></div>';high.querySelector(".barrier-value").textContent=fmt(item.high);
+    const low=document.createElement("div");low.innerHTML='<div class="barrier-label">LOWER BARRIER</div><div class="barrier-value"></div>';low.querySelector(".barrier-value").textContent=fmt(item.low);
+    pair.append(high,low);
+    const meta=document.createElement("div");meta.className="barrier-meta";
+    meta.textContent=["Reference spot: "+fmt(item.spot),"Barrier width: "+(item.barrierPct===null?"Not supplied":item.barrierPct+"%"),"Tick-size barrier: "+fmt(item.barrierSize),"Max ticks: "+(item.maximumTicks??"Not supplied"),"Max payout: "+(item.maximumPayout??"Not supplied"),"Deriv tick epoch: "+(item.lastTickEpoch??"Not supplied")].join(" · ");
+    const status=document.createElement("div");status.className="barrier-status";status.textContent=item.status||"Waiting for Deriv";
+    card.append(heading,pair,meta,status);box.append(card);
+  });
+}
+function drawChart(){
+  const c=$("chart"),r=c.getBoundingClientRect(),d=window.devicePixelRatio||1;c.width=Math.max(1,Math.floor(r.width*d));c.height=Math.max(1,Math.floor(r.height*d));
+  const x=c.getContext("2d");x.scale(d,d);const w=r.width,h=r.height;x.clearRect(0,0,w,h);x.strokeStyle="#252525";x.lineWidth=1;
+  for(let i=1;i<4;i++){x.beginPath();x.moveTo(0,h*i/4);x.lineTo(w,h*i/4);x.stroke();}
+  const vals=priceHistory[selectedSymbol]||[];if(vals.length<2)return;
+  const min=Math.min(...vals),max=Math.max(...vals),range=max-min||1;x.beginPath();
+  vals.forEach((p,i)=>{const px=i/(vals.length-1)*w,py=h-12-(p-min)/range*(h-24);i?x.lineTo(px,py):x.moveTo(px,py)});
+  x.strokeStyle="#f2f2f2";x.lineWidth=2;x.stroke();x.lineTo(w,h);x.lineTo(0,h);x.closePath();x.fillStyle="#ffffff10";x.fill();
+}
+async function refreshDerivAccount(){
+  const title=$("accountTitle"),detail=$("accountDetail"),message=$("accountMessage"),login=$("derivLogin"),logout=$("derivLogout");
+  try{
+    const appSession=sessionStorage.getItem("deriv_app_session");
+    const headers=appSession?{Authorization:"Bearer "+appSession}:{};
+    const response=await fetch(OAUTH_API+"/api/me",{credentials:"include",headers});
+    if(!response.ok)throw new Error(response.status===401?"Not connected":"Could not verify account");
+    const data=await response.json();
+    title.textContent="Deriv account · Connected";
+    const accounts=(data.accounts||[]).map(a=>(a.account_type||"Account")+" · "+(a.currency||"currency unknown")+(a.is_virtual?" · Demo":"")).join("  |  ");
+    derivAccounts=Array.isArray(data.accounts)?data.accounts:[];renderTradeAccounts();
+    detail.textContent=accounts||"Authorization active. No account summary was returned.";
+    message.textContent="Connected securely. Account tokens remain on the OAuth service.";
+    login.hidden=true;logout.hidden=false;$("balanceCta").textContent="DEPOSIT";$("balanceCta").dataset.connected="true";
+  }catch(e){
+    title.textContent="Deriv account · Not connected";
+    detail.textContent="OAuth connection is optional for public prices. Demo verification requires your account authorization.";
+    message.textContent=e.message==="Not connected"?"":e.message;
+    login.hidden=false;logout.hidden=true;$("balanceCta").textContent="DEPOSIT";$("balanceCta").dataset.connected="false";
+  }
+}
+async function startDerivLogin(){
+  const button=$("derivLogin"),message=$("accountMessage");button.disabled=true;message.textContent="Preparing secure Deriv login…";
+  try{
+    const response=await fetch(OAUTH_API+"/oauth/start",{method:"POST",credentials:"include"});
+    const data=await response.json();if(!response.ok||!data.authorization_url)throw new Error(data.error||"Could not start Deriv login");
+    window.location.assign(data.authorization_url);
+  }catch(e){message.textContent=e.message;button.disabled=false;}
+}
+function updateTradeHeaderBalance(){
+ const account=activeTradeAccount;
+ const currency=(account&&account.currency)||"";
+ const code=currency.toUpperCase();
+ const logo=$("tradeCurrencyLogo");
+ const currencyMarks={USD:"🇺🇸",EUR:"🇪🇺",GBP:"🇬🇧",BTC:"₿",ETH:"Ξ",USDT:"₮",LTC:"Ł",BCH:"◆"};logo.textContent=currencyMarks[code]|| (code?code.slice(0,3):"—");
+ logo.setAttribute("aria-label",code?currency+" currency":"Currency unavailable");
+ $("tradeHeaderBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2):"—";
+ const mode=$("tradeAccountMode");
+ if(account){mode.value=account.is_virtual?"demo":"real";}
+}
+function renderTradeInstrumentOptions(){
+ const select=$("tradeInstrumentSelect");if(!select)return;
+ select.replaceChildren();
+ if(!markets.length){const option=document.createElement("option");option.textContent="No instruments";select.append(option);select.disabled=true;return;}
+ markets.forEach(m=>{const option=document.createElement("option");option.value=m.symbol;option.textContent=m.name||m.symbol;select.append(option);});
+ select.disabled=false;select.value=selectedSymbol||markets[0].symbol;
+ updateTradeInstrumentMark();
+}
+function updateTradeInstrumentMark(){
+ const market=marketBySymbol[selectedSymbol];
+ const mark=$("tradeInstrumentMark");
+ if(mark&&market){const icon=createIndexKindIcon(market.symbol,"card");icon.id="tradeInstrumentMark";icon.classList.add("trade-instrument-icon");mark.replaceWith(icon);}
+ const select=$("tradeInstrumentSelect");if(select&&selectedSymbol)select.value=selectedSymbol;
+}
+function switchTradeAccountMode(mode){
+ if(window.DerivAccumulatorAlgoEngine?.isRunning()||window.DerivAccumulatorAlgoEngine?.hasOpenContracts()||Object.keys(algoBuyRequests).length){$("tradeMessage").textContent="Stop Algo and wait for all Algo contracts to settle before switching accounts.";updateTradeHeaderBalance();return;}
+ const account=derivAccounts.find(a=>a.is_virtual===(mode==="demo"));
+ if(!account){$("tradeMessage").textContent="No "+mode+" Deriv account is available. Connect an account of this type first.";updateTradeHeaderBalance();return;}
+ $("tradeAccount").value=account.account_id;
+ connectTradeAccount(account.account_id);
+}
+function renderTradeAccounts(){
+  const select=$("tradeAccount");select.replaceChildren();
+  if(!derivAccounts.length){const o=document.createElement("option");o.textContent="No trading accounts returned";select.append(o);select.disabled=true;return;}
+  derivAccounts.forEach(a=>{const o=document.createElement("option");o.value=a.account_id;o.textContent=(a.is_virtual?"DEMO":"REAL")+" · "+(a.account_type||"Options")+" · "+(a.currency||"")+" · "+a.account_id;select.append(o);});
+  select.disabled=false;
+  const preferred=derivAccounts.find(a=>a.is_virtual)||derivAccounts[0];
+  select.value=preferred.account_id;connectTradeAccount(preferred.account_id);updateTradeHeaderBalance();$("tradeAccountMode").value=preferred.is_virtual?"demo":"real";
+}
+function tradeSend(payload,kind){
+  if(!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)throw new Error("Selected Deriv account is not connected.");
+  const id=++tradingReqId;tradingPending[id]=kind||"other";tradingSocket.send(JSON.stringify({...payload,req_id:id}));return id;
+}
+async function connectTradeAccount(accountId){
+  const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
+  if(activeTradeAccount&&activeTradeAccount.account_id!==accountId&&(window.DerivAccumulatorAlgoEngine?.isRunning()||window.DerivAccumulatorAlgoEngine?.hasOpenContracts()||Object.keys(algoBuyRequests).length)){$("tradeMessage").textContent="Stop Algo and wait for its open contracts to settle before switching accounts.";renderAlgoDashboard();return;}
+  if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
+  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;lastTradeChartPosition=null;window.__derivAccumulatorContractInfo=null;window.__derivAccumulatorClosedBarriers=null;publishTradeChartOverlay();$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
+  $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
+  $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
+  $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
+  $("tradeMarket").value=selectedSymbol||"Select a market above";
+  $("quoteAsk").textContent="—";$("quotePayout").textContent="—";$("tradePnlValue").textContent="—";$("tradeContractId").textContent="—";
+  $("tradeContractStatus").textContent="No contract purchased";
+  try{
+    const sid=sessionStorage.getItem("deriv_app_session");if(!sid)throw new Error("Reconnect your Deriv account first.");
+    const response=await fetch(OAUTH_API+"/api/account/otp",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+sid},body:JSON.stringify({account_id:accountId})});
+    const data=await response.json();if(!response.ok||!data.ws_url)throw new Error(data.error||"Could not authorize this Deriv account.");
+    const socket=new WebSocket(data.ws_url);tradingSocket=socket;
+    socket.onopen=()=>{if(tradingSocket!==socket)return;$("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connected";$("tradeMessage").textContent="Authenticated to "+(account.is_virtual?"demo":"real")+" account.";$("getTradeQuote").disabled=false;try{tradeSend({balance:1,subscribe:1},"balance")}catch(e){$("tradeMessage").textContent=e.message}window.DerivAccumulatorAlgoEngine?.setCallbacks({onChange:renderAlgoDashboard,onQuoteRequest:requestAlgoQuote,onBuyRequest:requestAlgoBuy,onSellRequest:requestAlgoSell});restoreAlgoContractsForAccount(account.account_id);if(selectedSymbol&&marketBySymbol[selectedSymbol])requestTradeQuote()};
+    socket.onmessage=event=>{
+      let m;try{m=JSON.parse(event.data)}catch{return}
+      const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
+      let handledAlgoBuyResponse=false,handledAlgoSellResponse=false;
+      if(m.error){
+        const failedAlgoQuote=algoQuoteRequests[m.req_id];if(failedAlgoQuote){forgetAlgoQuoteRequest(m.req_id);window.DerivAccumulatorAlgoEngine?.quoteFailed(failedAlgoQuote.rate,m.error.message||m.error.code||"Deriv quote failed",failedAlgoQuote);return;}
+        const failedAlgoBuy=algoBuyRequests[m.req_id];if(failedAlgoBuy){delete algoBuyRequests[m.req_id];forgetAlgoSubscription(failedAlgoBuy.subscriptionId);window.DerivAccumulatorAlgoEngine?.buyFailed(failedAlgoBuy.rate,m.error.message||m.error.code||"Deriv purchase failed");return;}
+        const failedAlgoSell=algoSellRequests[m.req_id];if(failedAlgoSell){delete algoSellRequests[m.req_id];window.DerivAccumulatorAlgoEngine?.sellFailed(failedAlgoSell.contractId,m.error.message||m.error.code||"Deriv automatic close failed");return;}
+        $("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell"){tpCloseRequested=false;$("confirmTradeBuy").disabled=!activeContractId;if(activeContractId)$("confirmTradeBuy").textContent="CLOSE";}return}
+      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
+      if(m.msg_type==="proposal"&&m.proposal&&algoQuoteRequests[m.req_id]){
+        const meta=algoQuoteRequests[m.req_id];
+        if(m.subscription?.id)meta.subscriptionId=m.subscription.id;
+        if(meta.accountId===activeTradeAccount?.account_id&&meta.symbol===window.DerivAccumulatorAlgoEngine?.getSnapshot().config?.symbol&&meta.stake===Number($("algoStake").value)){
+          window.DerivAccumulatorAlgoEngine?.onQuote(meta.rate,{...m.proposal,subscriptionId:meta.subscriptionId,requestId:Number(m.req_id)},meta);
+          cleanupStaleAlgoQuotesForRate(meta.rate);
+        }else forgetAlgoQuoteRequest(m.req_id);
+      }
+      if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
+      if(m.msg_type==="buy"&&m.buy&&algoBuyRequests[m.req_id]){
+        handledAlgoBuyResponse=true;
+        const meta=algoBuyRequests[m.req_id];delete algoBuyRequests[m.req_id];
+        forgetAlgoSubscription(meta.subscriptionId);
+        const contractId=String(m.buy.contract_id);
+        const record={contractId,rate:meta.rate,symbol:meta.symbol,accountId:meta.accountId,stake:meta.stake,expectedEntryStat:meta.expectedEntryStat,signalCount:meta.signalCount,openedAt:Date.now(),status:"OPEN"};
+        algoContractsById[contractId]=record;saveAlgoContractRecords();
+        window.DerivAccumulatorAlgoEngine?.buySucceeded(meta.rate,{contractId,symbol:meta.symbol,accountId:meta.accountId,stake:meta.stake});
+        try{tradeSend({proposal_open_contract:1,contract_id:Number(contractId),subscribe:1},"algo-contract");}
+        catch(error){$("algoLiveText").textContent="Contract purchased; reconnecting contract monitor: "+error.message;}
+        try{tradeSend({balance:1,subscribe:1},"balance")}catch{}
+        renderAlgoDashboard();
+      }
+      if(m.msg_type==="buy"&&m.buy&&!handledAlgoBuyResponse){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");const tradeRate=Number($("tradeGrowth").value),tradeBarrier=barrierData[tradeRate]||{},tradeTick=latestTicks[selectedSymbol];
+        window.__derivAccumulatorContractInfo=null;
+        window.__derivAccumulatorClosedBarriers=null;
+        lastTradeChartPosition=null;
+        activeTradeOverlay={
+          contractId:activeContractId,symbol:selectedSymbol,rate:tradeRate,
+          entrySpot:null,barrier:null,
+          highBarrier:tradeBarrier.highDisplay||tradeBarrier.high,
+          lowBarrier:tradeBarrier.lowDisplay||tradeBarrier.low,
+          spot:tradeTick?.price??tradeBarrier.spot??null,
+          spotEpoch:tradeTick?.epoch??tradeBarrier.spotTime??null,
+          barrierEpoch:tradeBarrier.lastTickEpoch??tradeBarrier.spotTime??tradeTick?.epoch??null,
+          currentSpot:tradeTick?.price??null,status:"OPEN"
+        };
+        publishTradeChartOverlay();$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").textContent="CLOSE";$("confirmTradeBuy").disabled=!activeContractId;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
+      if(m.msg_type==="sell"&&m.sell&&algoSellRequests[m.req_id]){
+        handledAlgoSellResponse=true;
+        delete algoSellRequests[m.req_id];
+        renderAlgoDashboard();
+      }
+      if(m.msg_type==="sell"&&m.sell&&!handledAlgoSellResponse){
+        $("tradeMessage").textContent="Deriv confirmed the contract close. Waiting for its final contract update…";
+        activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");
+        if(activeTradeOverlay){activeTradeOverlay.isSold=true;activeTradeOverlay.status="SOLD · awaiting final tick";publishTradeChartOverlay();}
+        currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;
+        $("tradeContractId").textContent="—";$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;
+        $("tradeContractStatus").textContent="Contract closed";try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()
+      }
+      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){
+        const c=m.proposal_open_contract;
+        handleAlgoContractUpdate(c,m);
+        const contractId=c.contract_id??activeContractId;
+        const matchesActiveContract=!!activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(contractId);
+        if(matchesActiveContract){
+          window.__derivAccumulatorContractInfo=c;
+          const asNumber=value=>(value===null||value===undefined||value==="")?NaN:Number(value);
+          const entry=asNumber(c.entry_spot??c.entry_tick);
+          const entryTime=asNumber(c.entry_spot_time??c.entry_tick_time??c.date_start??c.purchase_time);
+          const currentSpot=asNumber(c.current_spot??c.sell_spot??activeTradeOverlay.currentSpot);
+          const currentSpotTime=asNumber(c.current_spot_time??c.sell_spot_time??c.sell_time??activeTradeOverlay.currentSpotTime);
+          const high=asNumber(c.high_barrier??c.highBarrier);
+          const low=asNumber(c.low_barrier??c.lowBarrier);
+          const profit=asNumber(c.profit);
+          if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;
+          if(Number.isFinite(entryTime))activeTradeOverlay.entrySpotTime=entryTime;
+          if(Number.isFinite(high)&&Number.isFinite(low)&&high>low){
+            activeTradeOverlay.highBarrier=String(c.high_barrier??c.highBarrier);
+            activeTradeOverlay.lowBarrier=String(c.low_barrier??c.lowBarrier);
+          }
+          if(Number.isFinite(currentSpot)){
+            activeTradeOverlay.currentSpot=currentSpot;
+            activeTradeOverlay.spot=currentSpot;
+          }
+          if(Number.isFinite(currentSpotTime)){
+            activeTradeOverlay.currentSpotTime=currentSpotTime;
+            activeTradeOverlay.spotEpoch=currentSpotTime;
+          }
+          if(Number.isFinite(profit))activeTradeOverlay.profit=profit;
+          activeTradeOverlay.currency=c.currency||activeTradeAccount?.currency||account.currency||"";
+          activeTradeOverlay.fractionalDigits=Number.isFinite(Number(c.profit_decimal_places))?Number(c.profit_decimal_places):2;
+          activeTradeOverlay.barrier=c.barrier??activeTradeOverlay.barrier;
+          activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");
+          activeTradeOverlay.dateStart=c.date_start;
+          activeTradeOverlay.dateExpiry=c.date_expiry;
+          activeTradeOverlay.isSold=c.is_sold===true||Number(c.is_sold)===1;
+          publishTradeChartOverlay();
+
+          $("tradeContractStatus").textContent=(c.status||"Open")+(activeTradeOverlay.isSold?" · settled":"");
+          $("tradeContractDetail").textContent="P/L: "+(Number.isFinite(profit)?profit.toFixed(2):"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");
+          $("tradePnlValue").textContent=Number.isFinite(profit)?profit.toFixed(2)+" "+(activeTradeOverlay.currency||""):"—";
+
+          const tpTarget=Number($("tradeTpTarget").value);
+          if(!activeTradeOverlay.isSold&&activeContractId&&!tpCloseRequested&&Number.isFinite(tpTarget)&&tpTarget>0&&Number.isFinite(profit)&&profit>=tpTarget){
+            tpCloseRequested=true;$("tradeMessage").textContent="Take-profit target reached. Closing contract…";closeTradeContract(true);
+          }
+
+          if(activeTradeOverlay.isSold){
+            const exitSpot=asNumber(c.exit_spot??c.sell_spot??c.current_spot??activeTradeOverlay.currentSpot);
+            const exitEpoch=asNumber(c.exit_spot_time??c.sell_spot_time??c.sell_time??c.current_spot_time??c.date_expiry??activeTradeOverlay.currentSpotTime);
+            const finalProfit=Number.isFinite(profit)?profit:activeTradeOverlay.profit;
+            const highBarrier=asNumber(activeTradeOverlay.highBarrier);
+            const lowBarrier=asNumber(activeTradeOverlay.lowBarrier);
+            if(Number.isFinite(highBarrier)&&Number.isFinite(lowBarrier)&&highBarrier>lowBarrier&&Number.isFinite(exitSpot)&&Number.isFinite(exitEpoch)&&Number.isFinite(finalProfit)){
+              window.__derivAccumulatorClosedBarriers={
+                highBarrier:String(activeTradeOverlay.highBarrier),
+                lowBarrier:String(activeTradeOverlay.lowBarrier),
+                barrierEpoch:Number(activeTradeOverlay.barrierEpoch??activeTradeOverlay.spotEpoch),
+                exitSpot,
+                exitEpoch,
+                profit:finalProfit,
+                currency:activeTradeOverlay.currency||"",
+                fractionalDigits:activeTradeOverlay.fractionalDigits??2,
+                retentionMs:8000
+              };
+            }
+            activeTradeOverlay=null;window.__derivAccumulatorContractInfo=null;
+            activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");
+            currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;
+            $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractId").textContent="—";
+            publishTradeChartOverlay();try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote();
+          }
+        }
+      }
+    };
+    socket.onerror=()=>{$("tradeConnectionState").textContent="Trading connection error";$("tradeMessage").textContent="Could not maintain authenticated Deriv connection."};
+    socket.onclose=()=>{if(tradingSocket===socket){tradingSocket=null;$("tradeConnectionState").textContent="Account disconnected";$("getTradeQuote").disabled=true;$("confirmTradeBuy").disabled=true;if(window.DerivAccumulatorAlgoEngine?.isRunning())window.DerivAccumulatorAlgoEngine.stop("Trading connection lost; new Algo entries paused.");renderAlgoDashboard()}};
+  }catch(e){$("tradeConnectionState").textContent="Not connected";$("tradeMessage").textContent=e.message}
+}
+function requestTradeQuote(){
+  if(!activeTradeAccount||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN){$("tradeMessage").textContent="Connect a Deriv account first.";return}
+  const stake=Number($("tradeStake").value),rate=Number($("tradeGrowth").value);
+  if(!Number.isFinite(stake)||stake<=0){$("tradeMessage").textContent="Enter a valid positive stake.";return}
+  if(!selectedSymbol||!marketBySymbol[selectedSymbol]){$("tradeMessage").textContent="Select a supported market first.";return}
+  if(!activeTradeAccount.currency){$("tradeMessage").textContent="Deriv did not provide this account's currency.";return}
+  currentTradeProposal=null;$("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Requesting quote for "+stake.toFixed(2)+" "+activeTradeAccount.currency+"…";
+  latestTradeQuoteContext={stake,rate,symbol:selectedSymbol,accountId:activeTradeAccount.account_id};
+  try{latestTradeQuoteReqId=tradeSend({proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:activeTradeAccount.currency,growth_rate:rate,underlying_symbol:selectedSymbol,subscribe:1},"proposal")}catch(e){latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("tradeMessage").textContent=e.message}
+}
+function buyTradeProposal(){
+  if(activeContractId){closeTradeContract();return;}
+  if(!activeTradeAccount)return;
+  const stake=Number($("tradeStake").value),rate=Number($("tradeGrowth").value);
+  if(!currentTradeProposal||currentTradeProposal.stake!==stake||currentTradeProposal.rate!==rate||currentTradeProposal.symbol!==selectedSymbol||currentTradeProposal.accountId!==activeTradeAccount.account_id){requestTradeQuote();$("tradeMessage").textContent="Stake or settings changed. Waiting for the matching quote before buying.";return;}
+  const summary="Buy ACCU on "+(activeTradeAccount.is_virtual?"DEMO":"REAL")+" account?\nMarket: "+selectedSymbol+"\nGrowth: "+Math.round(rate*100)+"%\nQuoted price: "+currentTradeProposal.askPrice+" "+(activeTradeAccount.currency||"")+"\nStake entered: "+stake;
+  if(!$("oneTapTrading").checked&&!window.confirm((activeTradeAccount.is_virtual?"DEMO TRADE":"REAL-MONEY TRADE")+"\n\n"+summary+"\n\n"+(activeTradeAccount.is_virtual?"Place this demo trade?":"This purchase can lose the full stake. Continue?")))return;
+  $("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Sending Buy request to Deriv…";
+  try{tradeSend({buy:currentTradeProposal.id,price:currentTradeProposal.askPrice,subscribe:1},"buy")}catch(e){$("confirmTradeBuy").disabled=false;$("tradeMessage").textContent=e.message}
+}
+function closeTradeContract(automatic=false){
+  if(!activeContractId||!activeTradeAccount)return;
+  const summary="Close contract "+activeContractId+" on "+(activeTradeAccount.is_virtual?"DEMO":"REAL")+" account?";
+  if(!automatic&&!$("oneTapTrading").checked&&!window.confirm(summary+"\n\nDeriv may return an early-sale value different from the original stake."))return;
+  $("confirmTradeBuy").disabled=true;$("tradeMessage").textContent="Sending close request to Deriv…";
+  try{tradeSend({sell:activeContractId,price:0},"sell")}catch(e){$("confirmTradeBuy").disabled=false;$("tradeMessage").textContent=e.message}
+}
+async function disconnectDeriv(){
+  const appSession=sessionStorage.getItem("deriv_app_session");
+  const headers=appSession?{Authorization:"Bearer "+appSession}:{};
+  await fetch(OAUTH_API+"/api/disconnect",{method:"POST",credentials:"include",headers}).catch(()=>{});
+  sessionStorage.removeItem("deriv_app_session");
+  refreshDerivAccount();
+}
+$("derivLogin").onclick=startDerivLogin;
+$("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);
+$("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").value);
+$("tradeAccountMode").onchange=()=>switchTradeAccountMode($("tradeAccountMode").value);
+$("getTradeQuote").onclick=requestTradeQuote;
+$("confirmTradeBuy").onclick=buyTradeProposal;
+$("tradeStake").addEventListener("input",()=>{currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("confirmTradeBuy").disabled=!!activeContractId;if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);tradeQuoteDebounce=setTimeout(requestTradeQuote,280);});
+$("tradeStake").addEventListener("change",()=>{if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);requestTradeQuote();});
+$("tradeGrowth").addEventListener("change",()=>{
+  const rate=Number($("tradeGrowth").value);
+  requestAccumulatorRateQuote(rate);
+  requestTradeQuote();
+  renderPurposeChartScaffold();
+  syncDerivAccumulatorChart();
+});
+$("tradeTpTarget").addEventListener("input",()=>{if(tpCloseRequested&&Number($("tradeTpTarget").value)<=0)tpCloseRequested=false;});
+$("oneTapTrading").addEventListener("change",()=>{$("tradeMessage").textContent=$("oneTapTrading").checked?"One tap trading enabled. Orders will not ask for confirmation.":"One tap trading disabled. Orders will ask for confirmation.";});
+
+$("derivLogout").onclick=disconnectDeriv;
+$("algoStart").addEventListener("click",startAccumulatorAlgo);
+$("algoStop").addEventListener("click",stopAccumulatorAlgo);
+$("algoRiskMode").addEventListener("change",()=>{const rates=$("algoRiskMode").value==="aggressive"?5:4;$("algoActiveTrackers").textContent=String(rates);});
+loadAlgoContractRecords();renderAlgoDashboard();
+if(new URLSearchParams(location.search).get("connected")==="1"){history.replaceState(null,"",location.pathname);$("accountMessage").textContent="Deriv account authorization completed."; }
+refreshDerivAccount();
+$("connectBtn").onclick=connect;
+$("statsGrowthRate").onchange=renderNativeStats;
+$("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;panel.hidden=!open;$("statsToggle").setAttribute("aria-expanded",String(open));$("statsChevron").textContent=open?"⌃":"⌄";};
+$("symbol").onchange=()=>selectMarket($("symbol").value);
+window.addEventListener("resize",()=>{drawChart();renderPurposeChartScaffold();});setupPurposeChartInteractions();renderNativeStats();renderPurposeChartScaffold();
+connect();
+
+function setTradeTab(mode){const manual=mode==="manual";$("tradePage").classList.toggle("algo-mode-active",!manual);$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
+$("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
+
+function showAppPage(page){const trade=page==="trade";document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
+document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("click",event=>{event.preventDefault();const page=link.dataset.page;showAppPage(page);history.replaceState(null,"",page==="trade"?"#tradePage":page==="markets"?"#marketView":"#homePage");const menu=link.closest("details");if(menu)menu.open=false;}));
+})();
+
+ document.getElementById("toolbarSearch")?.addEventListener("click",()=>{document.getElementById("symbol")?.focus();document.getElementById("marketView")?.scrollIntoView({behavior:"smooth",block:"start"});});
+ document.querySelectorAll(".mode-pill").forEach(button=>button.addEventListener("click",()=>{document.querySelectorAll(".mode-pill").forEach(p=>p.setAttribute("aria-pressed",String(p===button)));}));
+ document.getElementById("balanceCta")?.addEventListener("click",()=>{if(document.getElementById("balanceCta").dataset.connected==="true"){window.open("https://app.deriv.com/cashier/deposit","_blank","noopener,noreferrer");}else{startDerivLogin();}});
+
+ const heroBalance=document.getElementById("heroBalance"),balanceSource=document.getElementById("tradeBalance"),balanceEye=document.getElementById("balanceVisibility");
+ let balanceHidden=false,lastHeroBalance="—";
+ const syncHeroBalance=()=>{const value=(balanceSource?.textContent||"—").trim();if(value&&value!=="—"&&value!=="Connecting…")lastHeroBalance=value;heroBalance.textContent=balanceHidden?"••••••":lastHeroBalance;document.getElementById("heroBalanceCaption").textContent=value==="—"||value==="Connecting…"?"Connect your Deriv account to see your live balance":"Live balance · selected Deriv account";};
+ balanceEye.addEventListener("click",()=>{balanceHidden=!balanceHidden;balanceEye.setAttribute("aria-pressed",String(balanceHidden));balanceEye.setAttribute("aria-label",balanceHidden?"Show balance":"Hide balance");balanceEye.title=balanceHidden?"Show balance":"Hide balance";balanceEye.innerHTML=balanceHidden?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.5-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';syncHeroBalance();});
+ new MutationObserver(syncHeroBalance).observe(balanceSource,{childList:true,characterData:true,subtree:true});syncHeroBalance();
+</script>
+
+<script defer src="/dist/deriv-smartchart.js"></script>
+</body></html>
