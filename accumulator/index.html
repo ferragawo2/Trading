@@ -824,6 +824,21 @@ let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, 
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null;
+function publishTradeChartOverlay(){
+  const position=activeTradeOverlay;
+  const snapshot=position?{
+    contractId:position.contractId,
+    symbol:position.symbol,
+    entrySpot:position.entrySpot,
+    barrier:position.barrier,
+    currentSpot:position.currentSpot,
+    status:position.status,
+    dateStart:position.dateStart,
+    dateExpiry:position.dateExpiry
+  }:null;
+  window.__derivAccumulatorOpenPosition=snapshot;
+  window.dispatchEvent(new CustomEvent("deriv-accumulator-open-position",{detail:snapshot}));
+}
 const chartTickListeners=new Map();
 const chartSubscriptionDisposers=new Map();
 const chartHistoryRequests=new Map();
@@ -1424,6 +1439,26 @@ function requestAccumulatorQuotes(symbol){
   });
   log("Requested Deriv live Accumulator barrier streams for "+symbol+" at 1%, 2%, 3%, 4% and 5%.");
 }
+function requestAccumulatorRateQuote(rate){
+  const selectedRate=Number(rate);
+  if(!selectedSymbol||!growthRates.includes(selectedRate)||!ws||ws.readyState!==WebSocket.OPEN)return;
+  try{
+    const id=send({
+      proposal:1,
+      amount:1,
+      basis:"stake",
+      contract_type:"ACCU",
+      currency:"USD",
+      growth_rate:selectedRate,
+      underlying_symbol:selectedSymbol
+    });
+    barrierData[selectedRate]=barrierData[selectedRate]||{rate:selectedRate,status:"Refreshing selected growth-rate barrier"};
+    barrierRequests[id]=selectedRate;
+    publishChartDiagnostic("growth_rate_quote_requested",selectedSymbol+" · "+Math.round(selectedRate*100)+"%");
+  }catch(error){
+    log("Could not refresh "+Math.round(selectedRate*100)+"% Accumulator barrier: "+error.message);
+  }
+}
 function handleAccumulatorProposal(message){
   const proposal=message.proposal||{};
   if(!Object.prototype.hasOwnProperty.call(barrierRequests,message.req_id))return;
@@ -1439,8 +1474,11 @@ function handleAccumulatorProposal(message){
   item.maximumPayout=numberOrNull(details.maximum_payout);
   item.ticksStayedIn=Array.isArray(details.ticks_stayed_in)?details.ticks_stayed_in.slice():null;
   updateNativeStats(selectedSymbol,rate,details.ticks_stayed_in);
-  item.subscriptionId=message.subscription?.id||null;
-  if(item.subscriptionId&&!barrierSubscriptions.includes(item.subscriptionId))barrierSubscriptions.push(item.subscriptionId);
+  const subscriptionId=message.subscription?.id;
+  if(subscriptionId){
+    item.subscriptionId=subscriptionId;
+    if(!barrierSubscriptions.includes(subscriptionId))barrierSubscriptions.push(subscriptionId);
+  }
   item.status=(item.high!==null&&item.low!==null&&item.high>item.low)?"Live Deriv barrier received":(item.high!==null&&item.low!==null?"Invalid barrier range returned":"Quote received; barrier fields not present");
   item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderPurposeChartScaffold();renderNativeStats();syncDerivAccumulatorChart();
 }
@@ -1563,7 +1601,7 @@ function tradeSend(payload,kind){
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
   if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
-  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
+  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;publishTradeChartOverlay();$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
   $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
   $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
   $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
@@ -1582,9 +1620,9 @@ async function connectTradeAccount(accountId){
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell"){tpCloseRequested=false;$("confirmTradeBuy").disabled=!activeContractId;if(activeContractId)$("confirmTradeBuy").textContent="CLOSE";}return}
       if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
       if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
-      if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").textContent="CLOSE";$("confirmTradeBuy").disabled=!activeContractId;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
-      if(m.msg_type==="sell"&&m.sell){$("tradeMessage").textContent="Deriv confirmed the contract close. Refreshing your next quote…";activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");activeTradeOverlay=null;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("tradeContractId").textContent="—";$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractStatus").textContent="Contract closed";try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()}
-      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");$("tradePnlValue").textContent=c.profit==null?"—":Number(c.profit).toFixed(2)+" "+(c.currency||account.currency||"");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=c.entry_spot==null||c.entry_spot===""?NaN:Number(c.entry_spot),barrier=c.barrier==null||c.barrier===""?NaN:Number(c.barrier),spot=c.current_spot==null||c.current_spot===""?NaN:Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;}const tpTarget=Number($("tradeTpTarget").value);if(!c.is_sold&&activeContractId&&!tpCloseRequested&&Number.isFinite(tpTarget)&&tpTarget>0&&Number(c.profit)>=tpTarget){tpCloseRequested=true;$("tradeMessage").textContent="Take-profit target reached. Closing contract…";closeTradeContract(true);}if(c.is_sold){activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractId").textContent="—";activeTradeOverlay=null;try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()}}
+      if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");activeTradeOverlay={contractId:activeContractId,symbol:selectedSymbol,entrySpot:null,barrier:null,currentSpot:latestTicks[selectedSymbol]?.price??null,status:"OPEN"};publishTradeChartOverlay();$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").textContent="CLOSE";$("confirmTradeBuy").disabled=!activeContractId;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
+      if(m.msg_type==="sell"&&m.sell){$("tradeMessage").textContent="Deriv confirmed the contract close. Refreshing your next quote…";activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");activeTradeOverlay=null;publishTradeChartOverlay();currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("tradeContractId").textContent="—";$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractStatus").textContent="Contract closed";try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()}
+      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;$("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");$("tradePnlValue").textContent=c.profit==null?"—":Number(c.profit).toFixed(2)+" "+(c.currency||account.currency||"");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=c.entry_spot==null||c.entry_spot===""?NaN:Number(c.entry_spot),barrier=c.barrier==null||c.barrier===""?NaN:Number(c.barrier),spot=c.current_spot==null||c.current_spot===""?NaN:Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;publishTradeChartOverlay();}const tpTarget=Number($("tradeTpTarget").value);if(!c.is_sold&&activeContractId&&!tpCloseRequested&&Number.isFinite(tpTarget)&&tpTarget>0&&Number(c.profit)>=tpTarget){tpCloseRequested=true;$("tradeMessage").textContent="Take-profit target reached. Closing contract…";closeTradeContract(true);}if(c.is_sold){activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractId").textContent="—";activeTradeOverlay=null;publishTradeChartOverlay();try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()}}
     };
     socket.onerror=()=>{$("tradeConnectionState").textContent="Trading connection error";$("tradeMessage").textContent="Could not maintain authenticated Deriv connection."};
     socket.onclose=()=>{if(tradingSocket===socket){tradingSocket=null;$("tradeConnectionState").textContent="Account disconnected";$("getTradeQuote").disabled=true;$("confirmTradeBuy").disabled=true}};
@@ -1632,7 +1670,13 @@ $("getTradeQuote").onclick=requestTradeQuote;
 $("confirmTradeBuy").onclick=buyTradeProposal;
 $("tradeStake").addEventListener("input",()=>{currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("confirmTradeBuy").disabled=!!activeContractId;if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);tradeQuoteDebounce=setTimeout(requestTradeQuote,280);});
 $("tradeStake").addEventListener("change",()=>{if(tradeQuoteDebounce)clearTimeout(tradeQuoteDebounce);requestTradeQuote();});
-$("tradeGrowth").addEventListener("change",()=>{requestTradeQuote();renderPurposeChartScaffold();syncDerivAccumulatorChart();});
+$("tradeGrowth").addEventListener("change",()=>{
+  const rate=Number($("tradeGrowth").value);
+  requestAccumulatorRateQuote(rate);
+  requestTradeQuote();
+  renderPurposeChartScaffold();
+  syncDerivAccumulatorChart();
+});
 $("tradeTpTarget").addEventListener("input",()=>{if(tpCloseRequested&&Number($("tradeTpTarget").value)<=0)tpCloseRequested=false;});
 $("oneTapTrading").addEventListener("change",()=>{$("tradeMessage").textContent=$("oneTapTrading").checked?"One tap trading enabled. Orders will not ask for confirmation.":"One tap trading disabled. Orders will ask for confirmation.";});
 
@@ -1648,7 +1692,7 @@ connect();
 
 function setTradeTab(mode){const manual=mode==="manual";$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
 $("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
-$("tradeGrowth").addEventListener("change",()=>{renderPurposeChartScaffold();syncDerivAccumulatorChart();});
+
 function showAppPage(page){const trade=page==="trade";document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("click",event=>{event.preventDefault();const page=link.dataset.page;showAppPage(page);history.replaceState(null,"",page==="trade"?"#tradePage":page==="markets"?"#marketView":"#homePage");const menu=link.closest("details");if(menu)menu.open=false;}));
 })();
