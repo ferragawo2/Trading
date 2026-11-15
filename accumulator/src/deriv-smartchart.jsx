@@ -1,6 +1,6 @@
 import React from 'react';
 import { createRoot } from 'react-dom/client';
-import { SmartChart, setSmartChartsPublicPath } from '@deriv-com/smartcharts-champion';
+import { SmartChart, setSmartChartsPublicPath, ChartSetting, CrosshairToggle, DrawTools } from '@deriv-com/smartcharts-champion';
 import '@deriv-com/smartcharts-champion/dist/smartcharts.css';
 import './deriv-smartchart.css';
 
@@ -12,6 +12,7 @@ function ChartApp() {
     const [chartData, setChartData] = React.useState(() => bridge?.getMetadata?.() || null);
     const [connectionOpen, setConnectionOpen] = React.useState(() => !!bridge?.isConnected?.());
     const [chartReady, setChartReady] = React.useState(false);
+    const [openPosition, setOpenPosition] = React.useState(() => window.__derivAccumulatorOpenPosition || null);
     const [diagnostic, setDiagnostic] = React.useState(() => window.__derivChartDiagnostic || {
         stage: 'waiting_for_history',
         detail: 'Waiting for SmartCharts to request initial history',
@@ -23,11 +24,13 @@ function ChartApp() {
         const updateMetadata = event => setChartData(event.detail || null);
         const updateConnection = event => setConnectionOpen(!!event.detail?.connected);
         const updateDiagnostic = event => setDiagnostic(event.detail || { stage: 'unknown', detail: '' });
+        const updateOpenPosition = event => setOpenPosition(event.detail || null);
 
         window.addEventListener('deriv-accumulator-chart-state', updateState);
         window.addEventListener('deriv-chart-metadata', updateMetadata);
         window.addEventListener('deriv-chart-connection', updateConnection);
         window.addEventListener('deriv-chart-diagnostic', updateDiagnostic);
+        window.addEventListener('deriv-accumulator-open-position', updateOpenPosition);
 
         window.__derivChartSetSymbol = symbol => setChartState(current => ({ ...current, symbol }));
 
@@ -36,6 +39,7 @@ function ChartApp() {
             window.removeEventListener('deriv-chart-metadata', updateMetadata);
             window.removeEventListener('deriv-chart-connection', updateConnection);
             window.removeEventListener('deriv-chart-diagnostic', updateDiagnostic);
+            window.removeEventListener('deriv-accumulator-open-position', updateOpenPosition);
             delete window.__derivChartSetSymbol;
         };
     }, []);
@@ -63,6 +67,37 @@ function ChartApp() {
               barrierDelayMs: 500,
           }
         : undefined;
+
+    // Keep active Accumulator positions visible on the same native chart.
+    const positionBarriers = [];
+    if (openPosition && openPosition.symbol === symbol && !String(openPosition.status || '').includes('SETTLED')) {
+        const entrySpot = Number(openPosition.entrySpot);
+        const contractBarrier = Number(openPosition.barrier);
+        if (Number.isFinite(entrySpot)) {
+            positionBarriers.push({
+                high: entrySpot,
+                low: entrySpot,
+                color: '#f5c451',
+                title: 'OPEN ENTRY',
+                shade: 'NONE_SINGLE',
+                isSingleBarrier: true,
+                draggable: false,
+                useInlineLabel: true,
+            });
+        }
+        if (Number.isFinite(contractBarrier)) {
+            positionBarriers.push({
+                high: contractBarrier,
+                low: contractBarrier,
+                color: '#ef6477',
+                title: 'CONTRACT BARRIER',
+                shade: 'NONE_SINGLE',
+                isSingleBarrier: true,
+                draggable: false,
+                useInlineLabel: true,
+            });
+        }
+    }
 
     if (!chartData?.activeSymbols?.length || !symbol || !bridge) {
         return <div className="deriv-smartchart-loading">Connecting Deriv market data…</div>;
@@ -94,8 +129,14 @@ function ChartApp() {
             unsubscribeQuotes={request => bridge.unsubscribe(request || { symbol, granularity: 0 })}
             accumulatorBarriers={accumulatorBarriers}
             topWidgets={() => <div />}
-            chartControlsWidgets={null}
-            toolbarWidget={() => null}
+            chartControlsWidgets={() => (
+                <>
+                    <CrosshairToggle enabled={true} />
+                    <DrawTools />
+                    <ChartSetting />
+                </>
+            )}
+            barriers={positionBarriers}
             enabledNavigationWidget={!isMobile}
             enabledChartFooter={false}
             isVerticalScrollEnabled={!isMobile}
