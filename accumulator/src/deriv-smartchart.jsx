@@ -88,6 +88,7 @@ function ChartApp() {
                 minimumLeftBars: isMobile ? 3 : undefined,
             }}
             chartData={chartData}
+            feedCall={{ activeSymbols: false, tradingTimes: false }}
             getQuotes={request => bridge.getHistory(request)}
             subscribeQuotes={(request, callback) => bridge.subscribe(request.symbol || symbol, callback)}
             unsubscribeQuotes={request => bridge.unsubscribe(request || { symbol, granularity: 0 })}
@@ -104,9 +105,20 @@ function ChartApp() {
             yAxisMargin={{ top: isMobile ? 76 : 106 }}
             shouldFetchTradingTimes={false}
             clearChart={false}
+            stateChangeListener={(state, option) => {
+                const stateName = typeof state === 'string' ? state : state?.state || state?.status || '';
+                const detail = JSON.stringify({ state: stateName, option: option ?? null });
+                window.__publishDerivChartDiagnostic?.('chart_state_change', detail);
+                if (String(stateName).toUpperCase() === 'READY') {
+                    const readyDetail = 'SmartCharts stateChangeListener reports READY';
+                    setChartReady(true);
+                    setDiagnostic({ stage: 'chart_ready', detail: readyDetail });
+                    window.__publishDerivChartDiagnostic?.('chart_ready', readyDetail);
+                }
+            }}
             chartStatusListener={ready => {
                 if (ready) {
-                    const detail = 'SmartCharts reports chart ready';
+                    const detail = 'SmartCharts chartStatusListener reports chart ready';
                     setChartReady(true);
                     setDiagnostic({ stage: 'chart_ready', detail });
                     window.__publishDerivChartDiagnostic?.('chart_ready', detail);
