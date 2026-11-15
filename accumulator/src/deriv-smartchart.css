@@ -64,19 +64,22 @@
    SmartCharts recalculates these legacy settings menus while live ticks arrive. */
 
 
-/* Pure-black chart canvas and surrounding plot surfaces. */
+/* Pure-black outer chart surface. Leave SmartCharts' internal plot/canvas
+   backgrounds to the chart engine so its price series and overlays remain visible. */
 .deriv-smartchart-mount,
 #derivSmartChartRoot,
 #derivSmartChartRoot .deriv-smartchart-shell,
 #derivSmartChartRoot .smartcharts,
 #derivSmartChartRoot .smartcharts-mobile,
-#derivSmartChartRoot .smartcharts-desktop,
+#derivSmartChartRoot .smartcharts-desktop {
+  background-color: #000 !important;
+}
 #derivSmartChartRoot .cq-context,
 #derivSmartChartRoot .ciq-chart-area,
 #derivSmartChartRoot .ciq-chart,
 #derivSmartChartRoot .chartContainer,
 #derivSmartChartRoot .cq-inchart-subholder {
-  background-color: #000 !important;
+  background-color: transparent !important;
 }
 
 /* The mobile toolbar owns the compact round launcher; its expanded tools
