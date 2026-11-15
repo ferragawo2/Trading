@@ -203,7 +203,6 @@ function ChartApp() {
                     />
                 </ToolbarWidget>
             )}
-            barriers={positionBarriers}
             enabledNavigationWidget={true}
             enabledChartFooter={false}
             isVerticalScrollEnabled={!isMobile}
