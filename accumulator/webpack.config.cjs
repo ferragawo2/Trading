@@ -40,9 +40,12 @@ module.exports = {
     new CopyWebpackPlugin({
       patterns: [
         {
+          // SmartCharts requests these hashed chunks directly from /dist/.
+          // Set the glob context to the package dist folder so CopyWebpackPlugin
+          // writes only each chunk filename into the public dist directory.
           from: path.resolve(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist/*.smartcharts.*'),
-          to: path.resolve(__dirname, 'dist'),
-          noErrorOnMissing: true
+          context: path.resolve(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist'),
+          to: path.resolve(__dirname, 'dist')
         },
         {
           // The Flutter chart engine is loaded at runtime from /dist/chart/.
