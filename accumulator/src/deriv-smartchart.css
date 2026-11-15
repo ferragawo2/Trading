@@ -62,3 +62,28 @@
 
 /* Do not force .ciq-modal or its dropdown to viewport-sized dimensions:
    SmartCharts recalculates these legacy settings menus while live ticks arrive. */
+
+
+/* Pure-black chart canvas and surrounding plot surfaces. */
+.deriv-smartchart-mount,
+#derivSmartChartRoot,
+#derivSmartChartRoot .deriv-smartchart-shell,
+#derivSmartChartRoot .smartcharts,
+#derivSmartChartRoot .smartcharts-mobile,
+#derivSmartChartRoot .smartcharts-desktop,
+#derivSmartChartRoot .cq-context,
+#derivSmartChartRoot .ciq-chart-area,
+#derivSmartChartRoot .ciq-chart,
+#derivSmartChartRoot .chartContainer,
+#derivSmartChartRoot .cq-inchart-subholder {
+  background-color: #000 !important;
+}
+
+/* The mobile toolbar owns the compact round launcher; its expanded tools
+   stay grouped with the interval/timeframe selector. */
+#derivSmartChartRoot .sc-toolbar-widget--mobile {
+  z-index: 120;
+}
+#derivSmartChartRoot .sc-toolbar-widget--mobile .sc-toolbar-widget__items {
+  z-index: 121;
+}
