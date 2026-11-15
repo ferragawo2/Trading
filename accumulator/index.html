@@ -827,6 +827,12 @@ const chartStreamRequests=new Map();
 const chartStreamIds=new Map();
 let chartActiveSymbols=[],chartTradingTimes={};
 
+function publishChartDiagnostic(stage,detail=""){
+  const state={stage,detail:String(detail||""),timestamp:Date.now()};
+  window.__derivChartDiagnostic=state;
+  window.dispatchEvent(new CustomEvent("deriv-chart-diagnostic",{detail:state}));
+}
+
 function normalizeChartActiveSymbols(rows){
   return (Array.isArray(rows)?rows:[]).map(item=>{
     const symbol=item.underlying_symbol||item.symbol;
@@ -890,6 +896,7 @@ window.__derivChartBridge={
   getHistory:request=>new Promise((resolve,reject)=>{
     const symbol=request?.symbol||selectedSymbol;
     if(!symbol){reject(new Error("SmartCharts requested history without a symbol"));return;}
+    publishChartDiagnostic("requesting_history",symbol+" · waiting for ticks_history response");
     const payload={
       ticks_history:symbol,
       style:"ticks",
@@ -905,11 +912,14 @@ window.__derivChartBridge={
     try{reqId=send(payload);}catch(error){reject(error);return;}
     const timer=setTimeout(()=>{
       chartHistoryRequests.delete(reqId);
-      reject(new Error("Deriv did not return tick history for "+symbol+" within 12 seconds"));
+      const error="No ticks_history response for "+symbol+" within 12 seconds";
+      publishChartDiagnostic("history_timeout",error);
+      reject(new Error(error));
     },12000);
     chartHistoryRequests.set(reqId,{symbol,resolve,reject,timer});
   }),
   subscribe:(symbol,callback)=>{
+    publishChartDiagnostic("subscribing_ticks",symbol+" · requesting live tick stream");
     if(!chartTickListeners.has(symbol))chartTickListeners.set(symbol,new Set());
     const listeners=chartTickListeners.get(symbol);
     listeners.add(callback);
@@ -1031,7 +1041,9 @@ function connect(){
       const chartHistory=chartHistoryRequests.get(m.req_id);
       if(chartHistory){
         clearTimeout(chartHistory.timer);chartHistoryRequests.delete(m.req_id);
-        chartHistory.reject(new Error(m.error.message||m.error.code||"Deriv chart history request failed"));
+        const error=m.error.message||m.error.code||"Deriv chart history request failed";
+        publishChartDiagnostic("history_error",error);
+        chartHistory.reject(new Error(error));
       }
       const chartStream=chartStreamRequests.get(m.req_id);
       if(chartStream){
@@ -1058,6 +1070,7 @@ function connect(){
       chartHistoryRequests.delete(requestId);
     });
     window.dispatchEvent(new CustomEvent("deriv-chart-connection",{detail:{connected:false}}));
+    publishChartDiagnostic("market_socket_closed","Deriv public market-data socket closed");
     setStatus("Disconnected");
     log("WebSocket closed (code "+e.code+(e.reason?"; "+e.reason:"")+").");
     if(!manualClose)scheduleReconnect();
@@ -1136,13 +1149,12 @@ function handleHistory(m){
   if(pending){
     clearTimeout(pending.timer);chartHistoryRequests.delete(m.req_id);
     pending.resolve({
-      quotes:rows.map(point=>({
-        Date:String(point.time),
-        Close:point.price,
-        DT:new Date(point.time*1000)
-      })),
-      meta:{symbol,granularity:0,delay_amount:Number(m.pip_size)||0}
+      history:{
+        prices:rows.map(point=>point.price),
+        times:rows.map(point=>point.time)
+      }
     });
+    publishChartDiagnostic("history_received",symbol+" · "+rows.length+" ticks");
   }
   if(symbol===selectedSymbol){
     priceHistory[symbol]=rows.map(point=>point.price).slice(-120);
