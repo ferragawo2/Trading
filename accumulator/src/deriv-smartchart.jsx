@@ -186,13 +186,9 @@ function ChartApp() {
                 return { height, percent: height / Math.max(1, chartHeight) };
             }}
             topWidgets={() => <div />}
-            chartControlsWidgets={() => (
-                <>
-                    <ChartSetting />
-                    <ChartSize />
-                    <Share />
-                </>
-            )}
+            // Keep every chart action inside the single round mobile toolbar.
+            // Do not render SmartCharts' separate chart-controls toolbar.
+            chartControlsWidgets={() => <></>}
             toolbarWidget={() => (
                 <ToolbarWidget position="bottom">
                     <ChartMode
@@ -202,6 +198,9 @@ function ChartApp() {
                     <CrosshairToggle />
                     <DrawTools />
                     <StudyLegend />
+                    <ChartSetting />
+                    <ChartSize />
+                    <Share />
                 </ToolbarWidget>
             )}
             enabledNavigationWidget={true}
