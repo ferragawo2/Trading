@@ -11,11 +11,21 @@ module.exports = {
     publicPath: '/dist/',
     clean: true
   },
-  resolve: { extensions: ['.js', '.jsx'] },
+  resolve: {
+    extensions: ['.js', '.jsx'],
+    // The Quill UI stylesheet exists in the installed package but is not exported
+    // as a package subpath. Resolve that exact import straight to its installed file.
+    alias: {
+      '@deriv-com/quill-ui/dist/assets/quill-ui.css$': path.resolve(
+        __dirname,
+        'node_modules/@deriv-com/quill-ui/dist/assets/quill-ui.css'
+      )
+    }
+  },
   module: {
     rules: [
       {
-        test: /\.jsx?$/,
+        test: /\\.jsx?$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
@@ -27,9 +37,9 @@ module.exports = {
           }
         }
       },
-      { test: /\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] },
+      { test: /\\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] },
       {
-        test: /\.(woff2?|ttf|eot|png|jpe?g|gif|svg)$/i,
+        test: /\\.(woff2?|ttf|eot|png|jpe?g|gif|svg)$/i,
         type: 'asset/resource',
         generator: { filename: 'assets/[name][contenthash:6][ext]' }
       }
@@ -41,15 +51,12 @@ module.exports = {
       patterns: [
         {
           // SmartCharts requests these hashed chunks directly from /dist/.
-          // Set the glob context to the package dist folder so CopyWebpackPlugin
-          // writes only each chunk filename into the public dist directory.
           from: path.resolve(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist/*.smartcharts.*'),
           context: path.resolve(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist'),
           to: path.resolve(__dirname, 'dist')
         },
         {
           // The Flutter chart engine is loaded at runtime from /dist/chart/.
-          // Publishing only the JS chunks leaves Flutter waiting forever for its engine.
           from: path.resolve(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist/chart'),
           to: path.resolve(__dirname, 'dist/chart'),
           noErrorOnMissing: true
