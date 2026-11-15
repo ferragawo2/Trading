@@ -669,6 +669,19 @@ body.trade-active{padding-bottom:0!important}
   body.trade-active #tradePage #executionPanel .trade-buy-pill{width:100%!important;min-width:0!important;padding:9px 16px!important}
   body.trade-active #tradePage #executionPanel .trade-summary-tp input{font-size:13px!important}
 }
+/* One consistent mobile scroll container for Home, Trade and Markets. */
+@media(max-width:800px){
+ html,body{height:100%;min-height:0;overflow:hidden!important}
+ body{padding-bottom:0!important}
+ main.wrap{
+  height:100dvh;height:100vh;min-height:0;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior-y:contain;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y;
+  padding-bottom:96px
+ }
+}
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -1122,7 +1135,14 @@ function handleHistory(m){
     .filter(point=>Number.isFinite(point.time)&&Number.isFinite(point.price));
   if(pending){
     clearTimeout(pending.timer);chartHistoryRequests.delete(m.req_id);
-    pending.resolve({history:{prices:rows.map(point=>point.price),times:rows.map(point=>point.time)}});
+    pending.resolve({
+      quotes:rows.map(point=>({
+        Date:String(point.time),
+        Close:point.price,
+        DT:new Date(point.time*1000)
+      })),
+      meta:{symbol,granularity:0,delay_amount:Number(m.pip_size)||0}
+    });
   }
   if(symbol===selectedSymbol){
     priceHistory[symbol]=rows.map(point=>point.price).slice(-120);
@@ -1141,7 +1161,7 @@ function handleTick(t,m){
   if(!key||!marketBySymbol[key])return;
   latestTicks[key]={price,epoch};tickCounts[key]=(tickCounts[key]||0)+1;
   const quoteEpoch=Number.isFinite(epoch)?epoch:Date.now()/1000;
-  const chartQuote={Date:new Date(quoteEpoch*1000).toISOString(),Close:price,tick:t,DT:new Date(quoteEpoch*1000)};
+  const chartQuote={Date:String(quoteEpoch),Close:price,tick:t,DT:new Date(quoteEpoch*1000)};
   const chartEntry=chartStreamIds.get("symbol:"+key);
   const ownsChartStream=chartEntry?.subscriptionId&&String(chartEntry.subscriptionId)===String(m.subscription?.id);
   const canUseSharedStream=chartEntry&&!chartEntry.subscriptionId&&!m.echo_req?.ticks_history;
