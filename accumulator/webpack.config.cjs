@@ -25,7 +25,7 @@ module.exports = {
   module: {
     rules: [
       {
-        test: /\\.jsx?$/,
+        test: /\.jsx?$/,
         exclude: /node_modules/,
         use: {
           loader: 'babel-loader',
@@ -37,9 +37,9 @@ module.exports = {
           }
         }
       },
-      { test: /\\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] },
+      { test: /\.css$/, use: [MiniCssExtractPlugin.loader, 'css-loader'] },
       {
-        test: /\\.(woff2?|ttf|eot|png|jpe?g|gif|svg)$/i,
+        test: /\.(woff2?|ttf|eot|png|jpe?g|gif|svg)$/i,
         type: 'asset/resource',
         generator: { filename: 'assets/[name][contenthash:6][ext]' }
       }
