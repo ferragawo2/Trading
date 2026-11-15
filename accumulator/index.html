@@ -830,6 +830,9 @@ let chartActiveSymbols=[],chartTradingTimes={};
 function publishChartDiagnostic(stage,detail=""){
   const state={stage,detail:String(detail||""),timestamp:Date.now()};
   window.__derivChartDiagnostic=state;
+  const events=window.__derivChartDiagnosticEvents||(window.__derivChartDiagnosticEvents=[]);
+  events.push(state);
+  if(events.length>100)events.splice(0,events.length-100);
   window.dispatchEvent(new CustomEvent("deriv-chart-diagnostic",{detail:state}));
 }
 
@@ -1654,12 +1657,11 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
  const syncHeroBalance=()=>{const value=(balanceSource?.textContent||"—").trim();if(value&&value!=="—"&&value!=="Connecting…")lastHeroBalance=value;heroBalance.textContent=balanceHidden?"••••••":lastHeroBalance;document.getElementById("heroBalanceCaption").textContent=value==="—"||value==="Connecting…"?"Connect your Deriv account to see your live balance":"Live balance · selected Deriv account";};
  balanceEye.addEventListener("click",()=>{balanceHidden=!balanceHidden;balanceEye.setAttribute("aria-pressed",String(balanceHidden));balanceEye.setAttribute("aria-label",balanceHidden?"Show balance":"Hide balance");balanceEye.title=balanceHidden?"Show balance":"Hide balance";balanceEye.innerHTML=balanceHidden?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.5-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';syncHeroBalance();});
  new MutationObserver(syncHeroBalance).observe(balanceSource,{childList:true,characterData:true,subtree:true});syncHeroBalance();
-</script><div id="issueFinderModal" hidden role="dialog" aria-modal="true" aria-labelledby="issueFinderTitle" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);padding:18px;display:grid;place-items:center"><section style="width:min(720px,100%);max-height:88vh;overflow:auto;background:#080808;border:1px solid #444;border-radius:18px;padding:18px;box-shadow:0 20px 80px #000"><div class="row between"><h2 id="issueFinderTitle" style="margin:0">LIVE ISSUE FINDER</h2><button class="secondary" id="issueFinderClose" type="button">Close</button></div><p class="muted" style="font-size:11px">Checks the live Deriv public feed, market catalogue, tick stream, native canvas renderer and account connection. Errors are timestamped with the failing check and source location when the browser provides it.</p><div class="row" style="margin:12px 0"><button id="issueFinderRun" type="button">Run full check</button><span class="pill" id="issueFinderState">Not checked</span></div><div id="issueFinderSummary" class="note" aria-live="polite">Run the check to identify the first failing component.</div><div id="issueFinderLog" class="log" style="height:min(46vh,390px);white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"><div>Issue finder ready.</div></div></section></div><script>
+</script><div id="issueFinderModal" hidden role="dialog" aria-modal="true" aria-labelledby="issueFinderTitle" style="position:fixed;inset:0;z-index:9999;background:rgba(0,0,0,.82);padding:18px;display:grid;place-items:center"><section style="width:min(720px,100%);max-height:88vh;overflow:auto;background:#080808;border:1px solid #444;border-radius:18px;padding:18px;box-shadow:0 20px 80px #000"><div class="row between"><h2 id="issueFinderTitle" style="margin:0">LIVE ISSUE FINDER</h2><button class="secondary" id="issueFinderClose" type="button">Close</button></div><p class="muted" style="font-size:11px">Checks the actual SmartCharts startup stages (history request/response, Flutter runtime assets, live ticks and chart-ready callback), plus the Deriv market feed and page layout. It does not place trades.</p><div class="row" style="margin:12px 0"><button id="issueFinderRun" type="button">Run full check</button><button id="issueFinderCopy" class="secondary" type="button" disabled>Copy diagnostic report</button><span class="pill" id="issueFinderState">Not checked</span></div><div id="issueFinderSummary" class="note" aria-live="polite">Run the check to locate the first failing chart stage.</div><div id="issueFinderLog" class="log" style="height:min(46vh,390px);white-space:pre-wrap;overflow-wrap:anywhere" aria-live="polite"><div>Issue finder ready.</div></div></section></div><script>
 (() => {
- const $=id=>document.getElementById(id), entries=[], max=120;
- const stamp=()=>new Date().toLocaleTimeString();
+ const $=id=>document.getElementById(id),entries=[],max=180;
  function record(level,area,message,extra=""){
-   const item={time:new Date().toISOString(),level,area,message:String(message||"").slice(0,900),extra:String(extra||"").slice(0,900)};
+   const item={time:new Date().toISOString(),level,area,message:String(message||"").slice(0,1200),extra:String(extra||"").slice(0,1200)};
    entries.unshift(item);if(entries.length>max)entries.pop();render();
  }
  function render(){
@@ -1667,12 +1669,29 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
    box.replaceChildren();
    entries.forEach(e=>{const row=document.createElement("div");row.style.borderBottom="1px solid #292929";row.style.padding="5px 0";row.textContent="["+e.time+"] ["+e.level+"] ["+e.area+"] "+e.message+(e.extra?" · "+e.extra:"");box.append(row);});
  }
+ function reportText(){
+   const diagnostics=window.__derivChartDiagnosticEvents||[];
+   return [
+     "DERIV ACCUMULATOR ISSUE FINDER",
+     "Generated: "+new Date().toISOString(),
+     "Page: "+location.href,
+     "Selected symbol: "+(window.__derivAccumulatorChartState?.symbol||$("symbol")?.value||"unknown"),
+     "SmartCharts latest stage: "+JSON.stringify(window.__derivChartDiagnostic||null),
+     "SmartCharts event timeline:",
+     ...diagnostics.map(e=>new Date(e.timestamp).toISOString()+" ["+e.stage+"] "+(e.detail||"")),
+     "",
+     "ISSUE FINDER LOG:",
+     ...entries.slice().reverse().map(e=>"["+e.time+"] ["+e.level+"] ["+e.area+"] "+e.message+(e.extra?" · "+e.extra:""))
+   ].join("\n");
+ }
  window.addEventListener("error",e=>record("ERROR","browser",e.message||"Resource/script error",(e.filename||"")+" : "+(e.lineno||"?")+":"+(e.colno||"?")));
  window.addEventListener("unhandledrejection",e=>record("ERROR","promise",e.reason?.stack||e.reason?.message||String(e.reason)));
- window.addEventListener("deriv-chart-connection",e=>record(e.detail?.connected?"OK":"ERROR","chart websocket",e.detail?.connected?"WebSocket opened":"WebSocket closed or errored"));
+ window.addEventListener("deriv-chart-connection",e=>record(e.detail?.connected?"OK":"ERROR","chart websocket",e.detail?.connected?"App market WebSocket opened":"App market WebSocket closed or errored"));
+ window.addEventListener("deriv-chart-diagnostic",e=>record(e.detail?.stage==="history_error"||e.detail?.stage==="history_timeout"?"ERROR":"INFO","SmartCharts "+(e.detail?.stage||"event"),e.detail?.detail||""));
+ window.addEventListener("deriv-chart-ready",e=>record("OK","SmartCharts engine",e.detail?.detail||"Chart-ready callback fired"));
  const nativeConsoleError=console.error.bind(console);
  console.error=(...args)=>{record("ERROR","console",args.map(a=>a?.stack||a?.message||String(a)).join(" "));nativeConsoleError(...args);};
- function wait(ms){return new Promise(resolve=>setTimeout(resolve,ms));}
+
  async function probePublicFeed(){
    return new Promise((resolve,reject)=>{
      let socket,done=false;
@@ -1691,30 +1710,93 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
      };
    });
  }
+ async function probeAsset(path){
+   const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),8000);
+   try{
+     const response=await fetch(path,{method:"HEAD",cache:"no-store",signal:controller.signal});
+     if(!response.ok)throw new Error(path+" returned HTTP "+response.status);
+     return {path,status:response.status,contentLength:response.headers.get("content-length")||"not provided"};
+   }finally{clearTimeout(timer);}
+ }
  async function run(){
-   const state=$("issueFinderState"),summary=$("issueFinderSummary"),runButton=$("issueFinderRun");
-   entries.length=0;render();runButton.disabled=true;state.textContent="Checking…";summary.textContent="Running diagnostics. This does not place trades or access account credentials.";
+   const state=$("issueFinderState"),summary=$("issueFinderSummary"),runButton=$("issueFinderRun"),copyButton=$("issueFinderCopy");
+   entries.length=0;render();runButton.disabled=true;copyButton.disabled=true;state.textContent="Checking…";
+   summary.textContent="Checking the chart itself, not just the market feed. This does not place trades.";
    const checks=[];
    const check=async(name,fn)=>{try{const value=await fn();checks.push({name,ok:true,value});record("OK",name,typeof value==="string"?value:JSON.stringify(value));}catch(error){checks.push({name,ok:false,error:error.message||String(error)});record("FAIL",name,error.message||String(error),error.stack||"");}};
-   await check("Chart workspace",async()=>{const wrap=$("nativeChartWrap");const root=$("derivSmartChartRoot");if(!wrap||wrap.clientWidth<100||wrap.clientHeight<180||!root)throw Error("Deriv SmartCharts workspace has collapsed or is missing");return "Deriv SmartCharts mount is present";});
-   await check("Public Deriv WebSocket + API",probePublicFeed);
-   await check("Market feed freshness",async()=>{const count=Number($("tickCount")?.textContent||0);const tick=$("lastTick")?.textContent||"—";if(!count||tick==="—")throw Error("No live ticks have been received by the main market feed in this page session");return count+" selected-market ticks; last tick "+tick;});
-   await check("Market catalogue",async()=>{const count=Number($("marketCount")?.textContent||0);if(!count)throw Error("No Accumulator-compatible synthetic markets are loaded");return count+" markets loaded";});
-   await check("Account trading socket",async()=>{if(!window.tradingSocket && !document.getElementById("tradeConnectionState")?.textContent?.includes("Connected"))throw Error($("tradeConnectionState")?.textContent||"Trading account socket is not connected; connect Deriv account to test authenticated trading");return $("tradeConnectionState")?.textContent||"Account socket connected";});
+   await check("SmartCharts JavaScript bundle",()=>probeAsset("/dist/deriv-smartchart.js"));
+   await check("Flutter chart engine JavaScript",()=>probeAsset("/dist/chart/main.dart.js"));
+   await check("Flutter CanvasKit runtime",()=>probeAsset("/dist/chart/canvaskit/canvaskit.wasm"));
+   await check("Chart workspace dimensions",async()=>{
+     const wrap=$("nativeChartWrap"),root=$("derivSmartChartRoot");
+     if(!wrap||!root)throw Error("SmartCharts mount/root missing from page");
+     const rect=root.getBoundingClientRect();
+     if(rect.width<100||rect.height<180)throw Error("Chart root collapsed: "+Math.round(rect.width)+"×"+Math.round(rect.height));
+     return Math.round(rect.width)+"×"+Math.round(rect.height)+" px";
+   });
+   await check("Chart symbol metadata",async()=>{
+     const data=window.__derivChartBridge?.getMetadata?.(),symbol=window.__derivAccumulatorChartState?.symbol||$("symbol")?.value;
+     const list=data?.activeSymbols||[];
+     if(!symbol)throw Error("No selected market symbol");
+     if(!list.some(item=>item.symbol===symbol))throw Error("Selected symbol "+symbol+" is missing from SmartCharts activeSymbols metadata ("+list.length+" symbols supplied)");
+     if(!data?.tradingTimes||!data.tradingTimes[symbol])throw Error("Trading-time metadata missing for "+symbol);
+     return symbol+"; active symbols="+list.length+"; trading-time entry present";
+   });
+   await check("SmartCharts history-to-engine lifecycle",async()=>{
+     const events=window.__derivChartDiagnosticEvents||[];
+     const stages=events.map(e=>e.stage);
+     if(stages.includes("chart_ready"))return "Chart-ready callback received";
+     const failure=events.slice().reverse().find(e=>["history_error","history_timeout","market_socket_closed"].includes(e.stage));
+     if(failure)throw Error(failure.stage+": "+failure.detail);
+     if(stages.includes("history_received"))throw Error("Deriv history arrived, but SmartCharts never reported chart-ready. Failure is after history response: chart engine handoff/render initialization.");
+     if(stages.includes("requesting_history"))throw Error("SmartCharts requested history but no successful history response was recorded. Check the request/API response shown in the event timeline.");
+     if(stages.includes("subscribing_ticks"))throw Error("Live subscription started but no history-received or chart-ready event exists. Initial history lifecycle did not complete.");
+     throw Error("No SmartCharts history lifecycle events recorded. The React chart bundle may not have mounted or ChartStore did not initialize.");
+   });
+   await check("Main market tick feed",async()=>{
+     const count=Number($("tickCount")?.textContent||0),tick=$("lastTick")?.textContent||"—";
+     if(!count||tick==="—")throw Error("No live ticks received by the main market feed in this page session");
+     return count+" selected-market ticks; last tick "+tick;
+   });
+   await check("Accumulator proposal/barrier",async()=>{
+     const symbol=window.__derivAccumulatorChartState?.symbol;
+     const barrier=window.__derivAccumulatorChartState?.barrier;
+     if(!symbol)throw Error("No selected Accumulator symbol for barrier state");
+     if(!barrier)throw Error("No valid proposal barrier currently available for selected growth rate");
+     return "High "+barrier.high+"; low "+barrier.low+"; growth rate "+window.__derivAccumulatorChartState.rate;
+   });
+   await check("Deriv public API catalogue",probePublicFeed);
+   await check("Account trading socket (separate from chart)",async()=>{
+     const text=$("tradeConnectionState")?.textContent||"";
+     if(!text.includes("Connected")&&!text.includes("Authorized"))throw Error(text||"Not connected; this is separate from chart initialization");
+     return text;
+   });
    const failures=checks.filter(x=>!x.ok);
    state.textContent=failures.length?failures.length+" issue(s) found":"Checks passed";
-   summary.textContent=failures.length?"First failure: "+failures[0].name+" — "+failures[0].error:"All available checks passed. Account-specific checks depend on an authorized Deriv login.";
+   const chartFailure=checks.find(x=>!x.ok&&x.name.includes("SmartCharts"));
+   summary.textContent=chartFailure?"Chart diagnosis: "+chartFailure.name+" — "+chartFailure.error:
+      failures.length?"Other failure: "+failures[0].name+" — "+failures[0].error:
+      "All checked stages passed. If the spinner remains, share the full report for further tracing.";
    record(failures.length?"FAIL":"OK","RESULT",failures.length+" failing check(s) out of "+checks.length);
-   runButton.disabled=false;
+   runButton.disabled=false;copyButton.disabled=false;
+   window.__issueFinderLatestReport=reportText();
  }
  $("issueFinderOpen")?.addEventListener("click",()=>{$("issueFinderModal").hidden=false;});
  $("issueFinderClose")?.addEventListener("click",()=>{$("issueFinderModal").hidden=true;});
  $("issueFinderModal")?.addEventListener("click",e=>{if(e.target===$("issueFinderModal"))$("issueFinderModal").hidden=true;});
  $("issueFinderRun")?.addEventListener("click",run);
+ $("issueFinderCopy")?.addEventListener("click",async()=>{
+   const text=reportText();
+   try{await navigator.clipboard.writeText(text);record("OK","report","Diagnostic report copied. Paste it into ChatGPT.");}
+   catch(error){
+     const area=document.createElement("textarea");area.value=text;area.style.position="fixed";area.style.opacity="0";document.body.append(area);area.select();
+     const copied=document.execCommand("copy");area.remove();
+     record(copied?"OK":"ERROR","report",copied?"Diagnostic report copied. Paste it into ChatGPT.":"Copy failed; select and copy the visible log.");
+   }
+ });
  document.addEventListener("keydown",e=>{if(e.key==="Escape"&&$("issueFinderModal")&&!$("issueFinderModal").hidden)$("issueFinderModal").hidden=true;});
- record("INFO","issue finder","Diagnostic capture enabled on this page");
-})();
-</script>
+ record("INFO","issue finder","Chart lifecycle diagnostics enabled");
+})();</script>
 
 <script defer src="/dist/deriv-smartchart.js"></script>
 </body></html>
