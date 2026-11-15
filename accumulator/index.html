@@ -1203,7 +1203,46 @@ function connect(){
   $("marketGrid").innerHTML='<div class="metric"><small>MARKET DISCOVERY</small><strong>Requesting live catalogue…</strong></div>';
   $("marketCount").textContent="—";$("liveCount").textContent="0";$("price").textContent="—";$("lastTick").textContent="—";$("tickCount").textContent="0";
   setStatus("Connecting…"); log("Opening Deriv public market-data WebSocket.");
-  try{ws=new WebSocket(PUBLIC_WS);}catch(e){setStatus("Connection failed");log("Could not create WebSocket: "+e.message);scheduleReconnect();return;}
+  try{ws=new WebSocket(PUBLIC_WS);}catch(e){setStatus("Connection failed");log("Could not create WebSocket: "+e.message);scheduleRe// Recover chart and contract overlays after the browser/app has been backgrounded.
+let lastChartResumeAt=0;
+function resumeDerivChart(reason){
+  if(document.visibilityState==="hidden")return;
+  const now=Date.now();
+  if(now-lastChartResumeAt<1800)return;
+  lastChartResumeAt=now;
+  publishChartDiagnostic("app_resumed",reason||"page became active");
+  if(ws&&ws.readyState===WebSocket.OPEN){
+    if(selectedSymbol){
+      requestHistory(selectedSymbol);
+      requestAccumulatorQuotes(selectedSymbol);
+      const latest=latestTicks[selectedSymbol];
+      if(latest&&activeTradeOverlay&&activeTradeOverlay.symbol===selectedSymbol){
+        activeTradeOverlay.currentSpot=latest.price;
+        activeTradeOverlay.spot=latest.price;
+        activeTradeOverlay.currentSpotTime=latest.epoch;
+        activeTradeOverlay.spotEpoch=latest.epoch;
+      }
+      syncDerivAccumulatorChart();
+      drawChart();
+    }
+  }else if(!manualClose){
+    scheduleReconnect();
+  }
+  // Ask Deriv for an authoritative snapshot of the still-open contract.
+  // This is deliberately a one-shot request, so it cannot create a duplicate stream.
+  if(activeContractId&&tradingSocket&&tradingSocket.readyState===WebSocket.OPEN){
+    try{tradeSend({proposal_open_contract:1,contract_id:activeContractId},"contract_resume");}
+    catch(error){log("Could not refresh open contract after app resume: "+error.message);}
+  }
+  publishTradeChartOverlay();
+}
+document.addEventListener("visibilitychange",()=>{
+  if(document.visibilityState==="visible")resumeDerivChart("visibilitychange");
+});
+window.addEventListener("pageshow",()=>resumeDerivChart("pageshow"));
+window.addEventListener("focus",()=>resumeDerivChart("window focus"));
+
+connect();return;}
   ws.onopen=()=>{
     reconnectDelay=1500;setStatus("Connected · loading markets",true);log("Connected to Deriv public endpoint.");
     window.dispatchEvent(new CustomEvent("deriv-chart-connection",{detail:{connected:true}}));
