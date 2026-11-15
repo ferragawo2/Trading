@@ -45,8 +45,16 @@ module.exports = {
           noErrorOnMissing: true
         },
         {
+          // The Flutter chart engine is loaded at runtime from /dist/chart/.
+          // Publishing only the JS chunks leaves Flutter waiting forever for its engine.
+          from: path.resolve(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist/chart'),
+          to: path.resolve(__dirname, 'dist/chart'),
+          noErrorOnMissing: true
+        },
+        {
+          // Flutter receives assetBase='/dist/', so its assets must live at /dist/assets/.
           from: path.resolve(__dirname, 'node_modules/@deriv-com/smartcharts-champion/dist/chart/assets'),
-          to: path.resolve(__dirname, 'assets'),
+          to: path.resolve(__dirname, 'dist/assets'),
           noErrorOnMissing: true
         }
       ]
