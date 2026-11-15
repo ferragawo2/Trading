@@ -151,7 +151,11 @@
 }
 body.trade-active #home{display:none!important}
 body.trade-active #tradePage{padding-top:0}
-body.trade-active .wrap{max-width:none;width:100%;padding:0 12px 28px}
+body.trade-active .wrap{
+ max-width:none;width:100%;height:100vh;height:100dvh;min-height:0;
+ padding:0 12px 28px;overflow:auto;overscroll-behavior-y:contain;
+ -webkit-overflow-scrolling:touch;touch-action:pan-y
+}
 body.trade-active #tradePage .trade-tabs{width:max-content;max-width:100%;margin-left:auto;margin-right:auto}
 body.trade-active #tradePage .deriv-chart-card{
  position:relative;height:80vh;height:80dvh;min-height:440px;max-height:1000px;
@@ -167,7 +171,7 @@ body.trade-active #tradePage #nativeChartHost{width:100%;height:100%;min-height:
 body.trade-active #tradePage .deriv-chart-card>p{display:none}
 body.trade-active #tradePage #executionPanel{margin-top:18px}
 @media(max-width:600px){
- body.trade-active .wrap{padding-left:0;padding-right:0}
+ body.trade-active .wrap{padding-left:0;padding-right:0;overflow:auto}
  body.trade-active #tradePage .trade-tabs{margin-bottom:6px}
  body.trade-active #tradePage .deriv-chart-card{height:80vh;height:80dvh;min-height:420px}
  body.trade-active #tradePage .deriv-chart-card>.row:nth-of-type(2){left:6px;right:6px;top:6px}
