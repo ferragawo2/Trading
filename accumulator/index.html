@@ -825,14 +825,14 @@ let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={},
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
 function publishTradeChartOverlay(){
-  if(activeTradeOverlay)lastTradeChartPosition={...activeTradeOverlay};
-  const position=activeTradeOverlay||lastTradeChartPosition;
+  const position=activeTradeOverlay;
   const snapshot={
     position:position?{
       contractId:position.contractId,
       symbol:position.symbol,
       rate:position.rate,
       entrySpot:position.entrySpot,
+      entrySpotTime:position.entrySpotTime,
       barrier:position.barrier,
       highBarrier:position.highBarrier,
       lowBarrier:position.lowBarrier,
@@ -840,11 +840,17 @@ function publishTradeChartOverlay(){
       spotEpoch:position.spotEpoch,
       barrierEpoch:position.barrierEpoch,
       currentSpot:position.currentSpot,
+      currentSpotTime:position.currentSpotTime,
+      profit:position.profit,
+      currency:position.currency,
+      fractionalDigits:position.fractionalDigits,
+      isSold:position.isSold,
       status:position.status,
       dateStart:position.dateStart,
       dateExpiry:position.dateExpiry
     }:null,
-    contractInfo:window.__derivAccumulatorContractInfo||null
+    contractInfo:window.__derivAccumulatorContractInfo||null,
+    closedBarrier:window.__derivAccumulatorClosedBarriers||null
   };
   window.__derivAccumulatorOpenPosition=snapshot;
   window.dispatchEvent(new CustomEvent("deriv-accumulator-open-position",{detail:snapshot}));
@@ -1148,7 +1154,12 @@ function syncDerivAccumulatorChart(){
       activeTradeOverlay.highBarrier=tradeBarrier.highDisplay||String(tradeBarrier.high);
       activeTradeOverlay.lowBarrier=tradeBarrier.lowDisplay||String(tradeBarrier.low);
       activeTradeOverlay.spot=tradeSpot;
+
       activeTradeOverlay.spotEpoch=tradeEpoch;
+
+      activeTradeOverlay.currentSpot=tradeSpot;
+
+      activeTradeOverlay.currentSpotTime=tradeEpoch;
       activeTradeOverlay.barrierEpoch=Number(tradeBarrier.lastTickEpoch??tradeBarrier.spotTime??tradeEpoch);
       publishTradeChartOverlay();
     }
@@ -1750,7 +1761,7 @@ function tradeSend(payload,kind){
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
   if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
-  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;lastTradeChartPosition=null;window.__derivAccumulatorContractInfo=null;publishTradeChartOverlay();$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
+  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;lastTradeChartPosition=null;window.__derivAccumulatorContractInfo=null;window.__derivAccumulatorClosedBarriers=null;publishTradeChartOverlay();$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
   $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
   $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
   $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
@@ -1771,6 +1782,7 @@ async function connectTradeAccount(accountId){
       if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");const tradeRate=Number($("tradeGrowth").value),tradeBarrier=barrierData[tradeRate]||{},tradeTick=latestTicks[selectedSymbol];
         window.__derivAccumulatorContractInfo=null;
+        window.__derivAccumulatorClosedBarriers=null;
         lastTradeChartPosition=null;
         activeTradeOverlay={
           contractId:activeContractId,symbol:selectedSymbol,rate:tradeRate,
@@ -1783,11 +1795,88 @@ async function connectTradeAccount(accountId){
           currentSpot:tradeTick?.price??null,status:"OPEN"
         };
         publishTradeChartOverlay();$("tradeContractId").textContent=String(activeContractId||"—");$("tradeContractStatus").textContent="Purchased · monitoring with Deriv";$("tradeContractDetail").textContent="Buy price: "+(m.buy.buy_price??"—")+" "+(m.buy.currency||account.currency||"");$("tradeMessage").textContent="Deriv confirmed the purchase.";$("confirmTradeBuy").textContent="CLOSE";$("confirmTradeBuy").disabled=!activeContractId;currentTradeProposal=null;if(activeContractId){try{tradeSend({proposal_open_contract:1,contract_id:activeContractId,subscribe:1},"contract")}catch(e){$("tradeMessage").textContent=e.message}}try{tradeSend({balance:1,subscribe:1},"balance")}catch{}}
-      if(m.msg_type==="sell"&&m.sell){$("tradeMessage").textContent="Deriv confirmed the contract close. Refreshing your next quote…";activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");activeTradeOverlay=null;publishTradeChartOverlay();currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("tradeContractId").textContent="—";$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractStatus").textContent="Contract closed";try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()}
-      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){const c=m.proposal_open_contract;
-        const matchesActiveContract=activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId);
-        if(matchesActiveContract||!activeTradeOverlay){window.__derivAccumulatorContractInfo=c;publishTradeChartOverlay();}
-        $("tradeContractStatus").textContent=(c.status||"Open")+(c.is_sold?" · settled":"");$("tradeContractDetail").textContent="P/L: "+(c.profit??"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");$("tradePnlValue").textContent=c.profit==null?"—":Number(c.profit).toFixed(2)+" "+(c.currency||account.currency||"");if(activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(c.contract_id||activeContractId)){const entry=c.entry_spot==null||c.entry_spot===""?NaN:Number(c.entry_spot),barrier=c.barrier==null||c.barrier===""?NaN:Number(c.barrier),spot=c.current_spot==null||c.current_spot===""?NaN:Number(c.current_spot);if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;if(Number.isFinite(barrier))activeTradeOverlay.barrier=barrier;if(Number.isFinite(spot))activeTradeOverlay.currentSpot=spot;activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");activeTradeOverlay.dateStart=c.date_start;activeTradeOverlay.dateExpiry=c.date_expiry;publishTradeChartOverlay();}const tpTarget=Number($("tradeTpTarget").value);if(!c.is_sold&&activeContractId&&!tpCloseRequested&&Number.isFinite(tpTarget)&&tpTarget>0&&Number(c.profit)>=tpTarget){tpCloseRequested=true;$("tradeMessage").textContent="Take-profit target reached. Closing contract…";closeTradeContract(true);}if(c.is_sold){activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractId").textContent="—";activeTradeOverlay=null;publishTradeChartOverlay();try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()}}
+      if(m.msg_type==="sell"&&m.sell){
+        $("tradeMessage").textContent="Deriv confirmed the contract close. Waiting for its final contract update…";
+        activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");
+        if(activeTradeOverlay){activeTradeOverlay.isSold=true;activeTradeOverlay.status="SOLD · awaiting final tick";publishTradeChartOverlay();}
+        currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;
+        $("tradeContractId").textContent="—";$("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;
+        $("tradeContractStatus").textContent="Contract closed";try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote()
+      }
+      if(m.msg_type==="proposal_open_contract"&&m.proposal_open_contract){
+        const c=m.proposal_open_contract;
+        const contractId=c.contract_id??activeContractId;
+        const matchesActiveContract=!!activeTradeOverlay&&String(activeTradeOverlay.contractId)===String(contractId);
+        if(matchesActiveContract){
+          window.__derivAccumulatorContractInfo=c;
+          const asNumber=value=>(value===null||value===undefined||value==="")?NaN:Number(value);
+          const entry=asNumber(c.entry_spot??c.entry_tick);
+          const entryTime=asNumber(c.entry_spot_time??c.entry_tick_time??c.date_start??c.purchase_time);
+          const currentSpot=asNumber(c.current_spot??c.sell_spot??activeTradeOverlay.currentSpot);
+          const currentSpotTime=asNumber(c.current_spot_time??c.sell_spot_time??c.sell_time??activeTradeOverlay.currentSpotTime);
+          const high=asNumber(c.high_barrier??c.highBarrier);
+          const low=asNumber(c.low_barrier??c.lowBarrier);
+          const profit=asNumber(c.profit);
+          if(Number.isFinite(entry))activeTradeOverlay.entrySpot=entry;
+          if(Number.isFinite(entryTime))activeTradeOverlay.entrySpotTime=entryTime;
+          if(Number.isFinite(high)&&Number.isFinite(low)&&high>low){
+            activeTradeOverlay.highBarrier=String(c.high_barrier??c.highBarrier);
+            activeTradeOverlay.lowBarrier=String(c.low_barrier??c.lowBarrier);
+          }
+          if(Number.isFinite(currentSpot)){
+            activeTradeOverlay.currentSpot=currentSpot;
+            activeTradeOverlay.spot=currentSpot;
+          }
+          if(Number.isFinite(currentSpotTime)){
+            activeTradeOverlay.currentSpotTime=currentSpotTime;
+            activeTradeOverlay.spotEpoch=currentSpotTime;
+          }
+          if(Number.isFinite(profit))activeTradeOverlay.profit=profit;
+          activeTradeOverlay.currency=c.currency||activeTradeAccount?.currency||account.currency||"";
+          activeTradeOverlay.fractionalDigits=Number.isFinite(Number(c.profit_decimal_places))?Number(c.profit_decimal_places):2;
+          activeTradeOverlay.barrier=c.barrier??activeTradeOverlay.barrier;
+          activeTradeOverlay.status=(c.status||"OPEN")+(c.is_sold?" · SETTLED":"");
+          activeTradeOverlay.dateStart=c.date_start;
+          activeTradeOverlay.dateExpiry=c.date_expiry;
+          activeTradeOverlay.isSold=c.is_sold===true||Number(c.is_sold)===1;
+          publishTradeChartOverlay();
+
+          $("tradeContractStatus").textContent=(c.status||"Open")+(activeTradeOverlay.isSold?" · settled":"");
+          $("tradeContractDetail").textContent="P/L: "+(Number.isFinite(profit)?profit.toFixed(2):"—")+" · Buy price: "+(c.buy_price??"—")+" · Payout: "+(c.payout??"—");
+          $("tradePnlValue").textContent=Number.isFinite(profit)?profit.toFixed(2)+" "+(activeTradeOverlay.currency||""):"—";
+
+          const tpTarget=Number($("tradeTpTarget").value);
+          if(!activeTradeOverlay.isSold&&activeContractId&&!tpCloseRequested&&Number.isFinite(tpTarget)&&tpTarget>0&&Number.isFinite(profit)&&profit>=tpTarget){
+            tpCloseRequested=true;$("tradeMessage").textContent="Take-profit target reached. Closing contract…";closeTradeContract(true);
+          }
+
+          if(activeTradeOverlay.isSold){
+            const exitSpot=asNumber(c.exit_spot??c.sell_spot??c.current_spot??activeTradeOverlay.currentSpot);
+            const exitEpoch=asNumber(c.exit_spot_time??c.sell_spot_time??c.sell_time??c.current_spot_time??c.date_expiry??activeTradeOverlay.currentSpotTime);
+            const finalProfit=Number.isFinite(profit)?profit:activeTradeOverlay.profit;
+            const highBarrier=asNumber(activeTradeOverlay.highBarrier);
+            const lowBarrier=asNumber(activeTradeOverlay.lowBarrier);
+            if(Number.isFinite(highBarrier)&&Number.isFinite(lowBarrier)&&highBarrier>lowBarrier&&Number.isFinite(exitSpot)&&Number.isFinite(exitEpoch)&&Number.isFinite(finalProfit)){
+              window.__derivAccumulatorClosedBarriers={
+                highBarrier:String(activeTradeOverlay.highBarrier),
+                lowBarrier:String(activeTradeOverlay.lowBarrier),
+                barrierEpoch:Number(activeTradeOverlay.barrierEpoch??activeTradeOverlay.spotEpoch),
+                exitSpot,
+                exitEpoch,
+                profit:finalProfit,
+                currency:activeTradeOverlay.currency||"",
+                fractionalDigits:activeTradeOverlay.fractionalDigits??2,
+                retentionMs:8000
+              };
+            }
+            activeTradeOverlay=null;window.__derivAccumulatorContractInfo=null;
+            activeContractId=null;tpCloseRequested=false;$("executionPanel").classList.remove("contract-open");
+            currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;
+            $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("tradeContractId").textContent="—";
+            publishTradeChartOverlay();try{tradeSend({balance:1,subscribe:1},"balance")}catch{}requestTradeQuote();
+          }
+        }
+      }
     };
     socket.onerror=()=>{$("tradeConnectionState").textContent="Trading connection error";$("tradeMessage").textContent="Could not maintain authenticated Deriv connection."};
     socket.onclose=()=>{if(tradingSocket===socket){tradingSocket=null;$("tradeConnectionState").textContent="Account disconnected";$("getTradeQuote").disabled=true;$("confirmTradeBuy").disabled=true}};
