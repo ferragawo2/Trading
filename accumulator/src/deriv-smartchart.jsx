@@ -106,13 +106,16 @@ function ChartApp() {
             clearChart={false}
             chartStatusListener={ready => {
                 if (ready) {
+                    const detail = 'SmartCharts reports chart ready';
                     setChartReady(true);
-                    setDiagnostic({ stage: 'chart_ready', detail: 'SmartCharts reports chart ready' });
+                    setDiagnostic({ stage: 'chart_ready', detail });
+                    window.__publishDerivChartDiagnostic?.('chart_ready', detail);
                 }
             }}
             onMessage={message => {
                 const detail = message?.text || message?.message || message?.error?.message || 'SmartCharts reported a message';
                 setDiagnostic({ stage: 'chart_message', detail: String(detail) });
+                window.__publishDerivChartDiagnostic?.('chart_message', String(detail));
             }}
         />
         {!chartReady && (
