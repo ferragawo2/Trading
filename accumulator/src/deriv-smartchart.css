@@ -54,28 +54,11 @@
 }
 
 
-/* Quill UI dialogs (timeframe, drawing tools, indicators and download) portal
-   outside the chart. Keep that portal above the trading page's own layers. */
+/* Keep Quill UI dialogs above the chart without changing their native geometry.
+   SmartCharts/Quill own the menu dimensions, positioning and open/close transitions. */
 .smartcharts-quill-portal {
-  position: relative;
   z-index: 11000;
 }
 
-/* The legacy platform-settings dialog still uses SmartCharts' #smartcharts_modal
-   portal. Make it viewport-level so the chart card's overflow clipping cannot hide it. */
-#derivSmartChartRoot .ciq-modal {
-  position: fixed !important;
-  inset: 0 !important;
-  z-index: 11000 !important;
-  width: 100vw !important;
-  height: 100dvh !important;
-  overflow: visible !important;
-  pointer-events: none;
-}
-#derivSmartChartRoot .ciq-modal .cq-modal-dropdown.stxMenuActive {
-  position: absolute !important;
-  inset: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  pointer-events: auto !important;
-}
+/* Do not force .ciq-modal or its dropdown to viewport-sized dimensions:
+   SmartCharts recalculates these legacy settings menus while live ticks arrive. */
