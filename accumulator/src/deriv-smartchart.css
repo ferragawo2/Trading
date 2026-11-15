@@ -73,5 +73,9 @@
   pointer-events: none;
 }
 #derivSmartChartRoot .ciq-modal .cq-modal-dropdown.stxMenuActive {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
   pointer-events: auto !important;
 }
