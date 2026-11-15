@@ -188,9 +188,6 @@ function ChartApp() {
             topWidgets={() => <div />}
             chartControlsWidgets={() => (
                 <>
-                    <CrosshairToggle enabled={true} />
-                    <DrawTools />
-                    <StudyLegend />
                     <ChartSetting />
                     <ChartSize />
                     <Share />
@@ -202,6 +199,9 @@ function ChartApp() {
                         onChartType={chartType => window.__publishDerivChartDiagnostic?.('chart_type_changed', chartType)}
                         onGranularity={granularity => window.__publishDerivChartDiagnostic?.('chart_granularity_changed', granularity)}
                     />
+                    <CrosshairToggle />
+                    <DrawTools />
+                    <StudyLegend />
                 </ToolbarWidget>
             )}
             enabledNavigationWidget={true}
