@@ -12,7 +12,7 @@ function ChartApp() {
     const [chartData, setChartData] = React.useState(() => bridge?.getMetadata?.() || null);
     const [connectionOpen, setConnectionOpen] = React.useState(() => !!bridge?.isConnected?.());
     const [chartReady, setChartReady] = React.useState(false);
-    const [positionState, setPositionState] = React.useState(() => window.__derivAccumulatorOpenPosition || { position: null, contractInfo: null });
+    const [positionState, setPositionState] = React.useState(() => window.__derivAccumulatorOpenPosition || { position: null, contractInfo: null, closedBarrier: null });
     const [diagnostic, setDiagnostic] = React.useState(() => window.__derivChartDiagnostic || {
         stage: 'waiting_for_history',
         detail: 'Waiting for SmartCharts to request initial history',
@@ -24,7 +24,7 @@ function ChartApp() {
         const updateMetadata = event => setChartData(event.detail || null);
         const updateConnection = event => setConnectionOpen(!!event.detail?.connected);
         const updateDiagnostic = event => setDiagnostic(event.detail || { stage: 'unknown', detail: '' });
-        const updateOpenPosition = event => setPositionState(event.detail || { position: null, contractInfo: null });
+        const updateOpenPosition = event => setPositionState(event.detail || { position: null, contractInfo: null, closedBarrier: null });
 
         window.addEventListener('deriv-accumulator-chart-state', updateState);
         window.addEventListener('deriv-chart-metadata', updateMetadata);
@@ -47,10 +47,16 @@ function ChartApp() {
     const symbol = chartState.symbol || '';
     const openPosition = positionState.position || null;
     const rawContractInfo = positionState.contractInfo || null;
-    const contractSymbol = rawContractInfo?.underlying || rawContractInfo?.symbol || openPosition?.symbol || '';
+    // Support both the newer trading API field names and the older proposal_open_contract shape.
+    const contractSymbol =
+        rawContractInfo?.underlying_symbol ||
+        rawContractInfo?.underlying ||
+        rawContractInfo?.symbol ||
+        openPosition?.symbol ||
+        '';
     const contractInfo = rawContractInfo && contractSymbol === symbol ? rawContractInfo : null;
-    const shouldDrawContractTicks = Boolean(Array.isArray(contractInfo?.tick_stream) && contractInfo.tick_stream.length);
-    const hasNumber = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
+    const hasNumber = value =>
+        value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
     const barrier = chartState.barrier;
     const hasValidBarrier =
         barrier &&
@@ -61,27 +67,41 @@ function ChartApp() {
         Number.isFinite(Number(barrier.spotEpoch)) &&
         Number.isFinite(Number(barrier.barrierEpoch));
 
+    const hasPositionProfit = hasNumber(openPosition?.profit);
+    const positionProfit = hasPositionProfit ? Number(openPosition.profit) : undefined;
     const positionBarrierIsValid =
         openPosition &&
         openPosition.symbol === symbol &&
         Number.isFinite(Number(openPosition.highBarrier)) &&
         Number.isFinite(Number(openPosition.lowBarrier)) &&
         Number(openPosition.highBarrier) > Number(openPosition.lowBarrier) &&
-        hasNumber(openPosition.spot) &&
-        hasNumber(openPosition.spotEpoch) &&
+        hasNumber(openPosition.currentSpot ?? openPosition.spot) &&
+        hasNumber(openPosition.currentSpotTime ?? openPosition.spotEpoch) &&
         hasNumber(openPosition.barrierEpoch);
 
-    // For an open contract, keep showing the growth-rate barrier used when it
-    // was purchased; changing the next-trade selector must not move this trade's band.
+    // SmartCharts' native Accumulator renderer owns the in-chart P/L and
+    // profit/loss colour. Keep the ordinary market quote stream as the chart series.
+    const closedBarrier = positionState.closedBarrier || null;
     const accumulatorBarriers = positionBarrierIsValid
         ? {
               live: {
                   highBarrier: String(openPosition.highBarrier),
                   lowBarrier: String(openPosition.lowBarrier),
                   barrierEpoch: Number(openPosition.barrierEpoch),
-                  spot: Number(openPosition.spot),
-                  spotEpoch: Number(openPosition.spotEpoch),
+                  spot: Number(openPosition.currentSpot ?? openPosition.spot),
+                  spotEpoch: Number(openPosition.currentSpotTime ?? openPosition.spotEpoch),
+                  ...(hasPositionProfit
+                      ? {
+                            profit: positionProfit,
+                            currency: openPosition.currency || '',
+                            fractionalDigits: Number.isFinite(Number(openPosition.fractionalDigits))
+                                ? Number(openPosition.fractionalDigits)
+                                : 2,
+                        }
+                      : {}),
+                  ...(openPosition.isSold ? { isSold: true } : {}),
               },
+              ...(closedBarrier ? { closed: closedBarrier } : {}),
               barrierDelayMs: 500,
           }
         : hasValidBarrier
@@ -93,28 +113,39 @@ function ChartApp() {
                     spot: Number(barrier.spot),
                     spotEpoch: Number(barrier.spotEpoch),
                 },
+                ...(closedBarrier ? { closed: closedBarrier } : {}),
                 barrierDelayMs: 500,
             }
-          : undefined;
+          : closedBarrier
+            ? { live: null, closed: closedBarrier }
+            : undefined;
 
-    // Fallback labels are only used until Deriv supplies the first full
-    // proposal_open_contract tick_stream to SmartCharts.
-    const positionBarriers = [];
-    if (!shouldDrawContractTicks && openPosition && openPosition.symbol === symbol) {
-        const entrySpot = Number(openPosition.entrySpot);
-        if (Number.isFinite(entrySpot)) {
-            positionBarriers.push({
-                high: entrySpot,
-                low: entrySpot,
-                color: '#f5c451',
-                title: 'ENTRY',
-                shade: 'NONE_SINGLE',
-                isSingleBarrier: true,
-                draggable: false,
-                useInlineLabel: true,
-            });
-        }
-    }
+    // The same native marker group used by SmartCharts for contract entry:
+    // startTime paints the vertical line; entrySpot paints the entry-price dot.
+    const entryEpoch = Number(openPosition?.entrySpotTime);
+    const entrySpot = Number(openPosition?.entrySpot);
+    const currentPositionEpoch = Number(openPosition?.currentSpotTime ?? openPosition?.spotEpoch);
+    const positionMarkers =
+        positionBarrierIsValid &&
+        Number.isFinite(entryEpoch) &&
+        Number.isFinite(entrySpot) &&
+        Number.isFinite(currentPositionEpoch)
+            ? [
+                  {
+                      type: 'AccumulatorContract',
+                      direction: 'up',
+                      currentEpoch: currentPositionEpoch,
+                      props: {
+                          isProfit: !hasPositionProfit || positionProfit >= 0,
+                          isRunning: !openPosition.isSold,
+                      },
+                      markers: [
+                          { epoch: entryEpoch, quote: entrySpot, type: 'startTime', direction: 'up' },
+                          { epoch: entryEpoch, quote: entrySpot, type: 'entrySpot', direction: 'up' },
+                      ],
+                  },
+              ]
+            : [];
 
     if (!chartData?.activeSymbols?.length || !symbol || !bridge) {
         return <div className="deriv-smartchart-loading">Connecting Deriv market data…</div>;
@@ -144,7 +175,9 @@ function ChartApp() {
             unsubscribeQuotes={request => bridge.unsubscribe(request || { symbol, granularity: 0 })}
             accumulatorBarriers={accumulatorBarriers}
             contractInfo={contractInfo || undefined}
-            shouldDrawTicksFromContractInfo={shouldDrawContractTicks}
+            // Contract ticks are position metadata, not a replacement for the live market series.
+            shouldDrawTicksFromContractInfo={false}
+            contracts_array={positionMarkers}
             getIndicatorHeightRatio={(chartHeight, indicatorCount) => {
                 const count = Math.max(1, Number(indicatorCount) || 1);
                 const availableHeight = Math.max(90, chartHeight - 220);
