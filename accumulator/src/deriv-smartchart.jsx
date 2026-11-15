@@ -11,16 +11,23 @@ function ChartApp() {
     const [chartState, setChartState] = React.useState(() => window.__derivAccumulatorChartState || {});
     const [chartData, setChartData] = React.useState(() => bridge?.getMetadata?.() || null);
     const [connectionOpen, setConnectionOpen] = React.useState(() => !!bridge?.isConnected?.());
+    const [chartReady, setChartReady] = React.useState(false);
+    const [diagnostic, setDiagnostic] = React.useState(() => window.__derivChartDiagnostic || {
+        stage: 'waiting_for_history',
+        detail: 'Waiting for SmartCharts to request initial history',
+    });
     const isMobile = window.matchMedia('(max-width: 700px)').matches;
 
     React.useEffect(() => {
         const updateState = event => setChartState(event.detail || {});
         const updateMetadata = event => setChartData(event.detail || null);
         const updateConnection = event => setConnectionOpen(!!event.detail?.connected);
+        const updateDiagnostic = event => setDiagnostic(event.detail || { stage: 'unknown', detail: '' });
 
         window.addEventListener('deriv-accumulator-chart-state', updateState);
         window.addEventListener('deriv-chart-metadata', updateMetadata);
         window.addEventListener('deriv-chart-connection', updateConnection);
+        window.addEventListener('deriv-chart-diagnostic', updateDiagnostic);
 
         window.__derivChartSetSymbol = symbol => setChartState(current => ({ ...current, symbol }));
 
@@ -28,6 +35,7 @@ function ChartApp() {
             window.removeEventListener('deriv-accumulator-chart-state', updateState);
             window.removeEventListener('deriv-chart-metadata', updateMetadata);
             window.removeEventListener('deriv-chart-connection', updateConnection);
+            window.removeEventListener('deriv-chart-diagnostic', updateDiagnostic);
             delete window.__derivChartSetSymbol;
         };
     }, []);
@@ -61,6 +69,7 @@ function ChartApp() {
     }
 
     return (
+        <div className="deriv-smartchart-shell">
         <SmartChart
             id="trade"
             symbol={symbol}
@@ -95,7 +104,24 @@ function ChartApp() {
             yAxisMargin={{ top: isMobile ? 76 : 106 }}
             shouldFetchTradingTimes={false}
             clearChart={false}
+            chartStatusListener={ready => {
+                if (ready) {
+                    setChartReady(true);
+                    setDiagnostic({ stage: 'chart_ready', detail: 'SmartCharts reports chart ready' });
+                }
+            }}
+            onMessage={message => {
+                const detail = message?.text || message?.message || message?.error?.message || 'SmartCharts reported a message';
+                setDiagnostic({ stage: 'chart_message', detail: String(detail) });
+            }}
         />
+        {!chartReady && (
+            <div className="deriv-smartchart-diagnostic" role="status" aria-live="polite">
+                <strong>{diagnostic.stage.replaceAll('_', ' ')}</strong>
+                <span>{diagnostic.detail}</span>
+            </div>
+        )}
+        </div>
     );
 }
 
