@@ -1179,6 +1179,7 @@ function handleTick(t,m){
   const canUseSharedStream=chartEntry&&!chartEntry.subscriptionId&&!m.echo_req?.ticks_history;
   if(ownsChartStream||canUseSharedStream){
     chartTickListeners.get(key)?.forEach(callback=>{try{callback(chartQuote);}catch(error){console.error("SmartCharts shared tick callback:",error);}});
+    if(chartTickListeners.has(key))publishChartDiagnostic("live_tick_received",key+" · "+price);
   }
   if(!nativeChartTicks[key])nativeChartTicks[key]=[];nativeChartTicks[key].push({time:Number.isFinite(epoch)?epoch:Date.now()/1000,price});if(nativeChartTicks[key].length>12000)nativeChartTicks[key].splice(0,nativeChartTicks[key].length-12000);
   if(!priceHistory[key])priceHistory[key]=[];
