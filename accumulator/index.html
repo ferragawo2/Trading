@@ -1128,7 +1128,8 @@ function handleHistory(m){
   window.dispatchEvent(new CustomEvent("deriv-chart-history",{detail:{symbol}}));
 }
 function handleTick(t,m){
-  const symbol=t.underlying_symbol||t.symbol||m.echo_req?.ticks;
+  const chartStream=chartStreamIds.get(String(m.subscription?.id||""));
+  const symbol=t.underlying_symbol||t.symbol||m.echo_req?.ticks||chartStream?.symbol;
   const price=Number(t.quote),epoch=Number(t.epoch);
   if(!Number.isFinite(price))return;
   // When the API responds to an array subscription, the tick payload identifies its own symbol.
