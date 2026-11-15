@@ -835,6 +835,7 @@ function publishChartDiagnostic(stage,detail=""){
   if(events.length>100)events.splice(0,events.length-100);
   window.dispatchEvent(new CustomEvent("deriv-chart-diagnostic",{detail:state}));
 }
+window.__publishDerivChartDiagnostic=publishChartDiagnostic;
 
 function normalizeChartActiveSymbols(rows){
   return (Array.isArray(rows)?rows:[]).map(item=>{
