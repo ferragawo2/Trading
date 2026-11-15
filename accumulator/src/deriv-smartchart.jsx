@@ -50,6 +50,7 @@ function ChartApp() {
     const contractSymbol = rawContractInfo?.underlying || rawContractInfo?.symbol || openPosition?.symbol || '';
     const contractInfo = rawContractInfo && contractSymbol === symbol ? rawContractInfo : null;
     const shouldDrawContractTicks = Boolean(Array.isArray(contractInfo?.tick_stream) && contractInfo.tick_stream.length);
+    const hasNumber = value => value !== null && value !== undefined && value !== '' && Number.isFinite(Number(value));
     const barrier = chartState.barrier;
     const hasValidBarrier =
         barrier &&
@@ -66,9 +67,9 @@ function ChartApp() {
         Number.isFinite(Number(openPosition.highBarrier)) &&
         Number.isFinite(Number(openPosition.lowBarrier)) &&
         Number(openPosition.highBarrier) > Number(openPosition.lowBarrier) &&
-        Number.isFinite(Number(openPosition.spot)) &&
-        Number.isFinite(Number(openPosition.spotEpoch)) &&
-        Number.isFinite(Number(openPosition.barrierEpoch));
+        hasNumber(openPosition.spot) &&
+        hasNumber(openPosition.spotEpoch) &&
+        hasNumber(openPosition.barrierEpoch);
 
     // For an open contract, keep showing the growth-rate barrier used when it
     // was purchased; changing the next-trade selector must not move this trade's band.
