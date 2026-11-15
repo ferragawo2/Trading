@@ -1689,7 +1689,16 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
      ...entries.slice().reverse().map(e=>"["+e.time+"] ["+e.level+"] ["+e.area+"] "+e.message+(e.extra?" · "+e.extra:""))
    ].join("\n");
  }
- window.addEventListener("error",e=>record("ERROR","browser",e.message||"Resource/script error",(e.filename||"")+" : "+(e.lineno||"?")+":"+(e.colno||"?")));
+ window.addEventListener("error",e=>{
+   const target=e.target;
+   if(target&&target!==window){
+     const resource=target.src||target.href||target.currentSrc||target.data||target.tagName||"unknown resource";
+     record("ERROR","resource","Failed to load "+String(target.tagName||"resource").toLowerCase(),resource);
+     return;
+   }
+   record("ERROR","browser",e.message||"Script/runtime error",(e.filename||"")+" : "+(e.lineno||"?")+":"+(e.colno||"?"));
+ },true);
+ window.addEventListener("securitypolicyviolation",e=>record("ERROR","content security policy",e.violatedDirective||"Policy blocked a resource",e.blockedURI||e.sourceFile||""));
  window.addEventListener("unhandledrejection",e=>record("ERROR","promise",e.reason?.stack||e.reason?.message||String(e.reason)));
  window.addEventListener("deriv-chart-connection",e=>record(e.detail?.connected?"OK":"ERROR","chart websocket",e.detail?.connected?"App market WebSocket opened":"App market WebSocket closed or errored"));
  window.addEventListener("deriv-chart-diagnostic",e=>record(e.detail?.stage==="history_error"||e.detail?.stage==="history_timeout"?"ERROR":"INFO","SmartCharts "+(e.detail?.stage||"event"),e.detail?.detail||""));
@@ -1723,6 +1732,41 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
      return {path,status:response.status,contentLength:response.headers.get("content-length")||"not provided"};
    }finally{clearTimeout(timer);}
  }
+ function chartRuntimeSnapshot(){
+   const root=$("derivSmartChartRoot"),stack=root?[root]:[],seen=new Set();
+   const canvases=[],svgs=[],flutterNodes=[],chartNodes=[];
+   while(stack.length){
+     const element=stack.pop();
+     if(!element||seen.has(element))continue;
+     seen.add(element);
+     if(element.nodeType!==1)continue;
+     const tag=String(element.tagName||"").toLowerCase();
+     const className=typeof element.className==="string"?element.className:"";
+     if(tag==="canvas"){
+       const rect=element.getBoundingClientRect();
+       canvases.push({width:element.width,height:element.height,cssWidth:Math.round(rect.width),cssHeight:Math.round(rect.height)});
+     }
+     if(tag==="svg")svgs.push(tag);
+     if(tag.startsWith("flt-")||tag.includes("flutter"))flutterNodes.push(tag);
+     if(/smartchart|chart|ciq-|cq-|flutter|flt-/i.test(tag+" "+className)&&chartNodes.length<12){
+       chartNodes.push(tag+(className?"."+className.trim().replace(/\\s+/g,".").slice(0,90):""));
+     }
+     if(element.shadowRoot)stack.push(...Array.from(element.shadowRoot.children||[]));
+     stack.push(...Array.from(element.children||[]));
+   }
+   document.querySelectorAll("flt-glass-pane,flt-scene-host,flt-semantics-host,flt-platform-view").forEach(element=>{
+     const tag=String(element.tagName||"").toLowerCase();
+     if(!flutterNodes.includes(tag))flutterNodes.push(tag);
+   });
+   const resources=performance.getEntriesByType("resource")
+     .filter(entry=>/\\/dist\\/|smartcharts|canvaskit|\\.wasm|flutter/i.test(entry.name))
+     .slice(-24)
+     .map(entry=>{
+       let path=entry.name;try{path=new URL(entry.name,location.href).pathname;}catch{}
+       return {path,initiator:entry.initiatorType,durationMs:Math.round(entry.duration),transferBytes:entry.transferSize||0,encodedBytes:entry.encodedBodySize||0};
+     });
+   return {canvasCount:canvases.length,canvases:canvases.slice(0,8),svgCount:svgs.length,flutterNodes,chartNodes,resources};
+ }
  async function run(){
    const state=$("issueFinderState"),summary=$("issueFinderSummary"),runButton=$("issueFinderRun"),copyButton=$("issueFinderCopy");
    entries.length=0;render();runButton.disabled=true;copyButton.disabled=true;state.textContent="Checking…";
@@ -1738,6 +1782,29 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
      const rect=root.getBoundingClientRect();
      if(rect.width<100||rect.height<180)throw Error("Chart root collapsed: "+Math.round(rect.width)+"×"+Math.round(rect.height));
      return Math.round(rect.width)+"×"+Math.round(rect.height)+" px";
+   });
+   await check("SmartCharts lazy-load chunks",async()=>{
+     const snapshot=chartRuntimeSnapshot();
+     const chunks=snapshot.resources.filter(resource=>/\\.smartcharts\\./i.test(resource.path));
+     if(!chunks.length){
+       const seen=snapshot.resources.map(resource=>resource.path).slice(-10).join(", ")||"no matching runtime resources";
+       throw Error("No *.smartcharts.* lazy chunk request was observed. The package documentation says these chunks load asynchronously from /dist/. Resources seen: "+seen);
+     }
+     const paths=[...new Set(chunks.map(resource=>resource.path))].slice(0,12);
+     const results=await Promise.all(paths.map(async path=>{
+       try{const response=await fetch(path,{method:"HEAD",cache:"no-store"});return {path,status:response.status};}
+       catch(error){return {path,error:error.message||String(error)};}
+     }));
+     const failed=results.filter(result=>result.status!==200);
+     if(failed.length)throw Error("SmartCharts lazy chunk request failed: "+JSON.stringify(failed));
+     return JSON.stringify(results);
+   });
+   await check("SmartCharts render surface",async()=>{
+     const snapshot=chartRuntimeSnapshot();
+     if(!snapshot.canvasCount&&!snapshot.svgCount&&!snapshot.flutterNodes.length){
+       throw Error("No canvas, SVG, or Flutter scene host exists inside the SmartCharts mount. Render snapshot: "+JSON.stringify({chartNodes:snapshot.chartNodes,resources:snapshot.resources.slice(-8)}));
+     }
+     return JSON.stringify({canvases:snapshot.canvases,svgCount:snapshot.svgCount,flutterNodes:snapshot.flutterNodes,chartNodes:snapshot.chartNodes});
    });
    await check("Chart symbol metadata",async()=>{
      const data=window.__derivChartBridge?.getMetadata?.(),symbol=window.__derivAccumulatorChartState?.symbol||$("symbol")?.value;
