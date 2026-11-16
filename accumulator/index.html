@@ -2230,9 +2230,140 @@ function handleAlgoContractUpdate(contract,message){
   renderAlgoDashboard();
   return true;
 }
+function algoStatementTransactionMatches(transaction,meta){
+  if(String(transaction.action||"").toLowerCase()!=="buy")return false;
+  const symbol=String(transaction.symbol||transaction.underlying_symbol||"");
+  if(symbol&&symbol!==String(meta.symbol))return false;
+  const amount=Math.abs(Number(transaction.amount));
+  if(!Number.isFinite(amount)||Math.abs(amount-Number(meta.stake))>0.011)return false;
+  const txTime=Number(transaction.transaction_time??transaction.purchase_time??0);
+  if(!Number.isFinite(txTime)||txTime<Math.floor(Number(meta.submittedAt)/1000)-15)return false;
+  if(meta.quoteShortcode&&transaction.shortcode&&String(meta.quoteShortcode)!==String(transaction.shortcode))return false;
+  if(meta.quoteLongcode&&transaction.longcode&&String(meta.quoteLongcode)!==String(transaction.longcode))return false;
+  return true;
+}
+function reconcilePendingAlgoOrders(accountId){
+  loadAlgoPendingOrders();
+  const pending=Object.values(algoPendingOrders).filter(meta=>String(meta.accountId)===String(accountId));
+  if(!pending.length||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)return false;
+  if(Object.values(algoStatementRequests).some(item=>String(item.accountId)===String(accountId)))return true;
+  const dateFrom=Math.max(0,Math.floor(Math.min(...pending.map(meta=>Number(meta.submittedAt)||Date.now()))/1000)-15);
+  try{
+    const requestId=tradeSend({
+      statement:1,
+      action_type:"buy",
+      date_from:dateFrom,
+      description:1,
+      limit:100
+    },"algo-statement");
+    algoStatementRequests[requestId]={
+      accountId:String(accountId),intentIds:pending.map(meta=>String(meta.intentId)),
+      requestedAt:Date.now()
+    };
+    algoLog("Checking Deriv account statement for "+pending.length+" submitted Algo order(s)");
+    return true;
+  }catch(error){
+    algoLog("Could not reconcile pending buys with Deriv: "+error.message);
+    return false;
+  }
+}
+function handleAlgoStatementResponse(message,requestMeta){
+  const transactions=message.statement?.transactions;
+  if(!Array.isArray(transactions)){
+    algoLog("Deriv statement response did not include a transaction list; pending buy remains blocked");
+    return;
+  }
+  const rows=transactions.slice();
+  const intents=requestMeta.intentIds
+    .map(id=>algoPendingOrders[String(id)])
+    .filter(meta=>meta&&String(meta.accountId)===String(requestMeta.accountId))
+    .sort((a,b)=>Number(a.submittedAt)-Number(b.submittedAt));
+  const matchedIntents=new Set();
+  const usedRows=new Set();
+
+  // Only associate a transaction when its symbol, stake and time match an
+  // intent. If two same-stake orders are indistinguishable, keep them blocked
+  // rather than risk attaching the wrong contract to the wrong tracker.
+  intents.forEach(meta=>{
+    const candidates=[];
+    rows.forEach((transaction,index)=>{
+      if(usedRows.has(index)||!algoStatementTransactionMatches(transaction,meta))return;
+      const txTime=Number(transaction.transaction_time??transaction.purchase_time??0);
+      candidates.push({index,transaction,delta:Math.abs(txTime-Number(meta.submittedAt)/1000)});
+    });
+    candidates.sort((a,b)=>a.delta-b.delta);
+    if(!candidates.length)return;
+    if(candidates.length>1&&Math.abs(candidates[0].delta-candidates[1].delta)<1)return;
+    const chosen=candidates[0];
+    const contractId=String(chosen.transaction.contract_id||"");
+    if(!contractId)return;
+    usedRows.add(chosen.index);
+    matchedIntents.add(String(meta.intentId));
+
+    const record={
+      contractId,rate:Number(meta.rate),symbol:meta.symbol,accountId:meta.accountId,
+      stake:Number(meta.stake),watchStat:Number(meta.watchStat),signalCount:Number(meta.signalCount),
+      openedAt:Number(chosen.transaction.purchase_time||chosen.transaction.transaction_time||meta.submittedAt),
+      status:"OPEN",ticksAfterEntry:0,closeRequested:false,closeWhenSellable:false,
+      lastProfit:null,subscriptionId:null,statementRecovered:true
+    };
+    if(!algoContractsById[contractId]){
+      algoContractsById[contractId]=record;
+      let tracker=getAlgoTracker(meta.rate);
+      if(!tracker){
+        tracker=window.DerivAccumulatorAlgoEngine.createTracker({symbol:meta.symbol,growthRate:Number(meta.rate)});
+        algoTrackers.set(algoRateKey(meta.rate),tracker);
+      }
+      if(algoBuyRequests[String(meta.requestId)]){
+        delete algoBuyRequests[String(meta.requestId)];
+        algoLateBuyRequestIds[String(meta.requestId)]=meta;
+      }
+      if(tracker.state==="BUY_PENDING")tracker.confirmBuy(contractId);
+      else tracker.restoreContract(record);
+      subscribeAlgoContract(record);
+      algoLog("Recovered confirmed contract #"+contractId+" from Deriv account statement",meta.rate);
+    }else{
+      algoLog("Statement confirmed existing contract #"+contractId,meta.rate);
+    }
+    removePendingAlgoOrder(meta);
+  });
+
+  const unresolved=intents.filter(meta=>!matchedIntents.has(String(meta.intentId)));
+  unresolved.forEach(meta=>{
+    const candidates=rows.filter(tx=>algoStatementTransactionMatches(tx,meta));
+    if(candidates.length){
+      meta.reconciliationStatus="Ambiguous matching buy transaction; manual review required";
+      algoLog("Could not uniquely match the submitted buy to a contract; Algo remains blocked",meta.rate);
+      return;
+    }
+    if(Date.now()-Number(meta.submittedAt)<8000){
+      meta.reconciliationStatus="Waiting for the Deriv statement to reflect the submitted request";
+      setTimeout(()=>reconcilePendingAlgoOrders(requestMeta.accountId),3000);
+      return;
+    }
+    const liveRequest=algoBuyRequests[String(meta.requestId)];
+    if(liveRequest)delete algoBuyRequests[String(meta.requestId)];
+    removePendingAlgoOrder(meta);
+    const tracker=getAlgoTracker(meta.rate);
+    if(tracker?.state==="BUY_PENDING")tracker.buyFailed("Deriv account statement contains no matching buy transaction");
+    algoLog("Deriv statement found no matching buy; pending entry cleared without retrying the signal",meta.rate);
+  });
+  algoPendingStake=Object.values(algoBuyRequests).reduce((sum,meta)=>sum+Number(meta.stake||0),0);
+  saveAlgoContractRecords();
+  saveAlgoPendingOrders();
+  try{tradeSend({balance:1},"balance-refresh")}catch{}
+  renderAlgoDashboard();
+}
+
 function handleAlgoTradingMessage(message){
   const requestId=String(message.req_id??"");
   if(message.error){
+    if(algoStatementRequests[requestId]){
+      const statementMeta=algoStatementRequests[requestId];
+      delete algoStatementRequests[requestId];
+      algoLog("Deriv statement reconciliation failed: "+(message.error.message||message.error.code||"Unknown error")+"; pending buy remains blocked");
+      renderAlgoDashboard();return true;
+    }
     const quoteMeta=algoQuoteRequests[requestId];
     if(quoteMeta){
       delete algoQuoteRequests[requestId];
