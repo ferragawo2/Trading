@@ -2244,6 +2244,14 @@ function handleAlgoContractUpdate(contract,message){
     if(record.subscriptionId){try{tradeSend({forget:record.subscriptionId},"algo-forget");}catch{}}
     delete algoContractsById[id];
     saveAlgoContractRecords();
+    const reservation=algoConfirmedStakeReservations[id];
+    try{
+      const balanceRequestId=tradeSend({balance:1},"algo-balance-refresh");
+      if(reservation)reservation.refreshRequestId=String(balanceRequestId);
+    }catch(error){
+      algoLog("Could not refresh balance after settlement: "+error.message,record.rate);
+    }
+    recalculateAlgoReservedStake();
   }else{
     saveAlgoContractRecords();
   }
@@ -2399,8 +2407,8 @@ function handleAlgoTradingMessage(message){
     if(buyMeta){
       delete algoBuyRequests[requestId];
       delete algoLateBuyRequestIds[requestId];
-      algoPendingStake=Math.max(0,algoPendingStake-buyMeta.stake);
       removePendingAlgoOrder(buyMeta);
+      recalculateAlgoReservedStake();
       if(buyMeta.subscriptionId){try{tradeSend({forget:buyMeta.subscriptionId},"algo-forget");}catch{}}
       const tracker=getAlgoTracker(buyMeta.rate);
       tracker?.buyFailed(message.error.message||message.error.code||"Deriv rejected the purchase");
