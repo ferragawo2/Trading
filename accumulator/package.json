@@ -4,7 +4,8 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "webpack --mode production --config webpack.config.cjs"
+    "build": "webpack --mode production --config webpack.config.cjs",
+    "test": "node --test test/*.test.js"
   },
   "dependencies": {
     "@deriv-com/quill-tokens": "2.0.32",
