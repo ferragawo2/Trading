@@ -2257,7 +2257,8 @@ function handleAlgoContractUpdate(contract,message){
   return true;
 }
 function algoStatementTransactionMatches(transaction,meta){
-  if(String(transaction.action||"").toLowerCase()!=="buy")return false;
+  const action=String(transaction.action_type||transaction.action||"").toLowerCase();
+  if(action!=="buy")return false;
   const symbol=String(transaction.symbol||transaction.underlying_symbol||"");
   if(symbol&&symbol!==String(meta.symbol))return false;
   const amount=Math.abs(Number(transaction.amount));
