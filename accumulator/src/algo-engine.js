@@ -190,13 +190,6 @@
       if (suppliedSequence !== null) this.sequenceId = suppliedSequence;
       this.currentCount = count;
 
-      // A buy sent at the final pre-entry count may be acknowledged after the
-      // matching tick. A fill after the matching tick is late and must be closed.
-      if (this.state === STATES.BUY_PENDING && this.watchStat !== null && count > this.watchStat) {
-        this.entrySignalExpired = true;
-        this.lastAction = 'Matching tick passed while the buy was pending; any later fill must be closed';
-      }
-
       if (this.state === STATES.WAITING_FOR_MATCH && this.watchStat !== null) {
         const preEntryCount = this.watchStat - 1;
 
