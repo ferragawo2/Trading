@@ -67,6 +67,28 @@
       this.trades = 0;
     }
 
+    seedFromCompletedStat(stat) {
+      if (this._busy() || this.state === STATES.ARMED || this.state === STATES.BUY_PENDING) return false;
+      if (!isQualifyingWatchStat(stat, this.minExclusive, this.maxExclusive)) return false;
+      this.lastCompletedStat = stat;
+      this.watchStat = stat;
+      this.entryTarget = stat;
+      this.exitTarget = stat;
+      this.state = STATES.WAITING_FOR_MATCH;
+      this.lastAction = 'Restored Watch Stat ' + stat + '; waiting for the next matching run';
+      return true;
+    }
+
+    skipArmedEntry(reason = 'Entry skipped; waiting for the counting run to finish') {
+      if (this.state !== STATES.ARMED) return false;
+      this.watchStat = null;
+      this.entryTarget = null;
+      this.exitTarget = null;
+      this.state = STATES.WAITING_FOR_RUN_END;
+      this.lastAction = String(reason);
+      return true;
+    }
+
     snapshot() {
       return {
         symbol: this.symbol,
@@ -225,7 +247,8 @@
     }
 
     markBuySubmitted(requestId = null) {
-      if (this.state !== STATES.ARMED || this.entrySignalExpired) return false;
+      if (this.state !== STATES.ARMED || this.entrySignalExpired ||
+          !Number.isInteger(this.watchStat) || this.currentCount !== this.watchStat - 1) return false;
       this.state = STATES.BUY_PENDING;
       this.buyRequestId = requestId;
       this.lastAction = 'Buy request sent from the pre-entry count; waiting for Deriv confirmation';
