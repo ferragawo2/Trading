@@ -2066,8 +2066,6 @@ function requestAlgoQuote(rate,reason){
       currency:algoConfig.currency,
       growth_rate:Number(rate),
       underlying_symbol:algoConfig.symbol,
-      duration:45,
-      duration_unit:"t",
       subscribe:1
     },"algo-proposal");
     algoQuoteRequests[requestId]={
