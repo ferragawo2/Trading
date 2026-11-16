@@ -178,11 +178,9 @@ test('after a contract settles, the tracker waits for the current run to finish 
   tracker.observeContractUpdate({ contract_id: 'contract-4', current_spot_time: 401 });
   tracker.observeContractUpdate({ contract_id: 'contract-4', current_spot_time: 402, is_sold: true });
 
-  tracker.observeCount(12, 'match-run');
-  assert.equal(tracker.snapshot().state, engine.STATES.WAITING_FOR_RUN_END);
   tracker.observeCount(0, 'after-settlement-run');
-  assert.equal(tracker.snapshot().watchStat, 12 === 16 ? 16 : null);
-  assert.equal(tracker.snapshot().state, engine.STATES.OBSERVING);
+  assert.equal(tracker.snapshot().watchStat, 16);
+  assert.equal(tracker.snapshot().state, engine.STATES.WAITING_FOR_MATCH);
 });
 
 test('trackers keep their Watch Stats independent', () => {
@@ -230,4 +228,20 @@ test('tick stats payload normalization rejects malformed values', () => {
 test('tracker set creates four standard trackers and adds the fifth only in aggressive mode', () => {
   assert.deepEqual(engine.createTrackerSet('BOOM1000').map(tracker => tracker.growthRate), [0.01, 0.02, 0.03, 0.04]);
   assert.deepEqual(engine.createTrackerSet('BOOM1000', { aggressive: true }).map(tracker => tracker.growthRate), [0.01, 0.02, 0.03, 0.04, 0.05]);
+});
+
+test('a restored latest completed stat can seed a tracker before live count updates arrive', () => {
+  const tracker = trackerFor();
+  assert.equal(tracker.seedFromCompletedStat(16), true);
+  assert.equal(tracker.snapshot().watchStat, 16);
+  assert.equal(tracker.seedFromCompletedStat(15), false);
+});
+
+test('markBuySubmitted rejects any tracker that is no longer exactly one count before its target', () => {
+  const tracker = trackerFor();
+  seedWatchStat(tracker, 16);
+  tracker.observeCount(14, 'match-run');
+  assert.equal(tracker.markBuySubmitted('too-early'), false);
+  tracker.observeCount(15, 'match-run');
+  assert.equal(tracker.markBuySubmitted('on-time'), true);
 });
