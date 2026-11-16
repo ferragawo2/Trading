@@ -148,7 +148,7 @@ test('a buy already sent cannot be locally cancelled; a late fill is closed imme
   assert.equal(tracker.snapshot().state, engine.STATES.CLOSE_PENDING);
 });
 
-test('a pending buy that is acknowledged after the matching count is marked late', () => {
+test('a delayed buy acknowledgement still waits for two actual ticks after the Deriv entry', () => {
   const tracker = trackerFor();
   seedWatchStat(tracker, 16);
   tracker.observeCount(15, 'match-run');
@@ -156,15 +156,25 @@ test('a pending buy that is acknowledged after the matching count is marked late
   tracker.observeCount(16, 'match-run');
   tracker.observeCount(17, 'match-run');
 
-  tracker.confirmBuy('late-contract-2');
-  assert.equal(tracker.snapshot().closeWhenSellable, true);
-  const close = tracker.observeContractUpdate({
-    contract_id: 'late-contract-2',
+  tracker.confirmBuy('delayed-contract');
+  tracker.observeContractUpdate({
+    contract_id: 'delayed-contract',
     entry_spot_time: 300,
     current_spot_time: 300,
     is_valid_to_sell: true,
   });
+  assert.deepEqual(tracker.observeContractUpdate({
+    contract_id: 'delayed-contract',
+    current_spot_time: 301,
+    is_valid_to_sell: true,
+  }), []);
+  const close = tracker.observeContractUpdate({
+    contract_id: 'delayed-contract',
+    current_spot_time: 302,
+    is_valid_to_sell: true,
+  });
   assert.equal(close[0].type, 'CLOSE_CONTRACT');
+  assert.equal(close[0].ticksAfterEntry, 2);
 });
 
 test('after a contract settles, the tracker waits for the current run to finish before relearning', () => {
