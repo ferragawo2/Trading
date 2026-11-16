@@ -833,7 +833,7 @@ body.trade-active{padding-bottom:0!important}
 #algoTradeView .algo-positive{color:#39d98a!important}
 #algoTradeView .algo-position-row strong.algo-positive{color:#39d98a!important}
 #algoTradeView .algo-negative{color:#ff727c!important}
-#algoTradeView .algo-position-row{border-color:#242424}
+#algoTradeView .algo-position-row{border-color:#242424;color:#39d98a!important;background:linear-gradient(90deg,rgba(22,105,62,.10),transparent 75%)}
 #algoTradeView .algo-position-row strong.algo-positive{ text-shadow:0 0 12px rgba(57,217,138,.16)}
 #algoTradeView .algo-tracker-status{color:#ddd;border-color:#383838;background:#080808}
 #algoTradeView .algo-tracker-card:has(.algo-tracker-status){border-color:#303030!important}
@@ -2459,6 +2459,9 @@ function handleAlgoContractUpdate(contract,message){
   record.lastProfit=Number.isFinite(Number(contract.profit))?Number(contract.profit):record.lastProfit;
   record.status=contract.status||"OPEN";
   if(actions.some(action=>action.type==="CONTRACT_SETTLED")){
+    const settledProfit=Number(record.lastProfit);
+    if(Number.isFinite(settledProfit)&&settledProfit>0)algoLog("WIN · +"+settledProfit.toFixed(2)+" "+(algoConfig?.currency||activeTradeAccount?.currency||""),record.rate);
+    else if(Number.isFinite(settledProfit)&&settledProfit<0)algoLog("LOSS · "+settledProfit.toFixed(2)+" "+(algoConfig?.currency||activeTradeAccount?.currency||""),record.rate);
     if(record.subscriptionId){try{tradeSend({forget:record.subscriptionId},"algo-forget");}catch{}}
     delete algoContractsById[id];
     saveAlgoContractRecords();
