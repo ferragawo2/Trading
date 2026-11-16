@@ -1982,7 +1982,6 @@ function loadAlgoPendingOrders(){
 function removePendingAlgoOrder(meta){
   if(!meta)return;
   if(meta.intentId)delete algoPendingOrders[String(meta.intentId)];
-  if(meta.requestId)delete algoLateBuyRequestIds[String(meta.requestId)];
   saveAlgoPendingOrders();
 }
 function loadAlgoContractRecords(){
@@ -2268,7 +2267,7 @@ function reconcilePendingAlgoOrders(accountId){
   }
 }
 function handleAlgoStatementResponse(message,requestMeta){
-  const transactions=message.statement?.transactions;
+  const transactions=message.statement?.transactions||message.transactions||message.statement?.transactions?.transactions;
   if(!Array.isArray(transactions)){
     algoLog("Deriv statement response did not include a transaction list; pending buy remains blocked");
     return;
@@ -2376,6 +2375,7 @@ function handleAlgoTradingMessage(message){
     const buyMeta=algoBuyRequests[requestId];
     if(buyMeta){
       delete algoBuyRequests[requestId];
+      delete algoLateBuyRequestIds[requestId];
       algoPendingStake=Math.max(0,algoPendingStake-buyMeta.stake);
       removePendingAlgoOrder(buyMeta);
       if(buyMeta.subscriptionId){try{tradeSend({forget:buyMeta.subscriptionId},"algo-forget");}catch{}}
