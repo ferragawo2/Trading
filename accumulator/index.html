@@ -2091,12 +2091,19 @@ function trySubmitAlgoBuy(rate){
   try{
     const requestId=tradeSend({buy:quote.id,price:Number(quote.askPrice)},"algo-buy");
     tracker.buyRequestId=requestId;
-    algoBuyRequests[requestId]={
+    const submittedAt=Date.now();
+    const meta={
       requestId,rate:Number(rate),symbol:algoConfig.symbol,accountId:algoConfig.accountId,
       stake:algoConfig.stake,watchStat:tracker.watchStat,signalCount:tracker.currentCount,
-      sequenceNumber:tracker.sequenceNumber,submittedAt:Date.now()
+      sequenceNumber:tracker.sequenceNumber,submittedAt,
+      intentId:String(algoConfig.accountId)+":"+String(requestId),
+      quoteShortcode:quote.shortcode||"",quoteLongcode:quote.longcode||""
     };
+    algoBuyRequests[requestId]=meta;
+    algoPendingOrders[meta.intentId]=meta;
+    saveAlgoPendingOrders();
     algoPendingStake+=algoConfig.stake;
+    setTimeout(()=>{if(algoPendingOrders[meta.intentId]&&tradingSocket?.readyState===WebSocket.OPEN)reconcilePendingAlgoOrders(meta.accountId);},12000);
     forgetAlgoQuote(rate);
     algoLog("Buy submitted at pre-entry count "+tracker.currentCount+" for Watch Stat "+tracker.watchStat,rate);
     renderAlgoDashboard();return true;
@@ -2145,7 +2152,8 @@ function handleAlgoProposalMessage(message){
   if(proposal.id&&Number.isFinite(askPrice)&&askPrice>0){
     algoQuotes[algoRateKey(meta.rate)]={
       id:proposal.id,askPrice,receivedAt:Date.now(),subscriptionId:meta.subscriptionId||null,
-      requestId:requestKey||null,spot:Number.isFinite(Number(proposal.spot))?Number(proposal.spot):null
+      requestId:requestKey||null,spot:Number.isFinite(Number(proposal.spot))?Number(proposal.spot):null,
+      shortcode:proposal.shortcode||"",longcode:proposal.longcode||""
     };
     const tracker=getAlgoTracker(meta.rate);
     if(tracker?.state==="ARMED")trySubmitAlgoBuy(meta.rate);
@@ -2238,6 +2246,7 @@ function handleAlgoTradingMessage(message){
     if(buyMeta){
       delete algoBuyRequests[requestId];
       algoPendingStake=Math.max(0,algoPendingStake-buyMeta.stake);
+      removePendingAlgoOrder(buyMeta);
       if(buyMeta.subscriptionId){try{tradeSend({forget:buyMeta.subscriptionId},"algo-forget");}catch{}}
       const tracker=getAlgoTracker(buyMeta.rate);
       tracker?.buyFailed(message.error.message||message.error.code||"Deriv rejected the purchase");
@@ -2264,15 +2273,28 @@ function handleAlgoTradingMessage(message){
     return false;
   }
 
+  if(message.msg_type==="statement"&&algoStatementRequests[requestId]){
+    const statementMeta=algoStatementRequests[requestId];
+    delete algoStatementRequests[requestId];
+    handleAlgoStatementResponse(message,statementMeta);
+    return true;
+  }
+
   if(message.msg_type==="proposal"&&message.proposal&&handleAlgoProposalMessage(message))return true;
 
-  const buyMeta=algoBuyRequests[requestId];
+  const buyMeta=algoBuyRequests[requestId]||algoLateBuyRequestIds[requestId];
   if(message.msg_type==="buy"&&message.buy&&buyMeta){
     delete algoBuyRequests[requestId];
+    delete algoLateBuyRequestIds[requestId];
+    removePendingAlgoOrder(buyMeta);
     const contractId=String(message.buy.contract_id||"");
     if(!contractId){
       getAlgoTracker(buyMeta.rate)?.buyFailed("Deriv confirmed a buy without returning a contract ID");
       algoLog("Buy response did not include a contract ID",buyMeta.rate);
+      renderAlgoDashboard();return true;
+    }
+    if(algoContractsById[contractId]){
+      algoLog("Late buy acknowledgement reconciled with existing contract #"+contractId,buyMeta.rate);
       renderAlgoDashboard();return true;
     }
     const record={
@@ -2282,8 +2304,12 @@ function handleAlgoTradingMessage(message){
       closeWhenSellable:false,lastProfit:null,subscriptionId:null
     };
     algoContractsById[contractId]=record;saveAlgoContractRecords();
-    const tracker=getAlgoTracker(buyMeta.rate);
-    tracker?.confirmBuy(contractId);
+    let tracker=getAlgoTracker(buyMeta.rate);
+    if(!tracker){
+      tracker=window.DerivAccumulatorAlgoEngine.createTracker({symbol:buyMeta.symbol,growthRate:Number(buyMeta.rate)});
+      algoTrackers.set(algoRateKey(buyMeta.rate),tracker);
+    }
+    tracker.confirmBuy(contractId);
     algoLog("Deriv confirmed contract #"+contractId,buyMeta.rate);
     subscribeAlgoContract(record);
     try{tradeSend({balance:1},"balance-refresh")}catch{}
@@ -2307,6 +2333,7 @@ function handleAlgoTradingMessage(message){
 }
 function restoreAlgoContractsForAccount(accountId){
   loadAlgoContractRecords();
+  loadAlgoPendingOrders();
   Object.values(algoContractsById).filter(record=>String(record.accountId)===String(accountId)).forEach(record=>{
     const key=algoRateKey(record.rate);
     let tracker=getAlgoTracker(record.rate);
@@ -2318,6 +2345,7 @@ function restoreAlgoContractsForAccount(accountId){
     tracker.restoreContract(record);
     subscribeAlgoContract(record);
   });
+  reconcilePendingAlgoOrders(accountId);
   renderAlgoDashboard();
 }
 function renderAlgoEventList(){
