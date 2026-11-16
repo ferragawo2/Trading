@@ -33,15 +33,16 @@
   }
 
   class Tracker {
-    constructor({ symbol, growthRate, minExclusive = 15, maxExclusive = 45, exitOffset = 2 } = {}) {
+    constructor({ symbol, growthRate, minExclusive = 15, maxExclusive = 45 } = {}) {
       if (!symbol || typeof symbol !== 'string') throw new TypeError('A market symbol is required.');
       if (!GROWTH_RATES.includes(Number(growthRate))) throw new RangeError('Growth rate must be 1%, 2%, 3%, 4%, or 5%.');
-      if (!Number.isInteger(exitOffset) || exitOffset < 1) throw new RangeError('Exit offset must be a positive integer.');
+      if (!Number.isInteger(minExclusive) || !Number.isInteger(maxExclusive) || minExclusive >= maxExclusive) {
+        throw new RangeError('A valid Watch Stat range is required.');
+      }
       this.symbol = symbol;
       this.growthRate = Number(growthRate);
       this.minExclusive = minExclusive;
       this.maxExclusive = maxExclusive;
-      this.exitOffset = exitOffset;
       this.state = STATES.OBSERVING;
       this.watchStat = null;
       this.currentCount = null;
@@ -53,13 +54,17 @@
       this.closeRequestId = null;
       this.entryTarget = null;
       this.exitTarget = null;
-      this.entryConfirmedAtCount = null;
       this.entrySignalExpired = false;
+      this.quoteRequestedForSequence = null;
+      this.ticksAfterEntry = 0;
+      this.entrySpotTime = null;
+      this.lastContractSpotTime = null;
+      this.closeWhenSellable = false;
+      this.closeRequested = false;
       this.lastAction = 'Waiting for a qualifying completed run';
       this.lastCompletedStat = null;
       this.completedRuns = 0;
       this.trades = 0;
-      this.closeRequested = false;
     }
 
     snapshot() {
@@ -75,6 +80,9 @@
         entryTarget: this.entryTarget,
         exitTarget: this.exitTarget,
         entrySignalExpired: this.entrySignalExpired,
+        ticksAfterEntry: this.ticksAfterEntry,
+        closeWhenSellable: this.closeWhenSellable,
+        closeRequested: this.closeRequested,
         lastAction: this.lastAction,
         lastCompletedStat: this.lastCompletedStat,
         completedRuns: this.completedRuns,
@@ -82,49 +90,59 @@
       };
     }
 
-    _seedFromCompletedRun(stat) {
+    _busy() {
+      return [STATES.BUY_PENDING, STATES.IN_TRADE, STATES.CLOSE_PENDING].includes(this.state);
+    }
+
+    _saveOrClearWatch(stat, reason) {
       this.lastCompletedStat = stat;
       this.completedRuns += 1;
+      this.entryTarget = null;
+      this.exitTarget = null;
+      this.quoteRequestedForSequence = null;
+
       if (isQualifyingWatchStat(stat, this.minExclusive, this.maxExclusive)) {
         this.watchStat = stat;
         this.entryTarget = stat;
-        this.exitTarget = stat + this.exitOffset;
+        this.exitTarget = stat;
         this.state = STATES.WAITING_FOR_MATCH;
-        this.lastAction = 'Watch Stat ' + stat + ' saved; waiting for the next matching run';
-      } else if (this.state !== STATES.WAITING_FOR_MATCH || this.watchStat === null) {
-        this.watchStat = null;
-        this.entryTarget = null;
-        this.exitTarget = null;
-        this.state = STATES.OBSERVING;
-        this.lastAction = 'Completed stat ' + stat + ' is outside the qualifying range';
+        this.lastAction = 'Watch Stat ' + stat + ' saved; waiting for the next run to reach ' + stat;
       } else {
-        this.lastAction = 'Completed stat ' + stat + ' did not match Watch Stat ' + this.watchStat + '; retaining the watch';
+        this.watchStat = null;
+        this.state = STATES.OBSERVING;
+        this.lastAction = reason || ('Completed stat ' + stat + ' is outside the qualifying range');
       }
     }
 
     _completeCurrentRun() {
       if (!Number.isInteger(this.lastCount)) return null;
       const completed = this.lastCount;
-      if (this.state === STATES.ARMED) {
-        this.state = this.watchStat === null ? STATES.OBSERVING : STATES.WAITING_FOR_MATCH;
-        this.lastAction = 'Entry arm cancelled: run ended before ' + this.watchStat;
-        if (isQualifyingWatchStat(completed, this.minExclusive, this.maxExclusive)) this._seedFromCompletedRun(completed);
-      } else if (this.state === STATES.BUY_PENDING) {
-        this.entrySignalExpired = true;
-        this.lastAction = 'Entry signal expired while the buy request was in flight; reconciling Deriv response';
-      } else if (this.state === STATES.WAITING_FOR_RUN_END) {
-        this._seedFromCompletedRun(completed);
-      } else if (this.state === STATES.WAITING_FOR_MATCH) {
-        if (isQualifyingWatchStat(completed, this.minExclusive, this.maxExclusive)) {
-          this._seedFromCompletedRun(completed);
-        } else {
-          this.completedRuns += 1;
-          this.lastCompletedStat = completed;
-          this.lastAction = 'Run ended at ' + completed + '; waiting for a qualifying run';
-        }
-      } else if (this.state === STATES.OBSERVING) {
-        this._seedFromCompletedRun(completed);
+
+      // A submitted buy or a live position owns the tracker until Deriv confirms settlement.
+      // A cut observed while busy is deliberately not used as a new Watch Stat.
+      if (this._busy()) {
+        if (this.state === STATES.BUY_PENDING) this.entrySignalExpired = true;
+        this.lastCompletedStat = completed;
+        this.completedRuns += 1;
+        this.lastAction = this.state === STATES.BUY_PENDING
+          ? 'Run cut while buy was in flight; late fills will be closed as soon as sellable'
+          : 'Run cut while contract was active; waiting for contract settlement';
+        return completed;
       }
+
+      if (this.state === STATES.PAUSED) {
+        this._saveOrClearWatch(completed, 'Run completed while paused; waiting to resume');
+        this.state = STATES.PAUSED;
+        return completed;
+      }
+
+      if (this.state === STATES.ARMED) {
+        this.lastAction = 'Entry arm cancelled: run ended before the matching stat';
+      } else if (this.state === STATES.WAITING_FOR_RUN_END) {
+        this.lastAction = 'Post-trade counting run completed';
+      }
+
+      this._saveOrClearWatch(completed);
       return completed;
     }
 
@@ -138,32 +156,61 @@
         if (completed !== null) actions.push({ type: 'RUN_COMPLETED', stat: completed });
         this.lastCount = null;
         this.sequenceNumber += 1;
+        this.quoteRequestedForSequence = null;
       } else if (this.lastCount !== null && count < this.lastCount) {
         const completed = this._completeCurrentRun();
         if (completed !== null) actions.push({ type: 'RUN_COMPLETED', stat: completed });
         this.sequenceNumber += 1;
         this.lastCount = null;
+        this.quoteRequestedForSequence = null;
       }
 
       if (suppliedSequence !== null) this.sequenceId = suppliedSequence;
       this.currentCount = count;
 
-      if (this.state === STATES.IN_TRADE && this.exitTarget !== null && count >= this.exitTarget && !this.closeRequested) {
-        this.closeRequested = true;
-        this.state = STATES.CLOSE_PENDING;
-        this.lastAction = 'Exit requested at stat ' + count + '; target was ' + this.exitTarget;
-        actions.push({ type: 'CLOSE_CONTRACT', contractId: this.contractId, targetStat: this.exitTarget, observedStat: count, late: count > this.exitTarget });
-      } else if (this.state === STATES.WAITING_FOR_MATCH && this.watchStat !== null && count === this.watchStat - 1) {
-        this.state = STATES.ARMED;
-        this.lastAction = 'Entry armed before matching stat ' + this.watchStat;
-        actions.push({ type: 'ARM_ENTRY', watchStat: this.watchStat, expectedEntryStat: this.watchStat, sequenceNumber: this.sequenceNumber });
-      } else if (this.state === STATES.WAITING_FOR_MATCH && this.watchStat !== null && count >= this.watchStat) {
-        this.lastAction = 'Missed pre-entry arm for stat ' + this.watchStat + '; no late buy';
+      if (this.state === STATES.WAITING_FOR_MATCH && this.watchStat !== null) {
+        const preEntryCount = this.watchStat - 1;
+
+        // Quote preparation is deliberately earlier than the final pre-entry tick.
+        if (count >= this.watchStat - 3 && count < preEntryCount &&
+            this.quoteRequestedForSequence !== this.sequenceNumber) {
+          this.quoteRequestedForSequence = this.sequenceNumber;
+          actions.push({
+            type: 'PREPARE_QUOTE',
+            watchStat: this.watchStat,
+            count,
+            growthRate: this.growthRate,
+            sequenceNumber: this.sequenceNumber,
+          });
+        }
+
+        if (count === preEntryCount) {
+          this.state = STATES.ARMED;
+          this.lastAction = 'Entry armed at ' + count + '; buy must be submitted before ' + this.watchStat;
+          actions.push({
+            type: 'ARM_ENTRY',
+            watchStat: this.watchStat,
+            expectedEntryStat: this.watchStat,
+            count,
+            growthRate: this.growthRate,
+            sequenceNumber: this.sequenceNumber,
+          });
+        } else if (count >= this.watchStat) {
+          this.state = STATES.WAITING_FOR_RUN_END;
+          this.watchStat = null;
+          this.entryTarget = null;
+          this.exitTarget = null;
+          this.lastAction = 'Matching count passed without a timely buy; no late entry';
+          actions.push({ type: 'MISSED_ENTRY', observedStat: count });
+        }
+      } else if (this.state === STATES.ARMED && this.watchStat !== null && count >= this.watchStat) {
+        // An arm that has not yet submitted a buy is cancelled at the matching tick.
         this.state = STATES.WAITING_FOR_RUN_END;
         this.watchStat = null;
         this.entryTarget = null;
         this.exitTarget = null;
-        actions.push({ type: 'MISSED_ENTRY', observedStat: count });
+        this.lastAction = 'Unsubmitted entry cancelled: matching count arrived before the buy was sent';
+        actions.push({ type: 'CANCEL_ARMED_ENTRY', observedStat: count });
       }
 
       this.lastCount = count;
@@ -171,43 +218,92 @@
     }
 
     markBuySubmitted(requestId = null) {
-      if (this.state !== STATES.ARMED) return false;
+      if (this.state !== STATES.ARMED || this.entrySignalExpired) return false;
       this.state = STATES.BUY_PENDING;
       this.buyRequestId = requestId;
-      this.lastAction = 'Buy request sent to Deriv; waiting for confirmation';
+      this.lastAction = 'Buy request sent from the pre-entry count; waiting for Deriv confirmation';
       return true;
     }
 
-    confirmBuy(contractId, observedCount = this.currentCount) {
-      if (contractId === null || contractId === undefined || contractId === '') throw new TypeError('A confirmed Deriv contract ID is required.');
-      if (this.state !== STATES.BUY_PENDING && this.state !== STATES.ARMED) return [];
-      this.contractId = contractId;
-      this.trades += 1;
-      this.entryConfirmedAtCount = Number.isInteger(observedCount) ? observedCount : null;
-      this.closeRequested = false;
-      if (this.entrySignalExpired || (Number.isInteger(observedCount) && this.exitTarget !== null && observedCount >= this.exitTarget)) {
-        this.state = STATES.CLOSE_PENDING;
-        this.closeRequested = true;
-        this.lastAction = 'Late buy confirmed after its entry window; immediately requesting contract closure';
-        return [{ type: 'CLOSE_CONTRACT', contractId, targetStat: this.exitTarget, observedStat: observedCount, late: true }];
+    confirmBuy(contractId) {
+      if (contractId === null || contractId === undefined || contractId === '') {
+        throw new TypeError('A confirmed Deriv contract ID is required.');
       }
+      if (![STATES.BUY_PENDING, STATES.ARMED].includes(this.state)) return [];
+      this.contractId = String(contractId);
+      this.trades += 1;
+      this.ticksAfterEntry = 0;
+      this.entrySpotTime = null;
+      this.lastContractSpotTime = null;
+      this.closeWhenSellable = this.entrySignalExpired;
+      this.closeRequested = false;
       this.state = STATES.IN_TRADE;
-      this.lastAction = 'Contract ' + contractId + ' confirmed; exit target ' + this.exitTarget;
-      return [{ type: 'CONTRACT_OPEN', contractId, exitTarget: this.exitTarget }];
+      this.lastAction = this.entrySignalExpired
+        ? 'Late buy confirmed after the signal expired; closing as soon as Deriv permits'
+        : 'Contract ' + contractId + ' confirmed; monitoring two post-entry ticks';
+      return [{ type: 'CONTRACT_OPEN', contractId: this.contractId, late: this.entrySignalExpired }];
     }
 
-    confirmClose() {
+    observeContractUpdate(contract = {}) {
+      if (!this.contractId || ![STATES.IN_TRADE, STATES.CLOSE_PENDING].includes(this.state)) return [];
+      const actions = [];
+      const entryTime = contract.entry_spot_time === null || contract.entry_spot_time === undefined || contract.entry_spot_time === ''
+        ? NaN : Number(contract.entry_spot_time);
+      const currentTime = contract.current_spot_time === null || contract.current_spot_time === undefined || contract.current_spot_time === ''
+        ? NaN : Number(contract.current_spot_time);
+
+      if (Number.isFinite(entryTime)) this.entrySpotTime = entryTime;
+      if (Number.isFinite(currentTime)) {
+        if (this.entrySpotTime === null) {
+          this.entrySpotTime = currentTime;
+        } else if (currentTime > this.entrySpotTime && currentTime !== this.lastContractSpotTime) {
+          this.ticksAfterEntry += 1;
+        }
+        this.lastContractSpotTime = currentTime;
+      }
+
+      const sold = contract.is_sold === true || Number(contract.is_sold) === 1 ||
+        contract.is_expired === true || Number(contract.is_expired) === 1 ||
+        contract.is_open === false ||
+        ['won', 'lost', 'sold', 'expired'].includes(String(contract.status || '').toLowerCase());
+
+      if (sold) {
+        this.confirmNaturalSettlement();
+        actions.push({ type: 'CONTRACT_SETTLED', contractId: String(contract.contract_id || this.contractId) });
+        return actions;
+      }
+
+      if (this.ticksAfterEntry >= 2) this.closeWhenSellable = true;
+      const canSell = contract.is_valid_to_sell === true || Number(contract.is_valid_to_sell) === 1;
+      if (this.closeWhenSellable && canSell && !this.closeRequested) {
+        this.closeRequested = true;
+        this.state = STATES.CLOSE_PENDING;
+        this.lastAction = 'Two post-entry ticks completed; sending automatic close';
+        actions.push({
+          type: 'CLOSE_CONTRACT',
+          contractId: this.contractId,
+          ticksAfterEntry: this.ticksAfterEntry,
+        });
+      } else if (this.closeWhenSellable && !canSell) {
+        this.lastAction = 'Two post-entry ticks completed; waiting for Deriv to make the contract sellable';
+      } else {
+        this.lastAction = 'Contract active · ' + Math.min(2, this.ticksAfterEntry) + '/2 post-entry ticks';
+      }
+      return actions;
+    }
+
+    markCloseSubmitted(requestId = null) {
       if (this.state !== STATES.CLOSE_PENDING) return false;
-      this.contractId = null;
-      this.buyRequestId = null;
-      this.closeRequestId = null;
+      this.closeRequestId = requestId;
+      return true;
+    }
+
+    markCloseFailed(message = 'Automatic close request failed') {
+      if (!this.contractId) return false;
       this.closeRequested = false;
-      this.entrySignalExpired = false;
-      this.watchStat = null;
-      this.entryTarget = null;
-      this.exitTarget = null;
-      this.state = STATES.WAITING_FOR_RUN_END;
-      this.lastAction = 'Contract closed; waiting for the current counting run to finish';
+      this.closeWhenSellable = true;
+      this.state = STATES.IN_TRADE;
+      this.lastAction = String(message) + '; close will retry on the next sellable update';
       return true;
     }
 
@@ -217,18 +313,48 @@
       this.buyRequestId = null;
       this.closeRequestId = null;
       this.closeRequested = false;
+      this.closeWhenSellable = false;
       this.entrySignalExpired = false;
       this.watchStat = null;
       this.entryTarget = null;
       this.exitTarget = null;
+      this.quoteRequestedForSequence = null;
       this.state = STATES.WAITING_FOR_RUN_END;
       this.lastAction = 'Contract settled; waiting for the current counting run to finish';
       return true;
     }
 
+    buyFailed(message = 'Deriv rejected the purchase') {
+      if (this.state !== STATES.BUY_PENDING) return false;
+      this.buyRequestId = null;
+      this.entrySignalExpired = false;
+      this.watchStat = null;
+      this.entryTarget = null;
+      this.exitTarget = null;
+      this.state = STATES.WAITING_FOR_RUN_END;
+      this.lastAction = String(message) + '; no second buy attempt in this run';
+      return true;
+    }
+
+    restoreContract(record = {}) {
+      if (!record.contractId) throw new TypeError('A contract ID is required to restore an open position.');
+      this.contractId = String(record.contractId);
+      this.watchStat = Number.isInteger(record.watchStat) ? record.watchStat : this.watchStat;
+      this.entryTarget = this.watchStat;
+      this.exitTarget = this.watchStat;
+      this.ticksAfterEntry = Math.max(0, Number(record.ticksAfterEntry) || 0);
+      this.entrySpotTime = Number.isFinite(Number(record.entrySpotTime)) ? Number(record.entrySpotTime) : null;
+      this.lastContractSpotTime = Number.isFinite(Number(record.lastContractSpotTime)) ? Number(record.lastContractSpotTime) : null;
+      this.closeWhenSellable = record.closeWhenSellable === true;
+      this.closeRequested = record.closeRequested === true;
+      this.state = record.closeRequested ? STATES.CLOSE_PENDING : STATES.IN_TRADE;
+      this.lastAction = 'Restored open contract; reconciling its live status with Deriv';
+      return this.snapshot();
+    }
+
     pause(reason = 'Paused by user') {
-      if (this.state === STATES.BUY_PENDING || this.state === STATES.IN_TRADE || this.state === STATES.CLOSE_PENDING) {
-        this.lastAction = 'Pause requested; existing contract/request still requires management: ' + reason;
+      if (this._busy()) {
+        this.lastAction = 'New entries paused; existing contract/request still requires management: ' + reason;
         return false;
       }
       this.state = STATES.PAUSED;
@@ -248,10 +374,18 @@
     return new Tracker(options);
   }
 
-  function createTrackerSet(symbol, { aggressive = false, minExclusive = 15, maxExclusive = 45, exitOffset = 2 } = {}) {
+  function createTrackerSet(symbol, { aggressive = false, minExclusive = 15, maxExclusive = 45 } = {}) {
     const rates = aggressive ? GROWTH_RATES : GROWTH_RATES.slice(0, 4);
-    return rates.map(growthRate => createTracker({ symbol, growthRate, minExclusive, maxExclusive, exitOffset }));
+    return rates.map(growthRate => createTracker({ symbol, growthRate, minExclusive, maxExclusive }));
   }
 
-  return Object.freeze({ GROWTH_RATES, STATES, Tracker, createTracker, createTrackerSet, isQualifyingWatchStat, normalizeTicksStayedIn });
+  return Object.freeze({
+    GROWTH_RATES,
+    STATES,
+    Tracker,
+    createTracker,
+    createTrackerSet,
+    isQualifyingWatchStat,
+    normalizeTicksStayedIn,
+  });
 });
