@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "build": "webpack --mode production --config webpack.config.cjs",
+    "build": "npm test && webpack --mode production --config webpack.config.cjs",
     "test": "node --test test/*.test.js"
   },
   "dependencies": {
