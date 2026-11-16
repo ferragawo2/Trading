@@ -1834,7 +1834,7 @@ async function connectTradeAccount(accountId){
     renderAlgoDashboard();return;
   }
   if(tradingSocket){try{tradingSocket.close(1000,"Account changed")}catch{}}
-  activeTradeAccount=account;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;lastTradeChartPosition=null;window.__derivAccumulatorContractInfo=null;window.__derivAccumulatorClosedBarriers=null;publishTradeChartOverlay();$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
+  activeTradeAccount=account;tradeBalance=null;tradeBalanceUpdatedAt=0;algoPendingStake=0;currentTradeProposal=null;latestTradeQuoteReqId=null;latestTradeQuoteContext=null;tpCloseRequested=false;activeContractId=null;activeTradeOverlay=null;lastTradeChartPosition=null;window.__derivAccumulatorContractInfo=null;window.__derivAccumulatorClosedBarriers=null;publishTradeChartOverlay();$("executionPanel").classList.remove("contract-open");updateTradeHeaderBalance();
   $("confirmTradeBuy").textContent="BUY";$("confirmTradeBuy").disabled=true;$("getTradeQuote").disabled=true;
   $("tradeBalance").textContent="Connecting…";$("tradeBalanceTime").textContent="Opening account-scoped Deriv connection";
   $("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connecting";
@@ -1985,17 +1985,20 @@ function algoExposure(){
 }
 function getAlgoTracker(rate){return algoTrackers.get(algoRateKey(rate))||null;}
 function forgetAlgoQuote(rate){
-  const key=algoRateKey(rate);
+  const key=algoRateKey(rate),subscriptionsToForget=new Set();
   Object.entries(algoQuoteRequests).forEach(([requestId,meta])=>{
     if(Number(meta.rate)!==Number(rate))return;
-    if(meta.subscriptionId&&tradingSocket?.readyState===WebSocket.OPEN){try{tradeSend({forget:meta.subscriptionId},"algo-forget");}catch{}}
+    if(meta.subscriptionId)subscriptionsToForget.add(String(meta.subscriptionId));
     delete algoQuoteRequests[requestId];
   });
   Object.entries(algoQuoteSubscriptions).forEach(([subscriptionId,meta])=>{
     if(Number(meta.rate)!==Number(rate))return;
-    if(tradingSocket?.readyState===WebSocket.OPEN){try{tradeSend({forget:subscriptionId},"algo-forget");}catch{}}
+    subscriptionsToForget.add(String(subscriptionId));
     delete algoQuoteSubscriptions[subscriptionId];
   });
+  if(tradingSocket?.readyState===WebSocket.OPEN){
+    subscriptionsToForget.forEach(subscriptionId=>{try{tradeSend({forget:subscriptionId},"algo-forget");}catch{}});
+  }
   delete algoQuotes[key];
 }
 function forgetAllAlgoQuotes(){
@@ -2057,7 +2060,8 @@ function trySubmitAlgoBuy(rate){
     return false;
   }
   const available=Number(tradeBalance)-algoPendingStake;
-  if(!Number.isFinite(Number(tradeBalance))||available+1e-9<algoConfig.stake){
+  if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||
+     Date.now()-tradeBalanceUpdatedAt>30000||available+1e-9<algoConfig.stake){
     tracker.skipArmedEntry("Entry skipped: available Deriv balance is below the contract stake");
     algoLog("Entry skipped because available balance is insufficient",rate);
     renderAlgoDashboard();return false;
