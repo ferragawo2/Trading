@@ -841,7 +841,7 @@ const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
-let algoRunning=false,algoConfig=null,algoTrackers=new Map(),algoPendingStake=0,algoEvents=[];
+let algoRunning=false,algoConfig=null,algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0;
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
@@ -1859,7 +1859,7 @@ async function connectTradeAccount(accountId){
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
       if(handleAlgoTradingMessage(m))return;
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell"){tpCloseRequested=false;$("confirmTradeBuy").disabled=!activeContractId;if(activeContractId)$("confirmTradeBuy").textContent="CLOSE";}return}
-      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();if(kind==="algo-balance-refresh"){Object.entries(algoConfirmedStakeReservations).forEach(([contractId,reservation])=>{if(String(reservation.refreshRequestId)===String(m.req_id))delete algoConfirmedStakeReservations[contractId];});}recalculateAlgoReservedStake();const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
+      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();if(String(m.req_id)===String(algoBalanceRefreshRequestId))algoBalanceRefreshRequestId=null;if(kind==="algo-balance-refresh"){Object.entries(algoConfirmedStakeReservations).forEach(([contractId,reservation])=>{if(String(reservation.refreshRequestId)===String(m.req_id))delete algoConfirmedStakeReservations[contractId];});}recalculateAlgoReservedStake();const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance();if(algoRunning)algoTrackers.forEach((tracker,rateKey)=>{if(tracker.state==="ARMED")trySubmitAlgoBuy(Number(rateKey));});}
       if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");const tradeRate=Number($("tradeGrowth").value),tradeBarrier=barrierData[tradeRate]||{},tradeTick=latestTicks[selectedSymbol];
         window.__derivAccumulatorContractInfo=null;
@@ -2007,6 +2007,34 @@ function recalculateAlgoReservedStake(){
   algoPendingStake=Object.values(algoBuyRequests).reduce((sum,meta)=>sum+Number(meta.stake||0),0)+
     Object.values(algoConfirmedStakeReservations).reduce((sum,meta)=>sum+Number(meta.stake||0),0);
 }
+function requestAlgoBalanceRefresh(){
+  if(!algoRunning||!algoConfig||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)return false;
+  if(algoBalanceRefreshRequestId&&Date.now()-algoBalanceRefreshRequestedAt<10000)return false;
+  try{
+    const requestId=tradeSend({balance:1},"algo-balance-refresh");
+    algoBalanceRefreshRequestId=String(requestId);
+    algoBalanceRefreshRequestedAt=Date.now();
+    return true;
+  }catch(error){
+    algoLog("Could not refresh Deriv balance before an Algo entry: "+error.message);
+    return false;
+  }
+}
+function startAlgoBalanceRefresh(){
+  if(algoBalanceRefreshTimer)clearInterval(algoBalanceRefreshTimer);
+  algoBalanceRefreshRequestId=null;
+  algoBalanceRefreshRequestedAt=0;
+  requestAlgoBalanceRefresh();
+  algoBalanceRefreshTimer=setInterval(()=>{
+    if(!algoRunning){stopAlgoBalanceRefresh();return;}
+    if(!tradeBalanceUpdatedAt||Date.now()-tradeBalanceUpdatedAt>10000)requestAlgoBalanceRefresh();
+  },5000);
+}
+function stopAlgoBalanceRefresh(){
+  if(algoBalanceRefreshTimer){clearInterval(algoBalanceRefreshTimer);algoBalanceRefreshTimer=null;}
+  algoBalanceRefreshRequestId=null;
+  algoBalanceRefreshRequestedAt=0;
+}
 function reserveConfirmedAlgoStake(contractId,stake){
   const id=String(contractId);
   try{
@@ -2096,11 +2124,16 @@ function trySubmitAlgoBuy(rate){
     requestAlgoQuote(rate,"final quote while armed");
     return false;
   }
+  const balanceAge=tradeBalanceUpdatedAt?Date.now()-tradeBalanceUpdatedAt:Infinity;
+  if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||balanceAge>30000){
+    requestAlgoBalanceRefresh();
+    algoLog("Balance is stale; refreshing it before submitting the armed entry",rate);
+    return false;
+  }
   const available=Number(tradeBalance)-algoPendingStake;
-  if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||
-     Date.now()-tradeBalanceUpdatedAt>30000||available+1e-9<algoConfig.stake){
+  if(available+1e-9<algoConfig.stake){
     tracker.skipArmedEntry("Entry skipped: available Deriv balance is below the contract stake");
-    algoLog("Entry skipped because available balance is insufficient",rate);
+    algoLog("Insufficient available balance: "+Math.max(0,available).toFixed(2)+" "+algoConfig.currency+" available; "+algoConfig.stake.toFixed(2)+" required",rate);
     renderAlgoDashboard();return false;
   }
   if(!tracker.markBuySubmitted("submitting")){
@@ -2614,6 +2647,7 @@ function startAccumulatorAlgo(){
     currency:activeTradeAccount.currency,stake,aggressive
   };
   algoTrackers=new Map();algoEvents=[];algoPendingStake=0;algoRunning=true;
+  startAlgoBalanceRefresh();
   rates.forEach(rate=>{
     const tracker=engine.createTracker({symbol:selectedSymbol,growthRate:rate});
     const saved=nativeStatsByKey[nativeStatsKey(selectedSymbol,rate)]||{};
@@ -2628,6 +2662,7 @@ function startAccumulatorAlgo(){
 function stopAccumulatorAlgo(reason){
   if(!algoRunning){renderAlgoDashboard();return;}
   algoRunning=false;
+  stopAlgoBalanceRefresh();
   forgetAllAlgoQuotes();
   algoTrackers.forEach(tracker=>tracker.pause(reason||"New entries paused by user; open trades remain monitored"));
   algoLog("New entries paused. Any submitted buys and open contracts remain under Deriv monitoring.");
