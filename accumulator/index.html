@@ -777,6 +777,25 @@ body.trade-active{padding-bottom:0!important}
  .algo-card-heading strong{font-size:10px}
 }
 
+
+/* Android touch-scroll stability: one page scroller, no nested momentum areas. */
+@media(max-width:800px){
+ html,body{height:100%;min-height:0;overflow:hidden!important}
+ body{overscroll-behavior:none!important}
+ main.wrap,body.trade-active main.wrap,body.trade-active .wrap{
+  height:100dvh!important;height:100vh!important;min-height:0!important;
+  overflow-x:hidden!important;overflow-y:auto!important;
+  overscroll-behavior-y:auto!important;
+  -webkit-overflow-scrolling:touch;
+  touch-action:pan-y pinch-zoom;
+  scroll-behavior:auto!important;
+  overflow-anchor:auto;
+  will-change:scroll-position;
+ }
+ body.trade-active .wrap{padding-bottom:96px!important}
+ #algoTradeView,#algoTradeView *{touch-action:pan-y pinch-zoom}
+ #algoTradeView .algo-stat-history{overscroll-behavior-x:contain;touch-action:pan-x pan-y}
+}
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -960,6 +979,7 @@ let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, 
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
 let algoRunning=false,algoConfig=null,algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0;
+let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null;
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
@@ -2719,6 +2739,15 @@ function renderAlgoEventList(){
   if(!algoEvents.length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="Strategy events will appear here.";list.append(empty);}
 }
 function renderAlgoDashboard(){
+  if(Date.now()<algoScrollBusyUntil){
+    algoRenderDeferred=true;
+    clearTimeout(algoScrollRenderTimer);
+    algoScrollRenderTimer=setTimeout(()=>{
+      algoScrollRenderTimer=null;
+      if(algoRenderDeferred){algoRenderDeferred=false;renderAlgoDashboard();}
+    },Math.max(80,algoScrollBusyUntil-Date.now()+40));
+    return;
+  }
   const state=window.DerivAccumulatorAlgoEngine;
   if(!$("algoTrackerGrid"))return;
   const activeRates=algoConfig?(algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]):(algoTrackers.size?Array.from(algoTrackers.values()).map(tracker=>tracker.growthRate):($("algoRiskMode").value==="aggressive"?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]));
@@ -2917,6 +2946,13 @@ $("oneTapTrading").addEventListener("change",()=>{$("tradeMessage").textContent=
 
 $("derivLogout").onclick=disconnectDeriv;
 if(new URLSearchParams(location.search).get("connected")==="1"){history.replaceState(null,"",location.pathname);$("accountMessage").textContent="Deriv account authorization completed."; }
+const algoScrollHost=document.querySelector("main.wrap");
+if(algoScrollHost&&!algoScrollHost.dataset.algoScrollGuard){
+  algoScrollHost.dataset.algoScrollGuard="true";
+  algoScrollHost.addEventListener("scroll",()=>{
+    algoScrollBusyUntil=Date.now()+220;
+  },{passive:true});
+}
 loadAlgoPendingOrders();loadAlgoContractRecords();renderAlgoDashboard();
 refreshDerivAccount();
 $("connectBtn").onclick=connect;
