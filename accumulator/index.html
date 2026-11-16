@@ -2292,6 +2292,7 @@ function restoreAlgoContractsForAccount(accountId){
       tracker=window.DerivAccumulatorAlgoEngine.createTracker({symbol:record.symbol,growthRate:Number(record.rate)});
       algoTrackers.set(key,tracker);
     }
+    record.closeRequested=false;
     tracker.restoreContract(record);
     subscribeAlgoContract(record);
   });
@@ -2378,7 +2379,7 @@ function startAccumulatorAlgo(){
   if(activeContractId){$("algoLiveText").textContent="Close the manual contract before starting Algo.";return;}
   if(algoOpenContractCount()>0||algoPendingBuyCount()>0){$("algoLiveText").textContent="Wait for all existing Algo orders and contracts to settle before restarting.";return;}
   if(!Number.isFinite(stake)||stake<0.35){$("algoLiveText").textContent="Enter a valid stake of at least 0.35.";return;}
-  if(!Number.isFinite(Number(tradeBalance))){$("algoLiveText").textContent="Waiting for the connected Deriv account balance.";return;}
+  if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||Date.now()-tradeBalanceUpdatedAt>30000){$("algoLiveText").textContent="Waiting for a fresh connected Deriv account balance.";return;}
   const maxExposure=stake*rates.length;
   if(Number(tradeBalance)+1e-9<maxExposure){
     $("algoLiveText").textContent="Balance too low for maximum simultaneous exposure of "+maxExposure.toFixed(2)+" "+activeTradeAccount.currency+".";
@@ -2434,6 +2435,10 @@ function requestTradeQuote(){
 }
 function buyTradeProposal(){
   if(activeContractId){closeTradeContract();return;}
+  if(algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0){
+    $("tradeMessage").textContent="Pause Algo and wait for its submitted orders and open contracts to settle before manual buying.";
+    return;
+  }
   if(!activeTradeAccount)return;
   const stake=Number($("tradeStake").value),rate=Number($("tradeGrowth").value);
   if(!currentTradeProposal||currentTradeProposal.stake!==stake||currentTradeProposal.rate!==rate||currentTradeProposal.symbol!==selectedSymbol||currentTradeProposal.accountId!==activeTradeAccount.account_id){requestTradeQuote();$("tradeMessage").textContent="Stake or settings changed. Waiting for the matching quote before buying.";return;}
@@ -2457,6 +2462,10 @@ async function disconnectDeriv(){
   refreshDerivAccount();
 }
 $("derivLogin").onclick=startDerivLogin;
+$("algoStart").addEventListener("click",startAccumulatorAlgo);
+$("algoStop").addEventListener("click",()=>stopAccumulatorAlgo());
+$("algoRiskMode").addEventListener("change",()=>{$("algoActiveTrackers").textContent=$("algoRiskMode").value==="aggressive"?"5":"4";renderAlgoDashboard();});
+$("algoStake").addEventListener("change",renderAlgoDashboard);
 $("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);
 $("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").value);
 $("tradeAccountMode").onchange=()=>switchTradeAccountMode($("tradeAccountMode").value);
