@@ -1814,7 +1814,9 @@ function renderTradeAccounts(){
   if(!derivAccounts.length){const o=document.createElement("option");o.textContent="No trading accounts returned";select.append(o);select.disabled=true;return;}
   derivAccounts.forEach(a=>{const o=document.createElement("option");o.value=a.account_id;o.textContent=(a.is_virtual?"DEMO":"REAL")+" · "+(a.account_type||"Options")+" · "+(a.currency||"")+" · "+a.account_id;select.append(o);});
   select.disabled=false;
-  const preferred=derivAccounts.find(a=>a.is_virtual)||derivAccounts[0];
+  const tracked=[...loadAlgoContractRecords(),...loadAlgoPendingOrders()].find(item=>item&&item.accountId);
+  const preferred=(tracked&&derivAccounts.find(a=>String(a.account_id)===String(tracked.accountId)))||
+    derivAccounts.find(a=>a.is_virtual)||derivAccounts[0];
   select.value=preferred.account_id;connectTradeAccount(preferred.account_id);updateTradeHeaderBalance();$("tradeAccountMode").value=preferred.is_virtual?"demo":"real";
 }
 function tradeSend(payload,kind){
@@ -1823,7 +1825,11 @@ function tradeSend(payload,kind){
 }
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
-  loadAlgoContractRecords();
+  loadAlgoContractRecords();loadAlgoPendingOrders();
+  if(Object.values(algoPendingOrders).some(meta=>String(meta.accountId)!==String(accountId))){
+    $("tradeMessage").textContent="A pending Algo buy belongs to another Deriv account. Select that account to reconcile it before switching.";
+    renderAlgoDashboard();return;
+  }
   if(activeTradeAccount&&String(activeTradeAccount.account_id)!==String(accountId)&&
      (algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId)){
     $("tradeMessage").textContent="Stop Algo and wait for every submitted order and open Algo contract to settle before switching accounts.";
@@ -2335,6 +2341,7 @@ function handleAlgoStatementResponse(message,requestMeta){
       if(tracker.state==="BUY_PENDING")tracker.confirmBuy(contractId);
       else tracker.restoreContract(record);
       subscribeAlgoContract(record);
+      reserveConfirmedAlgoStake(contractId,meta.stake);
       algoLog("Recovered confirmed contract #"+contractId+" from Deriv account statement",meta.rate);
     }else{
       algoLog("Statement confirmed existing contract #"+contractId,meta.rate);
@@ -2362,7 +2369,7 @@ function handleAlgoStatementResponse(message,requestMeta){
     if(tracker?.state==="BUY_PENDING")tracker.buyFailed("Deriv account statement contains no matching buy transaction");
     algoLog("Deriv statement found no matching buy; pending entry cleared without retrying the signal",meta.rate);
   });
-  algoPendingStake=Object.values(algoBuyRequests).reduce((sum,meta)=>sum+Number(meta.stake||0),0);
+  recalculateAlgoReservedStake();
   saveAlgoContractRecords();
   saveAlgoPendingOrders();
   try{tradeSend({balance:1},"balance-refresh")}catch{}
@@ -2388,7 +2395,7 @@ function handleAlgoTradingMessage(message){
       if(tracker?.state==="ARMED")tracker.skipArmedEntry("Entry skipped: Deriv did not return a timely quote");
       renderAlgoDashboard();return true;
     }
-    const buyMeta=algoBuyRequests[requestId];
+    const buyMeta=algoBuyRequests[requestId]||algoLateBuyRequestIds[requestId];
     if(buyMeta){
       delete algoBuyRequests[requestId];
       delete algoLateBuyRequestIds[requestId];
