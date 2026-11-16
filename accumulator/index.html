@@ -841,9 +841,9 @@ const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
-const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
+const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
 let algoRunning=false,algoConfig=null,algoTrackers=new Map(),algoPendingStake=0,algoEvents=[];
-const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={};
+const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
 function publishTradeChartOverlay(){
@@ -1967,6 +1967,24 @@ function saveAlgoContractRecords(){
   try{localStorage.setItem(ALGO_CONTRACTS_STORAGE_KEY,JSON.stringify(Object.values(algoContractsById)));}
   catch(error){console.warn("Could not persist Algo contract records",error);}
 }
+function saveAlgoPendingOrders(){
+  try{localStorage.setItem(ALGO_PENDING_STORAGE_KEY,JSON.stringify(Object.values(algoPendingOrders)));}
+  catch(error){console.warn("Could not persist pending Algo orders",error);}
+}
+function loadAlgoPendingOrders(){
+  try{
+    const rows=JSON.parse(localStorage.getItem(ALGO_PENDING_STORAGE_KEY)||"[]");
+    Object.keys(algoPendingOrders).forEach(key=>delete algoPendingOrders[key]);
+    if(Array.isArray(rows))rows.forEach(item=>{if(item&&item.intentId)algoPendingOrders[String(item.intentId)]=item;});
+  }catch(error){console.warn("Could not restore pending Algo orders",error);}
+  return Object.values(algoPendingOrders);
+}
+function removePendingAlgoOrder(meta){
+  if(!meta)return;
+  if(meta.intentId)delete algoPendingOrders[String(meta.intentId)];
+  if(meta.requestId)delete algoLateBuyRequestIds[String(meta.requestId)];
+  saveAlgoPendingOrders();
+}
 function loadAlgoContractRecords(){
   try{
     const rows=JSON.parse(localStorage.getItem(ALGO_CONTRACTS_STORAGE_KEY)||"[]");
@@ -1978,7 +1996,7 @@ function loadAlgoContractRecords(){
   return Object.values(algoContractsById);
 }
 function algoOpenContractCount(){return Object.keys(algoContractsById).length;}
-function algoPendingBuyCount(){return Object.keys(algoBuyRequests).length;}
+function algoPendingBuyCount(){return Math.max(Object.keys(algoBuyRequests).length,Object.keys(algoPendingOrders).length);}
 function algoExposure(){
   const count=algoConfig?(algoConfig.aggressive?5:4):4;
   return algoConfig?algoConfig.stake*count:0;
