@@ -683,9 +683,17 @@ body.trade-active{padding-bottom:0!important}
  }
 }
 
-/* Stat-matching Algo workspace — presentation only */
-.algo-panel{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,.82fr);align-items:start;gap:14px;padding:0 0 24px;min-width:0}
+/* Stat-matching Algo workspace */
+.algo-panel{display:grid;grid-template-columns:1fr;align-items:start;gap:13px;padding:0 0 24px;min-width:0}
+.algo-top-workspace,.algo-section{background:#000;border:1px solid #303030;border-radius:17px;padding:15px;min-width:0;box-shadow:none}
+.algo-top-pills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;width:min(100%,640px);margin:0 auto 16px}
+.algo-segment-pill{display:flex;align-items:center;min-width:0;padding:4px;border:1px solid #303030;border-radius:999px;background:#000;box-shadow:inset 0 1px 0 rgba(255,255,255,.035)}
+.algo-segment-pill button{flex:1;min-width:0;min-height:42px;padding:0 10px;border:1px solid transparent;border-radius:999px;background:transparent;color:#929292;font-size:9px;font-weight:900;letter-spacing:.055em;white-space:nowrap;cursor:pointer;transition:background .18s,border-color .18s,color .18s}
+.algo-segment-pill button[aria-pressed="true"]{background:#151515;border-color:#4a4a4a;color:#fff;box-shadow:0 2px 10px #000}
+.algo-segment-pill button:disabled{opacity:.42;cursor:not-allowed}
+.algo-execution-strip{display:grid;grid-template-columns:minmax(115px,.7fr) minmax(150px,1fr) minmax(250px,1.55fr);align-items:end;gap:10px;max-width:820px;margin:0 auto}
 .algo-main-column,.algo-side-column{display:grid;align-content:start;gap:12px;min-width:0}
+.algo-content-grid{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(250px,.82fr);align-items:start;gap:13px;min-width:0}
 .algo-side-column{position:relative}
 .algo-control-card,.algo-section{background:linear-gradient(145deg,rgba(16,16,16,.96),rgba(3,3,3,.98));border:1px solid #303030;border-radius:17px;padding:15px;min-width:0;box-shadow:0 12px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.025)}
 .algo-control-card{border-color:#414141;box-shadow:0 12px 34px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.045)}
@@ -754,21 +762,25 @@ body.trade-active{padding-bottom:0!important}
 .algo-rate-4{--algo-accent:#b56cff;--algo-border:rgba(181,108,255,.48);--algo-glow:rgba(181,108,255,.14)}
 .algo-rate-5{--algo-accent:#e9cf37;--algo-border:rgba(233,207,55,.45);--algo-glow:rgba(233,207,55,.12)}
 @media(max-width:900px){
- .algo-panel{grid-template-columns:1fr;gap:12px}
+ .algo-content-grid{grid-template-columns:1fr;gap:12px}
  .algo-side-column{order:-1}
- .algo-control-card{padding:14px}
  .algo-tracker-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
 }
 @media(max-width:520px){
  .algo-stats-grid{grid-template-columns:1fr}
+ .algo-top-workspace,.algo-section{padding:12px;border-radius:15px}
+ .algo-top-pills{gap:7px;margin-bottom:13px}
+ .algo-segment-pill{padding:3px}
+ .algo-segment-pill button{min-height:39px;padding:0 5px;font-size:8px;letter-spacing:.02em}
+ .algo-execution-strip{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+ .algo-execution-strip .algo-action-row{grid-column:1/-1;margin-top:2px}
  .algo-tracker-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
  .algo-summary-grid{gap:5px}
  .algo-summary-item{padding:9px 6px}
  .algo-summary-item strong{font-size:12px}
  .algo-stat-card{padding:10px}
- .algo-control-card,.algo-section{padding:12px;border-radius:15px}
  .algo-tracker-card{padding:10px 8px}
- .algo-tracker-rate{font-size:17px}
+ .algo-tracker-rate{font-size:13px}
  .algo-action-row button{padding:9px 8px;font-size:9px}
 }
 @media(max-width:360px){
@@ -963,47 +975,51 @@ body.trade-active{padding-bottom:0!important}
   </div>
 </section></div>
 <section id="algoTradeView" class="algo-panel" role="tabpanel" aria-labelledby="algoTab" hidden>
- <div class="algo-main-column">
-  <section class="algo-section">
-   <div class="algo-card-heading"><strong>INDEPENDENT GROWTH TRACKERS</strong><span class="algo-muted">Live tracker state</span></div>
-   <div id="algoTrackerGrid" class="algo-tracker-grid"><div class="algo-muted">Start Algo to initialise the trackers.</div></div>
-  </section>
-  <section class="algo-section">
-   <div class="algo-card-heading"><strong>OPEN POSITIONS</strong><span class="algo-muted">2 confirmed ticks per contract</span></div>
-   <div id="algoPositionList" class="algo-list"><div class="algo-muted">No open Algo contracts.</div></div>
-  </section>
-  <section class="algo-section">
-   <div class="algo-card-heading"><strong>ALGO ACTIVITY</strong><span class="algo-muted">Latest events</span></div>
-   <div id="algoEventList" class="algo-list"><div class="algo-muted">Strategy events will appear here.</div></div>
-  </section>
- </div>
- <aside class="algo-side-column">
-  <div class="algo-control-card">
-   <div class="algo-card-heading"><strong>ALGO CONTROLS</strong><span class="algo-market-chip" id="algoMarketLabel">No market selected</span></div>
-   <div class="algo-form-grid">
-    <label class="algo-field">STAKE PER CONTRACT<input id="algoStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal"></label>
-    <label class="algo-field">RISK MODE<select id="algoRiskMode"><option value="normal">NORMAL · 1%–4%</option><option value="aggressive">AGGRESSIVE · 1%–5%</option></select></label>
+ <section class="algo-top-workspace" aria-label="Algo controls">
+  <div class="algo-top-pills">
+   <div class="algo-segment-pill" role="group" aria-label="Instrument scope">
+    <button id="algoScopeSelected" type="button" aria-pressed="true">SELECTED INSTRUMENT</button>
+    <button id="algoScopeAll" type="button" aria-pressed="false">WATCH ALL</button>
    </div>
-   <div class="algo-rule-card" aria-label="Algo strategy rules">
-    <div class="algo-rule-row"><span>WATCH STAT RANGE</span><strong>16–44 · completed Deriv cut</strong></div>
-    <div class="algo-rule-row"><span>ENTRY PREPARATION</span><strong>Before Watch Stat − 1</strong></div>
-    <div class="algo-rule-row"><span>HOLD DURATION</span><strong>2 confirmed contract ticks</strong></div>
-    <div class="algo-rule-row"><span>EXIT CONDITION</span><strong>Close when Deriv permits sale</strong></div>
+   <div class="algo-segment-pill" role="group" aria-label="Trading account">
+    <button id="algoAccountDemo" type="button" aria-pressed="true">DEMO</button>
+    <button id="algoAccountReal" type="button" aria-pressed="false">REAL</button>
    </div>
-   <p class="algo-muted" style="margin:10px 0 0">Each growth rate learns and maintains its own Watch Stat. Aggressive mode adds the independent 5% tracker.</p>
+  </div>
+  <div class="algo-execution-strip">
+   <label class="algo-field">STAKE PER CONTRACT<input id="algoStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal"></label>
+   <label class="algo-field">RISK MODE<select id="algoRiskMode"><option value="normal">NORMAL · 1%–4%</option><option value="aggressive">AGGRESSIVE · 1%–5%</option></select></label>
    <div class="algo-action-row"><button id="algoStart" class="algo-start-button" type="button">START ALGO</button><button id="algoStop" class="algo-stop-button" type="button" disabled>STOP NEW ENTRIES</button></div>
-   <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic entries</span></div>
-   <div class="algo-muted algo-account-note" id="algoAccountNote">Connect your Deriv account and select a market to start.</div>
   </div>
-  <div class="algo-section">
-   <div class="algo-card-heading"><strong>ENGINE SNAPSHOT</strong><span class="algo-muted">Live</span></div>
-   <div class="algo-summary-grid">
-    <div class="algo-summary-item"><span>ACTIVE TRACKERS</span><strong id="algoActiveTrackers">4</strong></div>
-    <div class="algo-summary-item"><span>OPEN CONTRACTS</span><strong id="algoOpenContracts">0</strong></div>
-    <div class="algo-summary-item"><span>MAX STAKE EXPOSURE</span><strong id="algoMaxExposure">—</strong></div>
+  <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic entries</span></div>
+  <div class="algo-muted algo-account-note" id="algoAccountNote">Connect your Deriv account to start automated execution.</div>
+ </section>
+ <div class="algo-content-grid">
+  <div class="algo-main-column">
+   <section class="algo-section">
+    <div class="algo-card-heading"><strong>INDEPENDENT GROWTH TRACKERS</strong><span class="algo-muted" id="algoMarketLabel">Live tracker state</span></div>
+    <div id="algoTrackerGrid" class="algo-tracker-grid"><div class="algo-muted">Start Algo to initialise the trackers.</div></div>
+   </section>
+   <section class="algo-section">
+    <div class="algo-card-heading"><strong>OPEN POSITIONS</strong><span class="algo-muted">2 confirmed ticks per contract</span></div>
+    <div id="algoPositionList" class="algo-list"><div class="algo-muted">No open Algo contracts.</div></div>
+   </section>
+   <section class="algo-section">
+    <div class="algo-card-heading"><strong>ALGO ACTIVITY</strong><span class="algo-muted">Latest events</span></div>
+    <div id="algoEventList" class="algo-list"><div class="algo-muted">Strategy events will appear here.</div></div>
+   </section>
+  </div>
+  <aside class="algo-side-column">
+   <div class="algo-section">
+    <div class="algo-card-heading"><strong>ENGINE SNAPSHOT</strong><span class="algo-muted">Live</span></div>
+    <div class="algo-summary-grid">
+     <div class="algo-summary-item"><span>ACTIVE TRACKERS</span><strong id="algoActiveTrackers">4</strong></div>
+     <div class="algo-summary-item"><span>OPEN CONTRACTS</span><strong id="algoOpenContracts">0</strong></div>
+     <div class="algo-summary-item"><span>MAX STAKE EXPOSURE</span><strong id="algoMaxExposure">—</strong></div>
+    </div>
    </div>
-  </div>
- </aside>
+  </aside>
+ </div>
 </section>
 </section>
 <nav class="mobile-nav" aria-label="Main navigation">
@@ -1021,8 +1037,10 @@ const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
-let algoRunning=false,algoConfig=null,algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0;
-let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null;
+let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0;
+let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,algoDashboardRenderTimer=null;
+let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=null,algoStatsWatchQueue=[];
+const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
@@ -1391,9 +1409,9 @@ function updateNativeStats(symbol,rate,raw){
   if(nativeHistory.length)history=nativeHistory;
   nativeStatsByKey[key]={current,history:history.slice(0,100),updatedAt:Date.now()};
   saveNativeStats();
-  if(algoRunning&&algoConfig&&String(symbol)===algoConfig.symbol){const tracker=algoTrackers.get(Number(rate).toFixed(2));if(tracker){const actions=tracker.observeCount(current);handleAlgoTrackerActions(Number(rate),actions);renderAlgoDashboard();}}
+  if(algoRunning&&algoConfig&&isAlgoSymbolAllowed(symbol)){const tracker=getAlgoTracker(rate,symbol);if(tracker){const actions=tracker.observeCount(current);handleAlgoTrackerActions(Number(rate),actions,symbol);scheduleAlgoDashboardRender();}}
   if(symbol===selectedSymbol&&Number($("tradeGrowth")?.value||0.01)===Number(rate))renderNativeStats();
-  if(symbol===selectedSymbol&&!algoRunning)renderAlgoDashboard();
+  if(symbol===selectedSymbol&&!algoRunning)scheduleAlgoDashboardRender();
 }
 loadNativeStats();
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
@@ -1478,6 +1496,8 @@ connect();return;}
       }
       const failedHistorySymbol=marketHistoryReqs[m.req_id];
       if(failedHistorySymbol){delete marketHistoryReqs[m.req_id];const card=document.querySelector('.market-card[data-market="'+failedHistorySymbol+'"]');const status=card?.querySelector(".market-live");if(status)status.textContent="24H HISTORY UNAVAILABLE";log("24h chart unavailable for "+failedHistorySymbol+": "+(m.error.message||m.error.code||"Unknown error"));}
+      const failedAlgoStats=algoStatsQuoteRequests[m.req_id];
+      if(failedAlgoStats){delete algoStatsQuoteRequests[m.req_id];log("Stats stream rejected for "+failedAlgoStats.symbol+" "+Math.round(failedAlgoStats.rate*100)+"%: "+(m.error.message||m.error.code||"Unknown error"));}
       const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
     if(m.msg_type==="trading_times"&&m.trading_times){handleChartTradingTimes(m.trading_times);return;}
@@ -1485,7 +1505,7 @@ connect();return;}
     if(handleSmartChartCandleMessage(m))return;
     if(m.msg_type==="candles"||m.candles||m.history?.candles){handleMarketHistory24h(m);return;}
     if(m.msg_type==="history"&&m.history){handleHistory(m);return;}
-    if(m.msg_type==="proposal"&&m.proposal){handleAccumulatorProposal(m);return;}
+    if(m.msg_type==="proposal"&&m.proposal){if(handleAlgoStatsProposal(m))return;handleAccumulatorProposal(m);return;}
     if(m.msg_type==="ping")return;
   };
   ws.onerror=()=>{setStatus("Transport error");log("WebSocket transport error. The browser could not complete or maintain the public data connection.");};
@@ -1531,6 +1551,7 @@ function handleSymbols(rows){
     log("Subscribed to live ticks for "+symbols.length+" synthetic indices.");
   }catch(e){log("Could not subscribe to markets: "+e.message)}
   requestHistory(selectedSymbol);updateSelectedLabel();requestAccumulatorQuotes(selectedSymbol);renderNativeStats();syncDerivAccumulatorChart();
+  if(algoRunning)startAlgoStatsWatch();
 }
 function requestMarketHistory24h(symbol){
   if(!symbol||!ws||ws.readyState!==WebSocket.OPEN)return;
@@ -1813,7 +1834,7 @@ function renderMarketCards(){
 }
 function selectMarket(symbol){
   if(!marketBySymbol[symbol])return;
-  if(symbol!==selectedSymbol&&algoRunning)stopAccumulatorAlgo("Market changed; new entries paused to prevent cross-market signals.");
+  if(symbol!==selectedSymbol&&algoRunning&&algoConfig?.scope!=="all")stopAccumulatorAlgo("Market changed; new entries paused to prevent cross-market signals.");
   selectedSymbol=symbol;window.__derivChartSetSymbol?.(symbol);$("symbol").value=symbol;updateTradeInstrumentMark();document.querySelectorAll(".market-card").forEach(card=>card.classList.toggle("selected",card.dataset.market===symbol));
   const m=marketBySymbol[symbol],t=latestTicks[symbol],dp=Math.max(0,Math.min(8,m.pipSize));
   $("price").textContent=t?t.price.toFixed(dp):"Waiting…";
@@ -1988,9 +2009,9 @@ function updateTradeInstrumentMark(){
 }
 function switchTradeAccountMode(mode){
  const account=derivAccounts.find(a=>a.is_virtual===(mode==="demo"));
- if(!account){$("tradeMessage").textContent="No "+mode+" Deriv account is available. Connect an account of this type first.";updateTradeHeaderBalance();return;}
- $("tradeAccount").value=account.account_id;
- connectTradeAccount(account.account_id);
+ if(!account){$("tradeMessage").textContent="No "+mode+" Deriv account is available. Connect an account of this type first.";updateTradeHeaderBalance();renderAlgoDashboard();return;}
+ if(activeTradeAccount&&String(activeTradeAccount.account_id)===String(account.account_id)){renderAlgoDashboard();return;}
+ $("tradeAccount").value=account.account_id;connectTradeAccount(account.account_id);renderAlgoDashboard();
 }
 function renderTradeAccounts(){
   const select=$("tradeAccount");select.replaceChildren();
@@ -2041,7 +2062,7 @@ async function connectTradeAccount(accountId){
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
       if(handleAlgoTradingMessage(m))return;
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell"){tpCloseRequested=false;$("confirmTradeBuy").disabled=!activeContractId;if(activeContractId)$("confirmTradeBuy").textContent="CLOSE";}return}
-      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();if(String(m.req_id)===String(algoBalanceRefreshRequestId))algoBalanceRefreshRequestId=null;if(kind==="algo-balance-refresh"){Object.entries(algoConfirmedStakeReservations).forEach(([contractId,reservation])=>{if(String(reservation.refreshRequestId)===String(m.req_id))delete algoConfirmedStakeReservations[contractId];});}recalculateAlgoReservedStake();const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance();if(algoRunning)algoTrackers.forEach((tracker,rateKey)=>{if(tracker.state==="ARMED")trySubmitAlgoBuy(Number(rateKey));});}
+      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();if(String(m.req_id)===String(algoBalanceRefreshRequestId))algoBalanceRefreshRequestId=null;if(kind==="algo-balance-refresh"){Object.entries(algoConfirmedStakeReservations).forEach(([contractId,reservation])=>{if(String(reservation.refreshRequestId)===String(m.req_id))delete algoConfirmedStakeReservations[contractId];});}recalculateAlgoReservedStake();const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance();if(algoRunning)algoTrackers.forEach((tracker,trackerKey)=>{if(tracker.state==="ARMED"){const split=trackerKey.lastIndexOf("|");if(split>0)trySubmitAlgoBuy(Number(trackerKey.slice(split+1)),trackerKey.slice(0,split));}});}
       if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");const tradeRate=Number($("tradeGrowth").value),tradeBarrier=barrierData[tradeRate]||{},tradeTick=latestTicks[selectedSymbol];
         window.__derivAccumulatorContractInfo=null;
@@ -2147,6 +2168,64 @@ async function connectTradeAccount(accountId){
 }
 
 function algoRateKey(rate){return Number(rate).toFixed(2);}
+function algoTrackerKey(symbol,rate){return String(symbol||"")+"|"+algoRateKey(rate);}
+function getAlgoTracker(rate,symbol){
+  const targetSymbol=String(symbol||algoConfig?.symbol||selectedSymbol||"");
+  return targetSymbol?algoTrackers.get(algoTrackerKey(targetSymbol,rate))||null:null;
+}
+function algoScopeSymbols(){
+  if(algoConfig?.scope==="all")return (algoConfig.symbols||markets.map(m=>m.symbol)).slice();
+  const symbol=algoConfig?.symbol||selectedSymbol;return symbol?[symbol]:[];
+}
+function isAlgoSymbolAllowed(symbol){
+  if(!algoConfig||!symbol)return false;
+  return algoConfig.scope==="all"?(algoConfig.symbols||[]).includes(String(symbol)):String(symbol)===String(algoConfig.symbol);
+}
+function scheduleAlgoDashboardRender(){
+  if(algoDashboardRenderTimer)return;
+  algoDashboardRenderTimer=setTimeout(()=>{algoDashboardRenderTimer=null;renderAlgoDashboard();},140);
+}
+function startAlgoStatsWatch(){
+  if(!algoRunning||!algoConfig||!ws||ws.readyState!==WebSocket.OPEN)return false;
+  stopAlgoStatsWatch();algoStatsWatchActive=true;
+  const generation=++algoStatsWatchGeneration,symbols=algoScopeSymbols();
+  const rates=algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04];
+  algoStatsWatchQueue=symbols.flatMap(symbol=>rates.map(rate=>({symbol,rate,generation})));
+  const sendNext=()=>{
+    if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning)return;
+    const job=algoStatsWatchQueue.shift();if(!job)return;
+    try{
+      const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
+      algoStatsQuoteRequests[String(requestId)]={...job,requestId:String(requestId)};
+    }catch(error){algoLog("Could not subscribe to "+job.symbol+" "+Math.round(job.rate*100)+"% Stats: "+error.message,job.rate);}
+    if(algoStatsWatchQueue.length)algoStatsWatchTimer=setTimeout(sendNext,65);else algoStatsWatchTimer=null;
+  };
+  sendNext();algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s).");return true;
+}
+function stopAlgoStatsWatch(){
+  algoStatsWatchActive=false;algoStatsWatchGeneration++;
+  if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
+  algoStatsWatchQueue=[];
+  Object.keys(algoStatsQuoteSubscriptions).forEach(subscriptionId=>{
+    try{if(ws?.readyState===WebSocket.OPEN)send({forget:subscriptionId});}catch{}
+    delete algoStatsQuoteSubscriptions[subscriptionId];
+  });
+}
+function handleAlgoStatsProposal(message){
+  const requestKey=String(message.req_id??"");
+  let meta=requestKey?algoStatsQuoteRequests[requestKey]:null;
+  const subscriptionId=message.subscription?.id;
+  if(!meta&&subscriptionId)meta=algoStatsQuoteSubscriptions[String(subscriptionId)];
+  if(!meta)return false;
+  if(subscriptionId){meta.subscriptionId=String(subscriptionId);algoStatsQuoteSubscriptions[String(subscriptionId)]=meta;if(requestKey)delete algoStatsQuoteRequests[requestKey];}
+  if(!algoStatsWatchActive||meta.generation!==algoStatsWatchGeneration||!algoRunning||!isAlgoSymbolAllowed(meta.symbol)){
+    if(subscriptionId){try{if(ws?.readyState===WebSocket.OPEN)send({forget:subscriptionId});}catch{}delete algoStatsQuoteSubscriptions[String(subscriptionId)];}
+    if(requestKey)delete algoStatsQuoteRequests[requestKey];return true;
+  }
+  const details=message.proposal?.contract_details||{};
+  if(Array.isArray(details.ticks_stayed_in))updateNativeStats(meta.symbol,meta.rate,details.ticks_stayed_in);
+  return true;
+}
 function algoLog(message,rate){
   const event={time:Date.now(),rate:rate===null||rate===undefined?null:Number(rate),message:String(message||"")};
   algoEvents.unshift(event);algoEvents=algoEvents.slice(0,30);
@@ -2228,46 +2307,37 @@ function reserveConfirmedAlgoStake(contractId,stake){
   }
   recalculateAlgoReservedStake();
 }
-function algoExposure(){
-  const count=algoConfig?(algoConfig.aggressive?5:4):4;
-  return algoConfig?algoConfig.stake*count:0;
-}
-function getAlgoTracker(rate){return algoTrackers.get(algoRateKey(rate))||null;}
-function forgetAlgoQuote(rate){
-  const key=algoRateKey(rate),subscriptionsToForget=new Set();
+function algoExposure(){return algoConfig?algoConfig.stake*Math.max(1,(algoConfig.symbols||[]).length):0;}
+function forgetAlgoQuote(rate,symbol){
+  const subscriptionsToForget=new Set();
   Object.entries(algoQuoteRequests).forEach(([requestId,meta])=>{
-    if(Number(meta.rate)!==Number(rate))return;
-    if(meta.subscriptionId)subscriptionsToForget.add(String(meta.subscriptionId));
-    delete algoQuoteRequests[requestId];
+    if(Number(meta.rate)!==Number(rate)||(symbol&&String(meta.symbol)!==String(symbol)))return;
+    if(meta.subscriptionId)subscriptionsToForget.add(String(meta.subscriptionId));delete algoQuoteRequests[requestId];
   });
   Object.entries(algoQuoteSubscriptions).forEach(([subscriptionId,meta])=>{
-    if(Number(meta.rate)!==Number(rate))return;
-    subscriptionsToForget.add(String(subscriptionId));
-    delete algoQuoteSubscriptions[subscriptionId];
+    if(Number(meta.rate)!==Number(rate)||(symbol&&String(meta.symbol)!==String(symbol)))return;
+    subscriptionsToForget.add(String(subscriptionId));delete algoQuoteSubscriptions[subscriptionId];
   });
-  if(tradingSocket?.readyState===WebSocket.OPEN){
-    subscriptionsToForget.forEach(subscriptionId=>{try{tradeSend({forget:subscriptionId},"algo-forget");}catch{}});
-  }
-  delete algoQuotes[key];
+  if(tradingSocket?.readyState===WebSocket.OPEN)subscriptionsToForget.forEach(subscriptionId=>{try{tradeSend({forget:subscriptionId},"algo-forget");}catch{}});
+  if(symbol)delete algoQuotes[algoTrackerKey(symbol,rate)];
+  else Object.keys(algoQuotes).forEach(key=>{if(key.endsWith("|"+algoRateKey(rate)))delete algoQuotes[key];});
 }
 function forgetAllAlgoQuotes(){
-  const rates=new Set();
-  Object.values(algoQuoteRequests).forEach(meta=>rates.add(Number(meta.rate)));
-  Object.values(algoQuoteSubscriptions).forEach(meta=>rates.add(Number(meta.rate)));
-  Object.keys(algoQuotes).forEach(rate=>rates.add(Number(rate)));
-  rates.forEach(forgetAlgoQuote);
+  const targets=new Map();
+  Object.values(algoQuoteRequests).forEach(meta=>targets.set(algoTrackerKey(meta.symbol,meta.rate),meta));
+  Object.values(algoQuoteSubscriptions).forEach(meta=>targets.set(algoTrackerKey(meta.symbol,meta.rate),meta));
+  Object.keys(algoQuotes).forEach(key=>{const split=key.lastIndexOf("|");if(split>0)targets.set(key,{symbol:key.slice(0,split),rate:Number(key.slice(split+1))});});
+  targets.forEach(meta=>forgetAlgoQuote(meta.rate,meta.symbol));
 }
-function requestAlgoQuote(rate,reason){
-  if(!algoRunning||!algoConfig||!activeTradeAccount||
-     activeTradeAccount.account_id!==algoConfig.accountId||
+function requestAlgoQuote(rate,reason,symbol){
+  if(!algoRunning||!algoConfig||!activeTradeAccount||activeTradeAccount.account_id!==algoConfig.accountId||
      !tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)return false;
-  const key=algoRateKey(rate),tracker=getAlgoTracker(rate);
-  if(!tracker)return false;
-  const cached=algoQuotes[key];
-  if(cached&&cached.id&&Date.now()-cached.receivedAt<=ALGO_QUOTE_MAX_AGE_MS)return true;
-  const pending=Object.entries(algoQuoteRequests).find(([,meta])=>Number(meta.rate)===Number(rate));
+  const targetSymbol=String(symbol||algoConfig.symbol||selectedSymbol||"");if(!isAlgoSymbolAllowed(targetSymbol))return false;
+  const key=algoTrackerKey(targetSymbol,rate),tracker=getAlgoTracker(rate,targetSymbol);if(!tracker)return false;
+  const cached=algoQuotes[key];if(cached&&cached.id&&Date.now()-cached.receivedAt<=ALGO_QUOTE_MAX_AGE_MS)return true;
+  const pending=Object.entries(algoQuoteRequests).find(([,meta])=>Number(meta.rate)===Number(rate)&&String(meta.symbol)===targetSymbol);
   if(pending&&Date.now()-pending[1].requestedAt<1000)return true;
-  if(pending){forgetAlgoQuote(rate);}
+  if(pending)forgetAlgoQuote(rate,targetSymbol);
   try{
     const requestId=tradeSend({
       proposal:1,
@@ -2276,11 +2346,11 @@ function requestAlgoQuote(rate,reason){
       contract_type:"ACCU",
       currency:algoConfig.currency,
       growth_rate:Number(rate),
-      underlying_symbol:algoConfig.symbol,
+      underlying_symbol:targetSymbol,
       subscribe:1
     },"algo-proposal");
     algoQuoteRequests[requestId]={
-      requestId,rate:Number(rate),symbol:algoConfig.symbol,accountId:algoConfig.accountId,
+      requestId,rate:Number(rate),symbol:targetSymbol,accountId:algoConfig.accountId,
       stake:algoConfig.stake,sequenceNumber:tracker.sequenceNumber,requestedAt:Date.now(),
       reason:reason||"pre-entry quote"
     };
@@ -2291,9 +2361,10 @@ function requestAlgoQuote(rate,reason){
     return false;
   }
 }
-function trySubmitAlgoBuy(rate){
+function trySubmitAlgoBuy(rate,symbol){
   if(!algoRunning||!algoConfig)return false;
-  const tracker=getAlgoTracker(rate);
+  const targetSymbol=String(symbol||algoConfig.symbol||selectedSymbol||"");if(!isAlgoSymbolAllowed(targetSymbol))return false;
+  const tracker=getAlgoTracker(rate,targetSymbol);
   if(!tracker||tracker.state!=="ARMED"||tracker.currentCount!==tracker.watchStat-1)return false;
   if(!activeTradeAccount||activeTradeAccount.account_id!==algoConfig.accountId||
      !tradingSocket||tradingSocket.readyState!==WebSocket.OPEN){
@@ -2301,7 +2372,7 @@ function trySubmitAlgoBuy(rate){
     algoLog("Entry skipped because the account connection is unavailable",rate);
     renderAlgoDashboard();return false;
   }
-  const quote=algoQuotes[algoRateKey(rate)];
+  const quote=algoQuotes[algoTrackerKey(targetSymbol,rate)];
   if(!quote||!quote.id||!Number.isFinite(quote.askPrice)||Date.now()-quote.receivedAt>ALGO_QUOTE_MAX_AGE_MS){
     requestAlgoQuote(rate,"final quote while armed");
     return false;
@@ -2312,6 +2383,9 @@ function trySubmitAlgoBuy(rate){
     algoLog("Balance is stale; refreshing it before submitting the armed entry",rate);
     return false;
   }
+  const symbolBusy=Object.values(algoContractsById).some(record=>String(record.accountId)===String(algoConfig.accountId)&&String(record.symbol)===targetSymbol)||
+    Object.values(algoPendingOrders).some(meta=>String(meta.accountId)===String(algoConfig.accountId)&&String(meta.symbol)===targetSymbol);
+  if(symbolBusy){tracker.skipArmedEntry("Entry skipped: this instrument already has an open or pending Accumulator contract");forgetAlgoQuote(rate,targetSymbol);algoLog("Entry skipped because this instrument already has a live or pending Accumulator contract",rate);renderAlgoDashboard();return false;}
   const available=Number(tradeBalance)-algoPendingStake;
   if(available+1e-9<algoConfig.stake){
     tracker.skipArmedEntry("Entry skipped: available Deriv balance is below the contract stake");
@@ -2327,7 +2401,7 @@ function trySubmitAlgoBuy(rate){
     tracker.buyRequestId=requestId;
     const submittedAt=Date.now();
     const meta={
-      requestId,rate:Number(rate),symbol:algoConfig.symbol,accountId:algoConfig.accountId,
+      requestId,rate:Number(rate),symbol:targetSymbol,accountId:algoConfig.accountId,
       stake:algoConfig.stake,watchStat:tracker.watchStat,signalCount:tracker.currentCount,
       sequenceNumber:tracker.sequenceNumber,submittedAt,
       intentId:String(algoConfig.accountId)+":"+String(requestId),
@@ -2338,8 +2412,8 @@ function trySubmitAlgoBuy(rate){
     saveAlgoPendingOrders();
     algoPendingStake+=algoConfig.stake;
     setTimeout(()=>{if(algoPendingOrders[meta.intentId]&&tradingSocket?.readyState===WebSocket.OPEN)reconcilePendingAlgoOrders(meta.accountId);},12000);
-    forgetAlgoQuote(rate);
-    algoLog("Buy submitted at pre-entry count "+tracker.currentCount+" for Watch Stat "+tracker.watchStat,rate);
+    forgetAlgoQuote(rate,targetSymbol);
+    algoLog("Buy submitted on "+targetSymbol+" at pre-entry count "+tracker.currentCount+" for Watch Stat "+tracker.watchStat,rate);
     renderAlgoDashboard();return true;
   }catch(error){
     tracker.buyFailed(error.message||"Could not send Deriv buy request");
@@ -2347,19 +2421,19 @@ function trySubmitAlgoBuy(rate){
     renderAlgoDashboard();return false;
   }
 }
-function handleAlgoTrackerActions(rate,actions){
+function handleAlgoTrackerActions(rate,actions,symbol){
+  const targetSymbol=String(symbol||algoConfig?.symbol||selectedSymbol||"");
   (actions||[]).forEach(action=>{
-    if(action.type==="PREPARE_QUOTE"){
-      requestAlgoQuote(rate,"Watch Stat "+action.watchStat+" · count "+action.count);
-    }else if(action.type==="ARM_ENTRY"){
-      algoLog("Entry armed at "+action.count+"; preparing to enter before "+action.expectedEntryStat,rate);
-      trySubmitAlgoBuy(rate);
-      if(getAlgoTracker(rate)?.state==="ARMED")requestAlgoQuote(rate,"armed entry");
+    if(action.type==="PREPARE_QUOTE")requestAlgoQuote(rate,"Watch Stat "+action.watchStat+" · count "+action.count,targetSymbol);
+    else if(action.type==="ARM_ENTRY"){
+      algoLog(targetSymbol+" · Entry armed at "+action.count+"; preparing to enter before "+action.expectedEntryStat,rate);
+      trySubmitAlgoBuy(rate,targetSymbol);
+      if(getAlgoTracker(rate,targetSymbol)?.state==="ARMED")requestAlgoQuote(rate,"armed entry",targetSymbol);
     }else if(action.type==="CANCEL_ARMED_ENTRY"||action.type==="MISSED_ENTRY"){
-      forgetAlgoQuote(rate);
+      forgetAlgoQuote(rate,targetSymbol);
       algoLog(action.type==="CANCEL_ARMED_ENTRY"?"Pending entry cancelled before execution":"Matching count missed; no late purchase",rate);
     }else if(action.type==="CLOSE_CONTRACT"){
-      requestAlgoSell(action.contractId,rate);
+      requestAlgoSell(action.contractId,rate,targetSymbol);
     }else if(action.type==="CONTRACT_SETTLED"){
       algoLog("Contract "+action.contractId+" settled",rate);
     }
@@ -2371,8 +2445,7 @@ function handleAlgoProposalMessage(message){
   const subscriptionId=message.subscription?.id;
   if(!meta&&subscriptionId)meta=algoQuoteSubscriptions[String(subscriptionId)];
   if(!meta)return false;
-  if(!algoConfig||meta.accountId!==activeTradeAccount?.account_id||
-     meta.accountId!==algoConfig.accountId||meta.symbol!==algoConfig.symbol){
+  if(!algoConfig||meta.accountId!==activeTradeAccount?.account_id||meta.accountId!==algoConfig.accountId||!isAlgoSymbolAllowed(meta.symbol)){
     if(subscriptionId){try{tradeSend({forget:subscriptionId},"algo-forget");}catch{}}
     if(requestKey)delete algoQuoteRequests[requestKey];
     return true;
@@ -2384,21 +2457,20 @@ function handleAlgoProposalMessage(message){
   const proposal=message.proposal||{};
   const askPrice=Number(proposal.ask_price);
   if(proposal.id&&Number.isFinite(askPrice)&&askPrice>0){
-    algoQuotes[algoRateKey(meta.rate)]={
+    algoQuotes[algoTrackerKey(meta.symbol,meta.rate)]={
       id:proposal.id,askPrice,receivedAt:Date.now(),subscriptionId:meta.subscriptionId||null,
       requestId:requestKey||null,spot:Number.isFinite(Number(proposal.spot))?Number(proposal.spot):null,
       shortcode:proposal.shortcode||"",longcode:proposal.longcode||""
     };
-    const tracker=getAlgoTracker(meta.rate);
-    if(tracker?.state==="ARMED")trySubmitAlgoBuy(meta.rate);
+    const tracker=getAlgoTracker(meta.rate,meta.symbol);
+    if(tracker?.state==="ARMED")trySubmitAlgoBuy(meta.rate,meta.symbol);
     renderAlgoDashboard();
   }
   return true;
 }
-function requestAlgoSell(contractId,rate){
-  const id=String(contractId||"");
-  const record=algoContractsById[id];
-  const tracker=getAlgoTracker(rate??record?.rate);
+function requestAlgoSell(contractId,rate,symbol){
+  const id=String(contractId||"");const record=algoContractsById[id];
+  const tracker=getAlgoTracker(rate??record?.rate,symbol||record?.symbol);
   if(!id||!record||!tracker||!activeTradeAccount||
      activeTradeAccount.account_id!==record.accountId||
      !tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)return false;
@@ -2437,15 +2509,15 @@ function handleAlgoContractUpdate(contract,message){
   const record=algoContractsById[id];
   if(!record)return false;
   if(message?.subscription?.id)record.subscriptionId=String(message.subscription.id);
-  const key=algoRateKey(record.rate);
-  let tracker=getAlgoTracker(record.rate);
+  const key=algoTrackerKey(record.symbol,record.rate);
+  let tracker=getAlgoTracker(record.rate,record.symbol);
   if(!tracker){
     tracker=window.DerivAccumulatorAlgoEngine.createTracker({symbol:record.symbol,growthRate:Number(record.rate)});
     tracker.restoreContract(record);
-    algoTrackers.set(key,tracker);
+    algoTrackers.set(algoTrackerKey(record.symbol,record.rate),tracker);
   }
   const actions=tracker.observeContractUpdate(contract);
-  handleAlgoTrackerActions(record.rate,actions);
+  handleAlgoTrackerActions(record.rate,actions,record.symbol);
   const snap=tracker.snapshot();
   record.ticksAfterEntry=snap.ticksAfterEntry;
   record.entrySpotTime=tracker.entrySpotTime;
@@ -2555,10 +2627,10 @@ function handleAlgoStatementResponse(message,requestMeta){
     };
     if(!algoContractsById[contractId]){
       algoContractsById[contractId]=record;
-      let tracker=getAlgoTracker(meta.rate);
+      let tracker=getAlgoTracker(meta.rate,meta.symbol);
       if(!tracker){
         tracker=window.DerivAccumulatorAlgoEngine.createTracker({symbol:meta.symbol,growthRate:Number(meta.rate)});
-        algoTrackers.set(algoRateKey(meta.rate),tracker);
+        algoTrackers.set(algoTrackerKey(meta.symbol,meta.rate),tracker);
       }
       if(algoBuyRequests[String(meta.requestId)]){
         delete algoBuyRequests[String(meta.requestId)];
@@ -2591,7 +2663,7 @@ function handleAlgoStatementResponse(message,requestMeta){
     const liveRequest=algoBuyRequests[String(meta.requestId)];
     if(liveRequest)delete algoBuyRequests[String(meta.requestId)];
     removePendingAlgoOrder(meta);
-    const tracker=getAlgoTracker(meta.rate);
+    const tracker=getAlgoTracker(meta.rate,meta.symbol);
     if(tracker?.state==="BUY_PENDING")tracker.buyFailed("Deriv account statement contains no matching buy transaction");
     algoLog("Deriv statement found no matching buy; pending entry cleared without retrying the signal",meta.rate);
   });
@@ -2616,7 +2688,7 @@ function handleAlgoTradingMessage(message){
     if(quoteMeta){
       delete algoQuoteRequests[requestId];
       if(quoteMeta.subscriptionId)delete algoQuoteSubscriptions[String(quoteMeta.subscriptionId)];
-      const tracker=getAlgoTracker(quoteMeta.rate);
+      const tracker=getAlgoTracker(quoteMeta.rate,quoteMeta.symbol);
       algoLog("Deriv quote error: "+(message.error.message||message.error.code||"Unknown error"),quoteMeta.rate);
       if(tracker?.state==="ARMED")tracker.skipArmedEntry("Entry skipped: Deriv did not return a timely quote");
       renderAlgoDashboard();return true;
@@ -2628,7 +2700,7 @@ function handleAlgoTradingMessage(message){
       removePendingAlgoOrder(buyMeta);
       recalculateAlgoReservedStake();
       if(buyMeta.subscriptionId){try{tradeSend({forget:buyMeta.subscriptionId},"algo-forget");}catch{}}
-      const tracker=getAlgoTracker(buyMeta.rate);
+      const tracker=getAlgoTracker(buyMeta.rate,buyMeta.symbol);
       tracker?.buyFailed(message.error.message||message.error.code||"Deriv rejected the purchase");
       algoLog("Deriv rejected the buy: "+(message.error.message||message.error.code||"Unknown error"),buyMeta.rate);
       try{tradeSend({balance:1},"balance-refresh")}catch{}
@@ -2637,7 +2709,7 @@ function handleAlgoTradingMessage(message){
     const sellMeta=algoSellRequests[requestId];
     if(sellMeta){
       delete algoSellRequests[requestId];
-      const tracker=getAlgoTracker(sellMeta.rate);
+      const tracker=getAlgoTracker(sellMeta.rate,algoContractsById[sellMeta.contractId]?.symbol);
       tracker?.markCloseFailed(message.error.message||message.error.code||"Deriv rejected the close");
       const record=algoContractsById[sellMeta.contractId];
       if(record){record.closeRequested=false;saveAlgoContractRecords();}
@@ -2669,7 +2741,7 @@ function handleAlgoTradingMessage(message){
     removePendingAlgoOrder(buyMeta);
     const contractId=String(message.buy.contract_id||"");
     if(!contractId){
-      getAlgoTracker(buyMeta.rate)?.buyFailed("Deriv confirmed a buy without returning a contract ID");
+      getAlgoTracker(buyMeta.rate,buyMeta.symbol)?.buyFailed("Deriv confirmed a buy without returning a contract ID");
       algoLog("Buy response did not include a contract ID",buyMeta.rate);
       renderAlgoDashboard();return true;
     }
@@ -2684,10 +2756,10 @@ function handleAlgoTradingMessage(message){
       closeWhenSellable:false,lastProfit:null,subscriptionId:null
     };
     algoContractsById[contractId]=record;saveAlgoContractRecords();
-    let tracker=getAlgoTracker(buyMeta.rate);
+    let tracker=getAlgoTracker(buyMeta.rate,buyMeta.symbol);
     if(!tracker){
       tracker=window.DerivAccumulatorAlgoEngine.createTracker({symbol:buyMeta.symbol,growthRate:Number(buyMeta.rate)});
-      algoTrackers.set(algoRateKey(buyMeta.rate),tracker);
+      algoTrackers.set(algoTrackerKey(buyMeta.symbol,buyMeta.rate),tracker);
     }
     tracker.confirmBuy(contractId);
     algoLog("Deriv confirmed contract #"+contractId,buyMeta.rate);
@@ -2715,11 +2787,11 @@ function restoreAlgoContractsForAccount(accountId){
   loadAlgoContractRecords();
   loadAlgoPendingOrders();
   Object.values(algoContractsById).filter(record=>String(record.accountId)===String(accountId)).forEach(record=>{
-    const key=algoRateKey(record.rate);
-    let tracker=getAlgoTracker(record.rate);
+    const key=algoTrackerKey(record.symbol,record.rate);
+    let tracker=getAlgoTracker(record.rate,record.symbol);
     if(!tracker){
       tracker=window.DerivAccumulatorAlgoEngine.createTracker({symbol:record.symbol,growthRate:Number(record.rate)});
-      algoTrackers.set(key,tracker);
+      algoTrackers.set(algoTrackerKey(record.symbol,record.rate),tracker);
     }
     record.closeRequested=false;
     tracker.restoreContract(record);
@@ -2786,6 +2858,19 @@ function renderAlgoEventList(){
   });
   if(!algoEvents.length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="Strategy events will appear here.";list.append(empty);}
 }
+function renderAlgoTopSelectors(){
+  const locked=algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId;
+  const selected=$("algoScopeSelected"),all=$("algoScopeAll"),demo=$("algoAccountDemo"),real=$("algoAccountReal");
+  if(selected){selected.setAttribute("aria-pressed",String(algoScopeMode==="selected"));selected.disabled=locked;}
+  if(all){all.setAttribute("aria-pressed",String(algoScopeMode==="all"));all.disabled=locked;}
+  const isDemo=activeTradeAccount?!!activeTradeAccount.is_virtual:true;
+  if(demo){demo.setAttribute("aria-pressed",String(isDemo));demo.disabled=locked;}
+  if(real){real.setAttribute("aria-pressed",String(!isDemo&&!!activeTradeAccount));real.disabled=locked;}
+}
+function setAlgoScopeMode(scope){
+  if(algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||activeContractId)return;
+  algoScopeMode=scope==="all"?"all":"selected";renderAlgoDashboard();
+}
 function renderAlgoDashboard(){
   if(Date.now()<algoScrollBusyUntil){
     algoRenderDeferred=true;
@@ -2801,8 +2886,9 @@ function renderAlgoDashboard(){
   const activeRates=algoConfig?(algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]):(algoTrackers.size?Array.from(algoTrackers.values()).map(tracker=>tracker.growthRate):($("algoRiskMode").value==="aggressive"?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]));
   renderAlgoStatsGrid(activeRates);
   const connected=!!activeTradeAccount&&!!tradingSocket&&tradingSocket.readyState===WebSocket.OPEN;
-  $("algoMarketLabel").textContent=algoConfig?.symbol||selectedSymbol||"No market selected";
-  $("algoActiveTrackers").textContent=String(activeRates.length||4);
+  $("algoMarketLabel").textContent=algoConfig?.scope==="all"?"WATCH ALL · "+(algoConfig.symbols||[]).length+" INSTRUMENTS":(algoConfig?.symbol||selectedSymbol||"No market selected");
+  $("algoActiveTrackers").textContent=String(algoTrackers.size||activeRates.length||4);
+  renderAlgoTopSelectors();
   $("algoOpenContracts").textContent=String(algoOpenContractCount());
   $("algoMaxExposure").textContent=algoConfig?algoExposure().toFixed(2)+" "+algoConfig.currency:"—";
   $("algoStart").disabled=algoRunning||!connected||algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId;
@@ -2811,9 +2897,8 @@ function renderAlgoDashboard(){
   $("algoStake").disabled=algoRunning;
   $("algoLiveState").classList.toggle("is-running",algoRunning);
   $("algoLiveText").textContent=algoRunning
-    ?"Running · "+(algoConfig?.aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%")
-    :algoPendingBuyCount()?"Buy confirmation pending · reconciling with Deriv"
-    :"Stopped · no new automatic entries";
+    ?"Running · "+(algoConfig?.scope==="all"?"Watch All · "+(algoConfig.symbols||[]).length+" instruments":algoConfig?.symbol)+" · "+(algoConfig?.aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%")
+    :algoPendingBuyCount()?"Buy confirmation pending · reconciling with Deriv":"Stopped · no new automatic entries";
   const balanceText=tradeBalance!==null&&Number.isFinite(Number(tradeBalance))?Number(tradeBalance).toFixed(2)+" "+(activeTradeAccount?.currency||""):"Balance unavailable";
   $("algoAccountNote").textContent=activeTradeAccount
     ?(activeTradeAccount.is_virtual?"Demo":"REAL")+" account · "+activeTradeAccount.account_id+" · "+balanceText+
@@ -2830,7 +2915,7 @@ function renderAlgoDashboard(){
     const snap=tracker.snapshot(),ratePercent=Math.round(snap.growthRate*100);
     const card=document.createElement("div");card.className="algo-tracker-card algo-rate-"+ratePercent;
     const top=document.createElement("div");top.className="algo-tracker-top";
-    const rate=document.createElement("strong");rate.className="algo-tracker-rate";rate.textContent=ratePercent+"%";
+    const rate=document.createElement("strong");rate.className="algo-tracker-rate";rate.textContent=ratePercent+"% · "+tracker.symbol;
     const status=document.createElement("span");status.className="algo-tracker-status";status.textContent=statusLabels[snap.state]||snap.state;
     top.append(rate,status);
     const numbers=document.createElement("div");numbers.className="algo-tracker-numbers";
@@ -2872,56 +2957,41 @@ function renderAlgoDashboard(){
   renderAlgoEventList();
 }
 function startAccumulatorAlgo(){
-  const engine=window.DerivAccumulatorAlgoEngine;
-  const stake=Number($("algoStake").value);
-  const aggressive=$("algoRiskMode").value==="aggressive";
-  const rates=aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04];
+  const engine=window.DerivAccumulatorAlgoEngine,stake=Number($("algoStake").value),aggressive=$("algoRiskMode").value==="aggressive";
+  const rates=aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04],scope=algoScopeMode==="all"?"all":"selected";
+  const symbols=scope==="all"?markets.map(m=>m.symbol):[selectedSymbol];
   if(!engine){$("algoLiveText").textContent="Algo engine did not load; refresh the app.";return;}
-  if(algoRunning){return;}
+  if(algoRunning)return;
   if(!activeTradeAccount||!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN){$("algoLiveText").textContent="Connect your Deriv account first.";return;}
-  if(!selectedSymbol||!marketBySymbol[selectedSymbol]){$("algoLiveText").textContent="Select a supported market first.";return;}
+  if(!symbols.length||symbols.some(symbol=>!marketBySymbol[symbol])){$("algoLiveText").textContent=scope==="all"?"No supported instruments are available yet.":"Select a supported market first.";return;}
   if(activeContractId){$("algoLiveText").textContent="Close the manual contract before starting Algo.";return;}
   if(algoOpenContractCount()>0||algoPendingBuyCount()>0){$("algoLiveText").textContent="Wait for all existing Algo orders and contracts to settle before restarting.";return;}
   if(!Number.isFinite(stake)||stake<0.35){$("algoLiveText").textContent="Enter a valid stake of at least 0.35.";return;}
   if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||Date.now()-tradeBalanceUpdatedAt>30000){$("algoLiveText").textContent="Waiting for a fresh connected Deriv account balance.";return;}
-  const maxExposure=stake*rates.length;
-  if(Number(tradeBalance)+1e-9<maxExposure){
-    $("algoLiveText").textContent="Balance too low for maximum simultaneous exposure of "+maxExposure.toFixed(2)+" "+activeTradeAccount.currency+".";
-    return;
-  }
+  const maxExposure=stake*symbols.length;
+  if(Number(tradeBalance)+1e-9<maxExposure){$("algoLiveText").textContent="Balance too low for maximum simultaneous exposure of "+maxExposure.toFixed(2)+" "+activeTradeAccount.currency+" across "+symbols.length+" instrument(s).";return;}
   if(!activeTradeAccount.is_virtual){
-    const accepted=window.confirm(
-      "REAL ACCOUNT · AUTOMATED ACCUMULATOR TRADING\n\n"+
-      selectedSymbol+"\nGrowth rates: "+rates.map(rate=>Math.round(rate*100)+"%").join(", ")+
-      "\nStake per contract: "+stake.toFixed(2)+" "+activeTradeAccount.currency+
+    const accepted=window.confirm("REAL ACCOUNT · AUTOMATED ACCUMULATOR TRADING\n\n"+(scope==="all"?"WATCH ALL · "+symbols.length+" instruments":symbols[0])+
+      "\nGrowth rates per instrument: "+rates.map(rate=>Math.round(rate*100)+"%").join(", ")+"\nStake per contract: "+stake.toFixed(2)+" "+activeTradeAccount.currency+
       "\nMaximum simultaneous stake exposure: "+maxExposure.toFixed(2)+" "+activeTradeAccount.currency+
-      "\n\nEach contract can lose its full stake. Start Algo?"
-    );
+      "\n\nOnly one live or pending contract is allowed per instrument. Each contract can lose its full stake. Start Algo?");
     if(!accepted)return;
   }
-  algoConfig={
-    symbol:selectedSymbol,accountId:activeTradeAccount.account_id,
-    accountMode:activeTradeAccount.is_virtual?"demo":"real",
-    currency:activeTradeAccount.currency,stake,aggressive
-  };
-  algoTrackers=new Map();algoEvents=[];algoPendingStake=0;algoRunning=true;
-  startAlgoBalanceRefresh();
-  rates.forEach(rate=>{
-    const tracker=engine.createTracker({symbol:selectedSymbol,growthRate:rate});
-    const saved=nativeStatsByKey[nativeStatsKey(selectedSymbol,rate)]||{};
+  algoConfig={scope,symbol:scope==="selected"?selectedSymbol:null,symbols:symbols.slice(),accountId:activeTradeAccount.account_id,
+    accountMode:activeTradeAccount.is_virtual?"demo":"real",currency:activeTradeAccount.currency,stake,aggressive,rates:rates.slice()};
+  algoTrackers=new Map();algoEvents=[];algoPendingStake=0;algoRunning=true;startAlgoBalanceRefresh();
+  symbols.forEach(symbol=>rates.forEach(rate=>{
+    const tracker=engine.createTracker({symbol,growthRate:rate}),saved=nativeStatsByKey[nativeStatsKey(symbol,rate)]||{};
     if(Array.isArray(saved.history)&&saved.history.length)tracker.seedFromCompletedStat(Number(saved.history[0]));
-    // Keep the learned Watch Stat, but never arm from a locally cached count.
-    // The first entry decision must come from a fresh live Deriv stats update.
-    algoTrackers.set(algoRateKey(rate),tracker);
-  });
-  algoLog("Algo started on "+selectedSymbol+" · "+(aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%")+" · "+stake.toFixed(2)+" "+activeTradeAccount.currency);
+    algoTrackers.set(algoTrackerKey(symbol,rate),tracker);
+  }));
+  startAlgoStatsWatch();
+  algoLog((scope==="all"?"Watch All started across "+symbols.length+" instruments":"Algo started on "+selectedSymbol)+" · "+(aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%")+" · "+stake.toFixed(2)+" "+activeTradeAccount.currency);
   renderAlgoDashboard();
 }
 function stopAccumulatorAlgo(reason){
   if(!algoRunning){renderAlgoDashboard();return;}
-  algoRunning=false;
-  stopAlgoBalanceRefresh();
-  forgetAllAlgoQuotes();
+  algoRunning=false;stopAlgoBalanceRefresh();stopAlgoStatsWatch();forgetAllAlgoQuotes();
   algoTrackers.forEach(tracker=>tracker.pause(reason||"New entries paused by user; open trades remain monitored"));
   algoLog("New entries paused. Any submitted buys and open contracts remain under Deriv monitoring.");
   renderAlgoDashboard();
@@ -2973,6 +3043,10 @@ $("derivLogin").onclick=startDerivLogin;
 $("algoStart").addEventListener("click",startAccumulatorAlgo);
 $("algoStop").addEventListener("click",()=>stopAccumulatorAlgo());
 $("algoRiskMode").addEventListener("change",()=>{$("algoActiveTrackers").textContent=$("algoRiskMode").value==="aggressive"?"5":"4";renderAlgoDashboard();});
+$("algoScopeSelected").addEventListener("click",()=>setAlgoScopeMode("selected"));
+$("algoScopeAll").addEventListener("click",()=>setAlgoScopeMode("all"));
+$("algoAccountDemo").addEventListener("click",()=>switchTradeAccountMode("demo"));
+$("algoAccountReal").addEventListener("click",()=>switchTradeAccountMode("real"));
 $("algoStake").addEventListener("change",renderAlgoDashboard);
 $("tradeAccount").onchange=()=>connectTradeAccount($("tradeAccount").value);
 $("tradeInstrumentSelect").onchange=()=>selectMarket($("tradeInstrumentSelect").value);
