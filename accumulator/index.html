@@ -2617,11 +2617,9 @@ function startAccumulatorAlgo(){
     const tracker=engine.createTracker({symbol:selectedSymbol,growthRate:rate});
     const saved=nativeStatsByKey[nativeStatsKey(selectedSymbol,rate)]||{};
     if(Array.isArray(saved.history)&&saved.history.length)tracker.seedFromCompletedStat(Number(saved.history[0]));
+    // Keep the learned Watch Stat, but never arm from a locally cached count.
+    // The first entry decision must come from a fresh live Deriv stats update.
     algoTrackers.set(algoRateKey(rate),tracker);
-    if(Number.isInteger(saved.current)){
-      const actions=tracker.observeCount(saved.current,"algo-start");
-      handleAlgoTrackerActions(rate,actions);
-    }
   });
   algoLog("Algo started on "+selectedSymbol+" · "+(aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%")+" · "+stake.toFixed(2)+" "+activeTradeAccount.currency);
   renderAlgoDashboard();
