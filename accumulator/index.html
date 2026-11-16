@@ -843,7 +843,7 @@ let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, 
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
 let algoRunning=false,algoConfig=null,algoTrackers=new Map(),algoPendingStake=0,algoEvents=[];
-const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={};
+const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
 function publishTradeChartOverlay(){
@@ -1852,7 +1852,7 @@ async function connectTradeAccount(accountId){
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
       if(handleAlgoTradingMessage(m))return;
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell"){tpCloseRequested=false;$("confirmTradeBuy").disabled=!activeContractId;if(activeContractId)$("confirmTradeBuy").textContent="CLOSE";}return}
-      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();algoPendingStake=Object.values(algoBuyRequests).reduce((total,meta)=>total+Number(meta.stake||0),0);const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
+      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();if(kind==="algo-balance-refresh"){Object.entries(algoConfirmedStakeReservations).forEach(([contractId,reservation])=>{if(String(reservation.refreshRequestId)===String(m.req_id))delete algoConfirmedStakeReservations[contractId];});}recalculateAlgoReservedStake();const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance()}
       if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");const tradeRate=Number($("tradeGrowth").value),tradeBarrier=barrierData[tradeRate]||{},tradeTick=latestTicks[selectedSymbol];
         window.__derivAccumulatorContractInfo=null;
@@ -1996,6 +1996,21 @@ function loadAlgoContractRecords(){
 }
 function algoOpenContractCount(){return Object.keys(algoContractsById).length;}
 function algoPendingBuyCount(){return Math.max(Object.keys(algoBuyRequests).length,Object.keys(algoPendingOrders).length);}
+function recalculateAlgoReservedStake(){
+  algoPendingStake=Object.values(algoBuyRequests).reduce((sum,meta)=>sum+Number(meta.stake||0),0)+
+    Object.values(algoConfirmedStakeReservations).reduce((sum,meta)=>sum+Number(meta.stake||0),0);
+}
+function reserveConfirmedAlgoStake(contractId,stake){
+  const id=String(contractId);
+  try{
+    const requestId=tradeSend({balance:1},"algo-balance-refresh");
+    algoConfirmedStakeReservations[id]={stake:Number(stake),refreshRequestId:String(requestId)};
+  }catch(error){
+    algoConfirmedStakeReservations[id]={stake:Number(stake),refreshRequestId:null};
+    algoLog("Balance refresh pending after contract confirmation: "+error.message);
+  }
+  recalculateAlgoReservedStake();
+}
 function algoExposure(){
   const count=algoConfig?(algoConfig.aggressive?5:4):4;
   return algoConfig?algoConfig.stake*count:0;
@@ -2361,6 +2376,7 @@ function handleAlgoTradingMessage(message){
       const statementMeta=algoStatementRequests[requestId];
       delete algoStatementRequests[requestId];
       algoLog("Deriv statement reconciliation failed: "+(message.error.message||message.error.code||"Unknown error")+"; pending buy remains blocked");
+      setTimeout(()=>reconcilePendingAlgoOrders(statementMeta.accountId),5000);
       renderAlgoDashboard();return true;
     }
     const quoteMeta=algoQuoteRequests[requestId];
@@ -2443,7 +2459,7 @@ function handleAlgoTradingMessage(message){
     tracker.confirmBuy(contractId);
     algoLog("Deriv confirmed contract #"+contractId,buyMeta.rate);
     subscribeAlgoContract(record);
-    try{tradeSend({balance:1},"balance-refresh")}catch{}
+    reserveConfirmedAlgoStake(contractId,buyMeta.stake);
     renderAlgoDashboard();return true;
   }
 
@@ -2508,8 +2524,9 @@ function renderAlgoDashboard(){
   $("algoLiveState").classList.toggle("is-running",algoRunning);
   $("algoLiveText").textContent=algoRunning
     ?"Running · "+(algoConfig?.aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%")
+    :algoPendingBuyCount()?"Buy confirmation pending · reconciling with Deriv"
     :"Stopped · no new automatic entries";
-  const balanceText=Number.isFinite(Number(tradeBalance))?Number(tradeBalance).toFixed(2)+" "+(activeTradeAccount?.currency||""):"Balance unavailable";
+  const balanceText=tradeBalance!==null&&Number.isFinite(Number(tradeBalance))?Number(tradeBalance).toFixed(2)+" "+(activeTradeAccount?.currency||""):"Balance unavailable";
   $("algoAccountNote").textContent=activeTradeAccount
     ?(activeTradeAccount.is_virtual?"Demo":"REAL")+" account · "+activeTradeAccount.account_id+" · "+balanceText+
       (algoOpenContractCount()?" · Existing Algo positions are still monitored.":"")
@@ -2670,6 +2687,7 @@ $("oneTapTrading").addEventListener("change",()=>{$("tradeMessage").textContent=
 
 $("derivLogout").onclick=disconnectDeriv;
 if(new URLSearchParams(location.search).get("connected")==="1"){history.replaceState(null,"",location.pathname);$("accountMessage").textContent="Deriv account authorization completed."; }
+loadAlgoPendingOrders();loadAlgoContractRecords();renderAlgoDashboard();
 refreshDerivAccount();
 $("connectBtn").onclick=connect;
 $("statsGrowthRate").onchange=renderNativeStats;
