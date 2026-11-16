@@ -2183,7 +2183,7 @@ function isAlgoSymbolAllowed(symbol){
 }
 function scheduleAlgoDashboardRender(){
   if(algoDashboardRenderTimer)return;
-  algoDashboardRenderTimer=setTimeout(()=>{algoDashboardRenderTimer=null;renderAlgoDashboard();},140);
+  algoDashboardRenderTimer=setTimeout(()=>{algoDashboardRenderTimer=null;renderAlgoDashboard();},350);
 }
 function startAlgoStatsWatch(){
   if(!algoRunning||!algoConfig||!ws||ws.readyState!==WebSocket.OPEN)return false;
@@ -2195,7 +2195,7 @@ function startAlgoStatsWatch(){
     if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning)return;
     const job=algoStatsWatchQueue.shift();if(!job)return;
     try{
-      const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
+      const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
       algoStatsQuoteRequests[String(requestId)]={...job,requestId:String(requestId)};
     }catch(error){algoLog("Could not subscribe to "+job.symbol+" "+Math.round(job.rate*100)+"% Stats: "+error.message,job.rate);}
     if(algoStatsWatchQueue.length)algoStatsWatchTimer=setTimeout(sendNext,65);else algoStatsWatchTimer=null;
@@ -2374,7 +2374,7 @@ function trySubmitAlgoBuy(rate,symbol){
   }
   const quote=algoQuotes[algoTrackerKey(targetSymbol,rate)];
   if(!quote||!quote.id||!Number.isFinite(quote.askPrice)||Date.now()-quote.receivedAt>ALGO_QUOTE_MAX_AGE_MS){
-    requestAlgoQuote(rate,"final quote while armed");
+    requestAlgoQuote(rate,"final quote while armed",targetSymbol);
     return false;
   }
   const balanceAge=tradeBalanceUpdatedAt?Date.now()-tradeBalanceUpdatedAt:Infinity;
