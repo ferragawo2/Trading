@@ -682,6 +682,9 @@ body.trade-active{padding-bottom:0!important}
   padding-bottom:96px
  }
 }
+
+/* Stat-matching algo workspace */
+.algo-panel{display:grid;gap:12px;padding:0 0 22px;min-width:0}.algo-control-card,.algo-section{background:#050505;border:1px solid #282828;border-radius:15px;padding:14px;min-width:0}.algo-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.algo-card-heading strong{font-size:11px;letter-spacing:.11em}.algo-muted{font-size:10px;color:#929292;line-height:1.55}.algo-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.algo-field{display:grid;gap:7px;min-width:0;color:#999;font-size:9px;font-weight:850;letter-spacing:.1em}.algo-field input,.algo-field select{width:100%;min-width:0;height:42px;padding:0 11px;border:1px solid #383838;border-radius:10px;background:#0b0b0b;color:#fff;font-size:13px;font-weight:750}.algo-action-row{display:flex;gap:9px;margin-top:12px}.algo-action-row button{flex:1;min-height:44px;border-radius:10px;font-size:11px;font-weight:900;letter-spacing:.1em}.algo-start-button{background:#fff;color:#000;border:1px solid #fff}.algo-stop-button{background:#090909;color:#fff;border:1px solid #777}.algo-start-button:disabled,.algo-stop-button:disabled{opacity:.4;cursor:not-allowed}.algo-live-state{display:flex;align-items:center;gap:8px;margin-top:11px;color:#aaa;font-size:10px}.algo-live-state.is-running{color:#fff}.algo-live-dot{width:7px;height:7px;border-radius:50%;background:#777;flex:0 0 7px}.algo-live-state.is-running .algo-live-dot{background:#72d99b;box-shadow:0 0 10px #72d99b88}.algo-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.algo-summary-item{min-width:0;padding:11px 9px;background:#050505;border:1px solid #292929;border-radius:12px}.algo-summary-item span{display:block;color:#888;font-size:8px;font-weight:850;letter-spacing:.08em;line-height:1.4}.algo-summary-item strong{display:block;margin-top:6px;color:#fff;font-size:15px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.algo-tracker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.algo-tracker-card{min-width:0;padding:12px;background:#090909;border:1px solid #333;border-radius:11px}.algo-tracker-top{display:flex;align-items:center;justify-content:space-between;gap:7px}.algo-tracker-rate{font-size:17px;font-weight:900}.algo-tracker-status{font-size:8px;color:#bbb;font-weight:850;letter-spacing:.07em;text-align:right}.algo-tracker-numbers{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.algo-tracker-numbers span{display:block;color:#777;font-size:8px;letter-spacing:.08em}.algo-tracker-numbers strong{display:block;margin-top:3px;color:#fff;font-size:19px;font-variant-numeric:tabular-nums}.algo-tracker-message{margin-top:9px;color:#aaa;font-size:9px;line-height:1.5;overflow-wrap:anywhere}.algo-list{display:grid;gap:8px}.algo-position-row,.algo-event-row{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:10px;padding:9px 0;border-top:1px solid #242424;color:#bbb;font-size:10px;line-height:1.5}.algo-position-row:first-child,.algo-event-row:first-child{border-top:0}.algo-position-row strong{text-align:right;color:#fff;font-variant-numeric:tabular-nums}.algo-event-time{color:#777;font:9px ui-monospace,monospace;white-space:nowrap}#tradePage.algo-mode-active .growth-shell{display:none}@media(max-width:390px){.algo-summary-grid{gap:5px}.algo-summary-item{padding:9px 6px}.algo-summary-item strong{font-size:13px}.algo-tracker-grid{grid-template-columns:1fr}}
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -802,7 +805,27 @@ body.trade-active{padding-bottom:0!important}
     <span id="tradeMessage" aria-live="polite">Connect Deriv and select a trading account.</span>
   </div>
 </section></div>
-<section id="algoTradeView" class="algo-placeholder" role="tabpanel" aria-labelledby="algoTab" hidden><div class="algo-mark" aria-hidden="true">⌁</div><h2>ALGO TRADING</h2><p>Automated strategies will be configured here. Algo execution is not enabled yet; no trades will be placed automatically.</p><span class="algo-status">COMING SOON</span></section>
+<section id="algoTradeView" class="algo-panel" role="tabpanel" aria-labelledby="algoTab" hidden>
+ <div class="algo-control-card">
+  <div class="algo-card-heading"><strong>STAT-MATCH ACCUMULATOR ENGINE</strong><span class="algo-muted" id="algoMarketLabel">No market selected</span></div>
+  <div class="algo-form-grid">
+   <label class="algo-field">STAKE PER CONTRACT<input id="algoStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal"></label>
+   <label class="algo-field">RISK MODE<select id="algoRiskMode"><option value="normal">NORMAL · 1%–4%</option><option value="aggressive">AGGRESSIVE · 1%–5%</option></select></label>
+  </div>
+  <p class="algo-muted" style="margin:10px 0 0">Each rate learns its own completed Watch Stat (16–44), prepares a quote before the match, arms at Watch Stat − 1, and closes after two confirmed post-entry contract ticks when Deriv permits the sale.</p>
+  <div class="algo-action-row"><button id="algoStart" class="algo-start-button" type="button">START ALGO</button><button id="algoStop" class="algo-stop-button" type="button" disabled>STOP NEW ENTRIES</button></div>
+  <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic entries</span></div>
+  <div class="algo-muted" id="algoAccountNote" style="margin-top:7px">Connect your Deriv account and select a market to start.</div>
+ </div>
+ <div class="algo-summary-grid">
+  <div class="algo-summary-item"><span>ACTIVE TRACKERS</span><strong id="algoActiveTrackers">4</strong></div>
+  <div class="algo-summary-item"><span>OPEN CONTRACTS</span><strong id="algoOpenContracts">0</strong></div>
+  <div class="algo-summary-item"><span>MAX STAKE EXPOSURE</span><strong id="algoMaxExposure">—</strong></div>
+ </div>
+ <div class="algo-section"><div class="algo-card-heading"><strong>INDEPENDENT GROWTH TRACKERS</strong><span class="algo-muted">Live Deriv stats</span></div><div id="algoTrackerGrid" class="algo-tracker-grid"><div class="algo-muted">Start Algo to initialise the trackers.</div></div></div>
+ <div class="algo-section"><div class="algo-card-heading"><strong>OPEN POSITIONS</strong><span class="algo-muted">Two post-entry ticks</span></div><div id="algoPositionList" class="algo-list"><div class="algo-muted">No open Algo contracts.</div></div></div>
+ <div class="algo-section"><div class="algo-card-heading"><strong>STRATEGY EVENTS</strong><span class="algo-muted">Latest activity</span></div><div id="algoEventList" class="algo-list"><div class="algo-muted">Strategy events will appear here.</div></div></div>
+</section>
 </section>
 <nav class="mobile-nav" aria-label="Main navigation">
 <a href="#homePage" data-page="home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
@@ -810,13 +833,17 @@ body.trade-active{padding-bottom:0!important}
 <a href="#marketView" data-page="markets" aria-label="Markets"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 6-7"/></svg><span>Markets</span></a>
 </nav>
 </main>
+<script src="/src/algo-engine.js"></script>
 <script>
 (() => {
 const $ = id => document.getElementById(id);
 const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
-let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
+let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
+const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
+let algoRunning=false,algoConfig=null,algoTrackers=new Map(),algoPendingStake=0,algoEvents=[];
+const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
 function publishTradeChartOverlay(){
@@ -1184,6 +1211,7 @@ function updateNativeStats(symbol,rate,raw){
   if(nativeHistory.length)history=nativeHistory;
   nativeStatsByKey[key]={current,history:history.slice(0,100),updatedAt:Date.now()};
   saveNativeStats();
+  if(algoRunning&&algoConfig&&String(symbol)===algoConfig.symbol){const tracker=algoTrackers.get(Number(rate).toFixed(2));if(tracker){const actions=tracker.observeCount(current);handleAlgoTrackerActions(Number(rate),actions);renderAlgoDashboard();}}
   if(symbol===selectedSymbol&&Number($("statsGrowthRate")?.value||0.01)===Number(rate))renderNativeStats();
 }
 loadNativeStats();
@@ -1978,7 +2006,7 @@ $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",()=>{drawChart();renderPurposeChartScaffold();});setupPurposeChartInteractions();renderNativeStats();renderPurposeChartScaffold();
 connect();
 
-function setTradeTab(mode){const manual=mode==="manual";$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
+function setTradeTab(mode){const manual=mode==="manual";$("tradePage").classList.toggle("algo-mode-active",!manual);$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
 $("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
 
 function showAppPage(page){const trade=page==="trade";document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
