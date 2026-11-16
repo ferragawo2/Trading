@@ -1825,7 +1825,7 @@ async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
   loadAlgoContractRecords();
   if(activeTradeAccount&&String(activeTradeAccount.account_id)!==String(accountId)&&
-     (algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0)){
+     (algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId)){
     $("tradeMessage").textContent="Stop Algo and wait for every submitted order and open Algo contract to settle before switching accounts.";
     renderAlgoDashboard();return;
   }
@@ -2318,7 +2318,7 @@ function renderAlgoEventList(){
 function renderAlgoDashboard(){
   const state=window.DerivAccumulatorAlgoEngine;
   if(!$("algoTrackerGrid"))return;
-  const activeRates=algoConfig?(algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]):Array.from(algoTrackers.values()).map(tracker=>tracker.growthRate);
+  const activeRates=algoConfig?(algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]):(algoTrackers.size?Array.from(algoTrackers.values()).map(tracker=>tracker.growthRate):($("algoRiskMode").value==="aggressive"?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]));
   const connected=!!activeTradeAccount&&!!tradingSocket&&tradingSocket.readyState===WebSocket.OPEN;
   $("algoMarketLabel").textContent=algoConfig?.symbol||selectedSymbol||"No market selected";
   $("algoActiveTrackers").textContent=String(activeRates.length||4);
@@ -2459,6 +2459,10 @@ function closeTradeContract(automatic=false){
   try{tradeSend({sell:activeContractId,price:0},"sell")}catch(e){$("confirmTradeBuy").disabled=false;$("tradeMessage").textContent=e.message}
 }
 async function disconnectDeriv(){
+  if(algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||activeContractId){
+    $("accountMessage").textContent="Stop Algo and wait for all submitted orders and open contracts to finish before disconnecting Deriv.";
+    return;
+  }
   const appSession=sessionStorage.getItem("deriv_app_session");
   const headers=appSession?{Authorization:"Bearer "+appSession}:{};
   await fetch(OAUTH_API+"/api/disconnect",{method:"POST",credentials:"include",headers}).catch(()=>{});
