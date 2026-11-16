@@ -769,10 +769,9 @@ body.trade-active{padding-bottom:0!important}
   <div id="derivSmartChartRoot" aria-label="Live Deriv Accumulator chart"></div>
  </div>
 </div></section><div class="stats-strip" id="statsPanel" aria-label="Live stats">
-  <span class="stats-strip-label">Stats</span>
+  <span class="stats-strip-label" id="statsStripLabel">Stats · 1%</span>
   <strong class="stats-strip-current" id="statsCurrentValue">—</strong>
   <span id="statsCurrentCaption" hidden>Waiting for Deriv’s current tick count…</span>
-  <select id="statsGrowthRate" aria-label="Stats growth rate" hidden><option value="0.01" selected>1%</option><option value="0.02">2%</option><option value="0.03">3%</option><option value="0.04">4%</option><option value="0.05">5%</option></select>
   <div class="stats-strip-history-preview" id="statsValues"><span class="stats-empty">Waiting for stats…</span></div>
   <button type="button" class="stats-strip-toggle" id="statsToggle" aria-expanded="false" aria-controls="statsHistory" aria-label="Open full stat history"><span id="statsChevron">⌄</span></button>
   <div class="stats-strip-full-history" id="statsHistory" hidden><div class="stats-strip-history-values" id="statsHistoryValues"></div></div>
@@ -1212,7 +1211,7 @@ function updateNativeStats(symbol,rate,raw){
   nativeStatsByKey[key]={current,history:history.slice(0,100),updatedAt:Date.now()};
   saveNativeStats();
   if(algoRunning&&algoConfig&&String(symbol)===algoConfig.symbol){const tracker=algoTrackers.get(Number(rate).toFixed(2));if(tracker){const actions=tracker.observeCount(current);handleAlgoTrackerActions(Number(rate),actions);renderAlgoDashboard();}}
-  if(symbol===selectedSymbol&&Number($("statsGrowthRate")?.value||0.01)===Number(rate))renderNativeStats();
+  if(symbol===selectedSymbol&&Number($("tradeGrowth")?.value||0.01)===Number(rate))renderNativeStats();
 }
 loadNativeStats();
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
@@ -1706,7 +1705,9 @@ function handleAccumulatorProposal(message){
   item.updatedAt=Date.now();$("barrierStatus").textContent="Live quote updates · "+selectedSymbol;renderBarrierCards();renderPurposeChartScaffold();renderNativeStats();syncDerivAccumulatorChart();
 }
 function renderNativeStats(){
-  const rate=Number($("statsGrowthRate")?.value||0.01);
+  const rate=Number($("tradeGrowth")?.value||0.01);
+  const label=$("statsStripLabel");
+  if(label)label.textContent="Stats · "+Math.round(rate*100)+"%";
   const data=nativeStatsByKey[nativeStatsKey(selectedSymbol,rate)];
   const current=$("statsCurrentValue"),caption=$("statsCurrentCaption");
   const values=$("statsValues"),history=$("statsHistoryValues");
@@ -2693,6 +2694,7 @@ $("tradeGrowth").addEventListener("change",()=>{
   requestTradeQuote();
   renderPurposeChartScaffold();
   syncDerivAccumulatorChart();
+  renderNativeStats();
 });
 $("tradeTpTarget").addEventListener("input",()=>{if(tpCloseRequested&&Number($("tradeTpTarget").value)<=0)tpCloseRequested=false;});
 $("oneTapTrading").addEventListener("change",()=>{$("tradeMessage").textContent=$("oneTapTrading").checked?"One tap trading enabled. Orders will not ask for confirmation.":"One tap trading disabled. Orders will ask for confirmation.";});
@@ -2702,7 +2704,7 @@ if(new URLSearchParams(location.search).get("connected")==="1"){history.replaceS
 loadAlgoPendingOrders();loadAlgoContractRecords();renderAlgoDashboard();
 refreshDerivAccount();
 $("connectBtn").onclick=connect;
-$("statsGrowthRate").onchange=renderNativeStats;
+
 $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;panel.hidden=!open;$("statsToggle").setAttribute("aria-expanded",String(open));$("statsChevron").textContent=open?"⌃":"⌄";};
 $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",()=>{drawChart();renderPurposeChartScaffold();});setupPurposeChartInteractions();renderNativeStats();renderPurposeChartScaffold();
