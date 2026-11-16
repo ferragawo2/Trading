@@ -26,8 +26,8 @@ Normal mode runs independent 1%, 2%, 3% and 4% trackers. Aggressive mode adds an
 
 - Demo trading is the recommended first validation environment. Real-account Algo start requires a separate confirmation and can lose the full stake on each contract.
 - “Stop New Entries” prevents new signals from being sent but continues monitoring buys already submitted and contracts already open.
-- Account switching is blocked while Algo orders or positions are still active. Confirmed open contract IDs are saved locally so the app can resubscribe to Deriv contract updates after a page refresh.
-- A submitted buy request cannot be cancelled by the client. If the network disconnects after sending a buy but before receiving its acknowledgement, the order outcome must be reconciled against the Deriv account before restarting.
+- Account switching is blocked while Algo orders or positions are still active. Confirmed open contract IDs and unacknowledged buy intents are saved locally so the app can resume monitoring after a page refresh.
+- A submitted buy request cannot be cancelled by the client. If its acknowledgement is lost, the app checks the authenticated Deriv account statement and follows a matching contract with proposal_open_contract. Ambiguous matches remain blocked for manual review; the bot never repeats an uncertain buy.
 - This software is not audited, does not guarantee execution at a specific tick, and is not investment advice. Quotes, network latency, Deriv sellability and market settlement can affect actual outcomes. Use the demo account to test behaviour before considering real funds.
 
 ## Build and tests
