@@ -683,8 +683,100 @@ body.trade-active{padding-bottom:0!important}
  }
 }
 
-/* Stat-matching algo workspace */
-.algo-panel{display:grid;gap:12px;padding:0 0 22px;min-width:0}.algo-control-card,.algo-section{background:#050505;border:1px solid #282828;border-radius:15px;padding:14px;min-width:0}.algo-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}.algo-card-heading strong{font-size:11px;letter-spacing:.11em}.algo-muted{font-size:10px;color:#929292;line-height:1.55}.algo-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.algo-field{display:grid;gap:7px;min-width:0;color:#999;font-size:9px;font-weight:850;letter-spacing:.1em}.algo-field input,.algo-field select{width:100%;min-width:0;height:42px;padding:0 11px;border:1px solid #383838;border-radius:10px;background:#0b0b0b;color:#fff;font-size:13px;font-weight:750}.algo-action-row{display:flex;gap:9px;margin-top:12px}.algo-action-row button{flex:1;min-height:44px;border-radius:10px;font-size:11px;font-weight:900;letter-spacing:.1em}.algo-start-button{background:#fff;color:#000;border:1px solid #fff}.algo-stop-button{background:#090909;color:#fff;border:1px solid #777}.algo-start-button:disabled,.algo-stop-button:disabled{opacity:.4;cursor:not-allowed}.algo-live-state{display:flex;align-items:center;gap:8px;margin-top:11px;color:#aaa;font-size:10px}.algo-live-state.is-running{color:#fff}.algo-live-dot{width:7px;height:7px;border-radius:50%;background:#777;flex:0 0 7px}.algo-live-state.is-running .algo-live-dot{background:#72d99b;box-shadow:0 0 10px #72d99b88}.algo-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}.algo-summary-item{min-width:0;padding:11px 9px;background:#050505;border:1px solid #292929;border-radius:12px}.algo-summary-item span{display:block;color:#888;font-size:8px;font-weight:850;letter-spacing:.08em;line-height:1.4}.algo-summary-item strong{display:block;margin-top:6px;color:#fff;font-size:15px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}.algo-tracker-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.algo-tracker-card{min-width:0;padding:12px;background:#090909;border:1px solid #333;border-radius:11px}.algo-tracker-top{display:flex;align-items:center;justify-content:space-between;gap:7px}.algo-tracker-rate{font-size:17px;font-weight:900}.algo-tracker-status{font-size:8px;color:#bbb;font-weight:850;letter-spacing:.07em;text-align:right}.algo-tracker-numbers{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}.algo-tracker-numbers span{display:block;color:#777;font-size:8px;letter-spacing:.08em}.algo-tracker-numbers strong{display:block;margin-top:3px;color:#fff;font-size:19px;font-variant-numeric:tabular-nums}.algo-tracker-message{margin-top:9px;color:#aaa;font-size:9px;line-height:1.5;overflow-wrap:anywhere}.algo-list{display:grid;gap:8px}.algo-position-row,.algo-event-row{display:grid;grid-template-columns:auto 1fr;align-items:start;gap:10px;padding:9px 0;border-top:1px solid #242424;color:#bbb;font-size:10px;line-height:1.5}.algo-position-row:first-child,.algo-event-row:first-child{border-top:0}.algo-position-row strong{text-align:right;color:#fff;font-variant-numeric:tabular-nums}.algo-event-time{color:#777;font:9px ui-monospace,monospace;white-space:nowrap}#tradePage.algo-mode-active .growth-shell{display:none}@media(max-width:390px){.algo-summary-grid{gap:5px}.algo-summary-item{padding:9px 6px}.algo-summary-item strong{font-size:13px}.algo-tracker-grid{grid-template-columns:1fr}}
+/* Stat-matching Algo workspace — presentation only */
+.algo-panel{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(270px,.82fr);align-items:start;gap:14px;padding:0 0 24px;min-width:0}
+.algo-main-column,.algo-side-column{display:grid;align-content:start;gap:12px;min-width:0}
+.algo-side-column{position:relative}
+.algo-control-card,.algo-section{background:linear-gradient(145deg,rgba(16,16,16,.96),rgba(3,3,3,.98));border:1px solid #303030;border-radius:17px;padding:15px;min-width:0;box-shadow:0 12px 34px rgba(0,0,0,.28),inset 0 1px 0 rgba(255,255,255,.025)}
+.algo-control-card{border-color:#414141;box-shadow:0 12px 34px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.045)}
+.algo-card-heading{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:13px}
+.algo-card-heading strong{font-size:11px;letter-spacing:.105em;font-weight:900;color:#f5f5f5}
+.algo-muted{font-size:10px;color:#929292;line-height:1.55}
+.algo-market-chip{max-width:55%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;border:1px solid #333;border-radius:999px;padding:5px 9px;color:#bbb;background:#080808;font-size:9px}
+.algo-form-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.algo-field{display:grid;gap:7px;min-width:0;color:#aaa;font-size:9px;font-weight:850;letter-spacing:.1em}
+.algo-field input,.algo-field select{width:100%;min-width:0;height:43px;padding:0 11px;border:1px solid #414141;border-radius:11px;background:#080808;color:#fff;font-size:13px;font-weight:750}
+.algo-field input:focus,.algo-field select:focus{border-color:#a66cff;box-shadow:0 0 0 2px rgba(166,108,255,.14)}
+.algo-rule-card{display:grid;gap:0;margin-top:13px;border:1px solid #292929;border-radius:12px;background:rgba(0,0,0,.52);overflow:hidden}
+.algo-rule-row{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:9px 11px;border-top:1px solid #222}
+.algo-rule-row:first-child{border-top:0}
+.algo-rule-row span{color:#909090;font-size:9px;letter-spacing:.06em}
+.algo-rule-row strong{color:#eee;font-size:10px;text-align:right;font-weight:750}
+.algo-action-row{display:flex;gap:9px;margin-top:13px}
+.algo-action-row button{flex:1;min-height:46px;border-radius:11px;font-size:10px;font-weight:900;letter-spacing:.08em}
+.algo-start-button{background:linear-gradient(135deg,#c18aff,#8d42ec);color:#08050c;border:1px solid #c18aff;box-shadow:0 0 20px rgba(165,100,255,.16)}
+.algo-stop-button{background:#080808;color:#ff747c;border:1px solid #8d3a40}
+.algo-start-button:disabled,.algo-stop-button:disabled{opacity:.38;cursor:not-allowed;box-shadow:none}
+.algo-live-state{display:flex;align-items:center;gap:8px;margin-top:13px;padding:10px 11px;border:1px solid #292929;border-radius:11px;background:#050505;color:#aaa;font-size:10px}
+.algo-live-state.is-running{color:#e8fff0;border-color:rgba(57,217,138,.34);background:rgba(20,75,48,.12)}
+.algo-live-dot{width:7px;height:7px;border-radius:50%;background:#777;flex:0 0 7px}
+.algo-live-state.is-running .algo-live-dot{background:#39d98a;box-shadow:0 0 10px #39d98a88}
+.algo-account-note{margin-top:9px!important;padding:0 2px}
+.algo-summary-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:7px}
+.algo-summary-item{min-width:0;padding:10px 8px;background:#070707;border:1px solid #292929;border-radius:12px}
+.algo-summary-item span{display:block;color:#858585;font-size:8px;font-weight:850;letter-spacing:.07em;line-height:1.4}
+.algo-summary-item strong{display:block;margin-top:6px;color:#fff;font-size:14px;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.algo-stats-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.algo-stat-card{min-width:0;padding:11px;border:1px solid var(--algo-border,#303030);border-radius:13px;background:linear-gradient(145deg,var(--algo-glow,rgba(255,255,255,.035)),rgba(5,5,5,.96) 64%)}
+.algo-stat-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px}
+.algo-stat-rate{font-size:14px;font-weight:900;color:var(--algo-accent,#fff)}
+.algo-stat-current{font-size:10px;color:#aaa}
+.algo-stat-current strong{margin-left:5px;color:#fff;font-size:17px;font-variant-numeric:tabular-nums}
+.algo-stat-metrics{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:5px}
+.algo-stat-metric{min-width:0;padding:7px 6px;border-radius:8px;background:rgba(0,0,0,.42);border:1px solid rgba(255,255,255,.055)}
+.algo-stat-metric span{display:block;color:#777;font-size:7px;letter-spacing:.06em;line-height:1.35}
+.algo-stat-metric strong{display:block;margin-top:4px;color:#f3f3f3;font-size:12px;font-variant-numeric:tabular-nums}
+.algo-stat-history{display:flex;align-items:center;gap:5px;overflow-x:auto;padding:9px 0 1px;scrollbar-width:thin;scrollbar-color:#444 #080808}
+.algo-stat-history-label{flex:0 0 auto;color:#777;font-size:8px;letter-spacing:.06em}
+.algo-stat-chip{flex:0 0 auto;min-width:26px;padding:4px 7px;text-align:center;border:1px solid var(--algo-border,#333);border-radius:999px;background:#080808;color:#ddd;font:10px ui-monospace,monospace}
+.algo-stat-chip.zero{color:#ff8a8a;border-color:#663737}
+.algo-tracker-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px}
+.algo-tracker-card{position:relative;min-width:0;padding:12px 10px;border:1px solid var(--algo-border,#353535);border-radius:13px;background:linear-gradient(155deg,var(--algo-glow,rgba(255,255,255,.04)),#080808 56%);overflow:hidden}
+.algo-tracker-top{display:flex;align-items:center;justify-content:space-between;gap:6px;padding-bottom:9px;border-bottom:1px solid rgba(255,255,255,.09)}
+.algo-tracker-rate{font-size:19px;font-weight:900;color:var(--algo-accent,#fff);font-variant-numeric:tabular-nums}
+.algo-tracker-status{max-width:65%;padding:4px 6px;border:1px solid rgba(255,255,255,.14);border-radius:999px;color:#cfcfcf;font-size:7px;font-weight:900;letter-spacing:.045em;text-align:center;line-height:1.25}
+.algo-tracker-numbers{display:grid;grid-template-columns:1fr 1fr;gap:7px;margin-top:10px}
+.algo-tracker-numbers>div{min-width:0;padding:8px 6px;border-radius:9px;background:rgba(0,0,0,.4)}
+.algo-tracker-numbers span{display:block;color:#858585;font-size:7px;letter-spacing:.07em;line-height:1.3}
+.algo-tracker-numbers strong{display:block;margin-top:4px;color:#fff;font-size:19px;font-variant-numeric:tabular-nums}
+.algo-tracker-details{display:grid;gap:5px;margin-top:9px;color:#a9a9a9;font-size:8px;line-height:1.4}
+.algo-tracker-details strong{color:#eee;font-weight:800}
+.algo-tracker-message{margin-top:9px;padding-top:8px;border-top:1px solid rgba(255,255,255,.075);color:#aaa;font-size:8px;line-height:1.45;overflow-wrap:anywhere}
+.algo-list{display:grid;gap:0}
+.algo-position-row,.algo-event-row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:start;gap:10px;padding:10px 2px;border-top:1px solid #242424;color:#bbb;font-size:10px;line-height:1.5}
+.algo-position-row:first-child,.algo-event-row:first-child{border-top:0}
+.algo-position-row strong{text-align:right;color:#fff;font-variant-numeric:tabular-nums}
+.algo-event-row{grid-template-columns:auto minmax(0,1fr)}
+.algo-event-time{color:#777;font:9px ui-monospace,monospace;white-space:nowrap}
+.algo-rate-1{--algo-accent:#55a8ff;--algo-border:rgba(85,168,255,.42);--algo-glow:rgba(48,133,255,.13)}
+.algo-rate-2{--algo-accent:#39d98a;--algo-border:rgba(57,217,138,.42);--algo-glow:rgba(42,190,117,.12)}
+.algo-rate-3{--algo-accent:#ffa52e;--algo-border:rgba(255,165,46,.43);--algo-glow:rgba(255,165,46,.12)}
+.algo-rate-4{--algo-accent:#b56cff;--algo-border:rgba(181,108,255,.48);--algo-glow:rgba(181,108,255,.14)}
+.algo-rate-5{--algo-accent:#e9cf37;--algo-border:rgba(233,207,55,.45);--algo-glow:rgba(233,207,55,.12)}
+@media(max-width:900px){
+ .algo-panel{grid-template-columns:1fr;gap:12px}
+ .algo-side-column{order:-1}
+ .algo-control-card{padding:14px}
+ .algo-tracker-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+ .algo-stats-grid{grid-template-columns:1fr}
+ .algo-tracker-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+ .algo-summary-grid{gap:5px}
+ .algo-summary-item{padding:9px 6px}
+ .algo-summary-item strong{font-size:12px}
+ .algo-stat-card{padding:10px}
+ .algo-control-card,.algo-section{padding:12px;border-radius:15px}
+ .algo-tracker-card{padding:10px 8px}
+ .algo-tracker-rate{font-size:17px}
+ .algo-action-row button{padding:9px 8px;font-size:9px}
+}
+@media(max-width:360px){
+ .algo-form-grid{grid-template-columns:1fr}
+ .algo-tracker-grid{grid-template-columns:1fr}
+ .algo-card-heading strong{font-size:10px}
+}
+
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -805,25 +897,51 @@ body.trade-active{padding-bottom:0!important}
   </div>
 </section></div>
 <section id="algoTradeView" class="algo-panel" role="tabpanel" aria-labelledby="algoTab" hidden>
- <div class="algo-control-card">
-  <div class="algo-card-heading"><strong>STAT-MATCH ACCUMULATOR ENGINE</strong><span class="algo-muted" id="algoMarketLabel">No market selected</span></div>
-  <div class="algo-form-grid">
-   <label class="algo-field">STAKE PER CONTRACT<input id="algoStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal"></label>
-   <label class="algo-field">RISK MODE<select id="algoRiskMode"><option value="normal">NORMAL · 1%–4%</option><option value="aggressive">AGGRESSIVE · 1%–5%</option></select></label>
+ <div class="algo-main-column">
+  <section class="algo-section algo-stats-section">
+   <div class="algo-card-heading"><strong>STATS · LIVE FROM DERIV</strong><span class="algo-market-chip" id="algoStatsMarket">Waiting for market</span></div>
+   <div id="algoStatsGrid" class="algo-stats-grid"><div class="algo-muted">Connect to a market to load the native Deriv Accumulator stats.</div></div>
+  </section>
+  <section class="algo-section">
+   <div class="algo-card-heading"><strong>INDEPENDENT GROWTH TRACKERS</strong><span class="algo-muted">Live tracker state</span></div>
+   <div id="algoTrackerGrid" class="algo-tracker-grid"><div class="algo-muted">Start Algo to initialise the trackers.</div></div>
+  </section>
+  <section class="algo-section">
+   <div class="algo-card-heading"><strong>OPEN POSITIONS</strong><span class="algo-muted">2 confirmed ticks per contract</span></div>
+   <div id="algoPositionList" class="algo-list"><div class="algo-muted">No open Algo contracts.</div></div>
+  </section>
+  <section class="algo-section">
+   <div class="algo-card-heading"><strong>ALGO ACTIVITY</strong><span class="algo-muted">Latest events</span></div>
+   <div id="algoEventList" class="algo-list"><div class="algo-muted">Strategy events will appear here.</div></div>
+  </section>
+ </div>
+ <aside class="algo-side-column">
+  <div class="algo-control-card">
+   <div class="algo-card-heading"><strong>ALGO CONTROLS</strong><span class="algo-market-chip" id="algoMarketLabel">No market selected</span></div>
+   <div class="algo-form-grid">
+    <label class="algo-field">STAKE PER CONTRACT<input id="algoStake" type="number" min="0.35" step="0.01" value="1" inputmode="decimal"></label>
+    <label class="algo-field">RISK MODE<select id="algoRiskMode"><option value="normal">NORMAL · 1%–4%</option><option value="aggressive">AGGRESSIVE · 1%–5%</option></select></label>
+   </div>
+   <div class="algo-rule-card" aria-label="Algo strategy rules">
+    <div class="algo-rule-row"><span>WATCH STAT RANGE</span><strong>16–44 · completed Deriv cut</strong></div>
+    <div class="algo-rule-row"><span>ENTRY PREPARATION</span><strong>Before Watch Stat − 1</strong></div>
+    <div class="algo-rule-row"><span>HOLD DURATION</span><strong>2 confirmed contract ticks</strong></div>
+    <div class="algo-rule-row"><span>EXIT CONDITION</span><strong>Close when Deriv permits sale</strong></div>
+   </div>
+   <p class="algo-muted" style="margin:10px 0 0">Each growth rate learns and maintains its own Watch Stat. Aggressive mode adds the independent 5% tracker.</p>
+   <div class="algo-action-row"><button id="algoStart" class="algo-start-button" type="button">START ALGO</button><button id="algoStop" class="algo-stop-button" type="button" disabled>STOP NEW ENTRIES</button></div>
+   <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic entries</span></div>
+   <div class="algo-muted algo-account-note" id="algoAccountNote">Connect your Deriv account and select a market to start.</div>
   </div>
-  <p class="algo-muted" style="margin:10px 0 0">Each rate learns its own completed Watch Stat (16–44), prepares a quote before the match, arms at Watch Stat − 1, and closes after two confirmed post-entry contract ticks when Deriv permits the sale.</p>
-  <div class="algo-action-row"><button id="algoStart" class="algo-start-button" type="button">START ALGO</button><button id="algoStop" class="algo-stop-button" type="button" disabled>STOP NEW ENTRIES</button></div>
-  <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic entries</span></div>
-  <div class="algo-muted" id="algoAccountNote" style="margin-top:7px">Connect your Deriv account and select a market to start.</div>
- </div>
- <div class="algo-summary-grid">
-  <div class="algo-summary-item"><span>ACTIVE TRACKERS</span><strong id="algoActiveTrackers">4</strong></div>
-  <div class="algo-summary-item"><span>OPEN CONTRACTS</span><strong id="algoOpenContracts">0</strong></div>
-  <div class="algo-summary-item"><span>MAX STAKE EXPOSURE</span><strong id="algoMaxExposure">—</strong></div>
- </div>
- <div class="algo-section"><div class="algo-card-heading"><strong>INDEPENDENT GROWTH TRACKERS</strong><span class="algo-muted">Live Deriv stats</span></div><div id="algoTrackerGrid" class="algo-tracker-grid"><div class="algo-muted">Start Algo to initialise the trackers.</div></div></div>
- <div class="algo-section"><div class="algo-card-heading"><strong>OPEN POSITIONS</strong><span class="algo-muted">Two post-entry ticks</span></div><div id="algoPositionList" class="algo-list"><div class="algo-muted">No open Algo contracts.</div></div></div>
- <div class="algo-section"><div class="algo-card-heading"><strong>STRATEGY EVENTS</strong><span class="algo-muted">Latest activity</span></div><div id="algoEventList" class="algo-list"><div class="algo-muted">Strategy events will appear here.</div></div></div>
+  <div class="algo-section">
+   <div class="algo-card-heading"><strong>ENGINE SNAPSHOT</strong><span class="algo-muted">Live</span></div>
+   <div class="algo-summary-grid">
+    <div class="algo-summary-item"><span>ACTIVE TRACKERS</span><strong id="algoActiveTrackers">4</strong></div>
+    <div class="algo-summary-item"><span>OPEN CONTRACTS</span><strong id="algoOpenContracts">0</strong></div>
+    <div class="algo-summary-item"><span>MAX STAKE EXPOSURE</span><strong id="algoMaxExposure">—</strong></div>
+   </div>
+  </div>
+ </aside>
 </section>
 </section>
 <nav class="mobile-nav" aria-label="Main navigation">
@@ -1212,6 +1330,7 @@ function updateNativeStats(symbol,rate,raw){
   saveNativeStats();
   if(algoRunning&&algoConfig&&String(symbol)===algoConfig.symbol){const tracker=algoTrackers.get(Number(rate).toFixed(2));if(tracker){const actions=tracker.observeCount(current);handleAlgoTrackerActions(Number(rate),actions);renderAlgoDashboard();}}
   if(symbol===selectedSymbol&&Number($("tradeGrowth")?.value||0.01)===Number(rate))renderNativeStats();
+  if(symbol===selectedSymbol&&!algoRunning)renderAlgoDashboard();
 }
 loadNativeStats();
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
@@ -2543,6 +2662,49 @@ function restoreAlgoContractsForAccount(accountId){
   reconcilePendingAlgoOrders(accountId);
   renderAlgoDashboard();
 }
+function renderAlgoStatsGrid(rates){
+  const grid=$("algoStatsGrid");if(!grid)return;
+  const symbol=algoConfig?.symbol||selectedSymbol||"";
+  const marketLabel=$("algoStatsMarket");
+  if(marketLabel)marketLabel.textContent=symbol||"Waiting for market";
+  grid.replaceChildren();
+  if(!symbol){
+    const empty=document.createElement("div");empty.className="algo-muted";
+    empty.textContent="Select a supported market to load Deriv’s live Stats stream.";grid.append(empty);return;
+  }
+  (Array.isArray(rates)&&rates.length?rates:[0.01,0.02,0.03,0.04]).forEach(rate=>{
+    const data=nativeStatsByKey[nativeStatsKey(symbol,rate)]||{};
+    const history=Array.isArray(data.history)?data.history.filter(Number.isInteger):[];
+    const average=history.length?(history.reduce((sum,value)=>sum+value,0)/history.length).toFixed(1):"—";
+    const longest=history.length?String(Math.max(...history)):"—";
+    const lastCut=history.length?String(history[0]):"—";
+    const card=document.createElement("div");card.className="algo-stat-card algo-rate-"+Math.round(rate*100);
+    const top=document.createElement("div");top.className="algo-stat-top";
+    const rateLabel=document.createElement("strong");rateLabel.className="algo-stat-rate";rateLabel.textContent=Math.round(rate*100)+"%";
+    const current=document.createElement("span");current.className="algo-stat-current";current.textContent="CURRENT COUNT";
+    const currentValue=document.createElement("strong");currentValue.textContent=Number.isInteger(data.current)?String(data.current):"—";current.append(currentValue);
+    top.append(rateLabel,current);
+    const metrics=document.createElement("div");metrics.className="algo-stat-metrics";
+    [[ "LAST CUT",lastCut ],[ "AVERAGE RUN",average ],[ "LONGEST RUN",longest ]].forEach(([label,value])=>{
+      const item=document.createElement("div");item.className="algo-stat-metric";
+      const caption=document.createElement("span");caption.textContent=label;
+      const number=document.createElement("strong");number.textContent=value;
+      item.append(caption,number);metrics.append(item);
+    });
+    const historyRow=document.createElement("div");historyRow.className="algo-stat-history";
+    const historyLabel=document.createElement("span");historyLabel.className="algo-stat-history-label";historyLabel.textContent="RECENT CUTS";
+    historyRow.append(historyLabel);
+    if(history.length){
+      history.slice(0,8).forEach(value=>{
+        const chip=document.createElement("span");chip.className="algo-stat-chip"+(value===0?" zero":"");
+        chip.textContent=String(value);chip.title="Completed Deriv run: "+value+" ticks";historyRow.append(chip);
+      });
+    }else{
+      const empty=document.createElement("span");empty.className="algo-muted";empty.textContent="No completed runs yet";historyRow.append(empty);
+    }
+    card.append(top,metrics,historyRow);grid.append(card);
+  });
+}
 function renderAlgoEventList(){
   const list=$("algoEventList");if(!list)return;
   list.replaceChildren();
@@ -2560,6 +2722,7 @@ function renderAlgoDashboard(){
   const state=window.DerivAccumulatorAlgoEngine;
   if(!$("algoTrackerGrid"))return;
   const activeRates=algoConfig?(algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]):(algoTrackers.size?Array.from(algoTrackers.values()).map(tracker=>tracker.growthRate):($("algoRiskMode").value==="aggressive"?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]));
+  renderAlgoStatsGrid(activeRates);
   const connected=!!activeTradeAccount&&!!tradingSocket&&tradingSocket.readyState===WebSocket.OPEN;
   $("algoMarketLabel").textContent=algoConfig?.symbol||selectedSymbol||"No market selected";
   $("algoActiveTrackers").textContent=String(activeRates.length||4);
@@ -2581,25 +2744,43 @@ function renderAlgoDashboard(){
     :"Connect a Deriv account to activate automated execution.";
   const grid=$("algoTrackerGrid");grid.replaceChildren();
   const statusLabels={
-    OBSERVING:"LEARNING",WAITING_FOR_MATCH:"WATCHING",ARMED:"ARMED · PRE-ENTRY",
+    OBSERVING:"LEARNING",WAITING_FOR_MATCH:"WATCHING",ARMED:"PRE-ENTRY",
     BUY_PENDING:"BUY PENDING",IN_TRADE:"CONTRACT OPEN",CLOSE_PENDING:"CLOSE PENDING",
     WAITING_FOR_RUN_END:"WAITING FOR CUT",PAUSED:"PAUSED"
   };
   const sorted=Array.from(algoTrackers.values()).sort((a,b)=>a.growthRate-b.growthRate);
   sorted.forEach(tracker=>{
-    const snap=tracker.snapshot();
-    const card=document.createElement("div");card.className="algo-tracker-card";
+    const snap=tracker.snapshot(),ratePercent=Math.round(snap.growthRate*100);
+    const card=document.createElement("div");card.className="algo-tracker-card algo-rate-"+ratePercent;
     const top=document.createElement("div");top.className="algo-tracker-top";
-    const rate=document.createElement("strong");rate.className="algo-tracker-rate";rate.textContent=Math.round(snap.growthRate*100)+"%";
+    const rate=document.createElement("strong");rate.className="algo-tracker-rate";rate.textContent=ratePercent+"%";
     const status=document.createElement("span");status.className="algo-tracker-status";status.textContent=statusLabels[snap.state]||snap.state;
     top.append(rate,status);
     const numbers=document.createElement("div");numbers.className="algo-tracker-numbers";
-    const current=document.createElement("div");current.innerHTML="<span>LIVE COUNT</span><strong></strong>";current.querySelector("strong").textContent=Number.isInteger(snap.currentCount)?String(snap.currentCount):"—";
-    const watch=document.createElement("div");watch.innerHTML="<span>WATCH STAT</span><strong></strong>";watch.querySelector("strong").textContent=Number.isInteger(snap.watchStat)?String(snap.watchStat):"—";
-    numbers.append(current,watch);
+    const metric=(label,value)=>{
+      const item=document.createElement("div"),caption=document.createElement("span"),number=document.createElement("strong");
+      caption.textContent=label;number.textContent=value;item.append(caption,number);return item;
+    };
+    numbers.append(
+      metric("LIVE COUNT",Number.isInteger(snap.currentCount)?String(snap.currentCount):"—"),
+      metric("WATCH STAT",Number.isInteger(snap.watchStat)?String(snap.watchStat):"—")
+    );
+    const details=document.createElement("div");details.className="algo-tracker-details";
+    const arm=document.createElement("span"),entry=document.createElement("span");
+    if(Number.isInteger(snap.watchStat)){
+      arm.textContent="ARM AT ";const armValue=document.createElement("strong");armValue.textContent=String(snap.watchStat-1);arm.append(armValue);
+      entry.textContent="NEXT ENTRY ";const entryValue=document.createElement("strong");entryValue.textContent=String(snap.watchStat);entry.append(entryValue);
+    }else{
+      arm.textContent="LAST CUT ";const last=document.createElement("strong");last.textContent=Number.isInteger(snap.lastCompletedStat)?String(snap.lastCompletedStat):"—";arm.append(last);
+      entry.textContent="COMPLETED RUNS ";const runs=document.createElement("strong");runs.textContent=String(snap.completedRuns||0);entry.append(runs);
+    }
+    details.append(arm,entry);
     const message=document.createElement("div");message.className="algo-tracker-message";message.textContent=snap.lastAction||"Waiting for live statistics";
-    card.append(top,numbers,message);
-    if(snap.contractId){const contract=document.createElement("div");contract.className="algo-muted";contract.textContent="Contract #"+snap.contractId+" · "+snap.ticksAfterEntry+"/2 post-entry ticks";card.append(contract);}
+    card.append(top,numbers,details,message);
+    if(snap.contractId){
+      const contract=document.createElement("div");contract.className="algo-muted";
+      contract.textContent="Contract #"+snap.contractId+" · "+snap.ticksAfterEntry+"/2 post-entry ticks";card.append(contract);
+    }
     grid.append(card);
   });
   if(!sorted.length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="Start Algo to initialise the independent growth-rate trackers.";grid.append(empty);}
