@@ -796,6 +796,53 @@ body.trade-active{padding-bottom:0!important}
  #algoTradeView,#algoTradeView *{touch-action:pan-y pinch-zoom}
  #algoTradeView .algo-stat-history{overscroll-behavior-x:contain;touch-action:pan-x pan-y}
 }
+
+/* Algo visual language: monochrome surfaces with green reserved for positive states. */
+#algoTradeView .algo-control-card,
+#algoTradeView .algo-section,
+#algoTradeView .algo-summary-item,
+#algoTradeView .algo-stat-card,
+#algoTradeView .algo-tracker-card,
+#algoTradeView .algo-rule-card,
+#algoTradeView .algo-live-state{
+  background:#000!important;
+  color:#fff!important;
+}
+#algoTradeView .algo-control-card,
+#algoTradeView .algo-section,
+#algoTradeView .algo-summary-item,
+#algoTradeView .algo-stat-card,
+#algoTradeView .algo-tracker-card{
+  border-color:#303030!important;
+  box-shadow:none!important;
+}
+#algoTradeView .algo-card-heading strong,
+#algoTradeView .algo-rule-row strong,
+#algoTradeView .algo-summary-item strong,
+#algoTradeView .algo-stat-metric strong,
+#algoTradeView .algo-tracker-numbers strong,
+#algoTradeView .algo-tracker-details strong,
+#algoTradeView .algo-position-row,
+#algoTradeView .algo-event-row{color:#fff}
+#algoTradeView .algo-tracker-rate,
+#algoTradeView .algo-stat-rate{color:#fff!important}
+#algoTradeView .algo-tracker-card{--algo-accent:#fff!important;--algo-border:#303030!important;--algo-glow:transparent!important}
+#algoTradeView .algo-tracker-numbers>div:nth-child(2){border:1px solid rgba(57,217,138,.28);background:rgba(22,105,62,.12)}
+#algoTradeView .algo-tracker-numbers>div:nth-child(2) strong,
+#algoTradeView .algo-tracker-details strong.algo-positive,
+#algoTradeView .algo-positive{color:#39d98a!important}
+#algoTradeView .algo-position-row strong.algo-positive{color:#39d98a!important}
+#algoTradeView .algo-negative{color:#ff727c!important}
+#algoTradeView .algo-position-row{border-color:#242424}
+#algoTradeView .algo-position-row strong.algo-positive{ text-shadow:0 0 12px rgba(57,217,138,.16)}
+#algoTradeView .algo-tracker-status{color:#ddd;border-color:#383838;background:#080808}
+#algoTradeView .algo-tracker-card:has(.algo-tracker-status){border-color:#303030!important}
+#algoTradeView .algo-live-state.is-running{color:#39d98a!important;border-color:rgba(57,217,138,.42)!important;background:rgba(20,75,48,.12)!important}
+#algoTradeView .algo-start-button{background:#39d98a!important;border-color:#39d98a!important;color:#001b0d!important;box-shadow:0 0 18px rgba(57,217,138,.14)!important}
+#algoTradeView .algo-start-button:hover:not(:disabled){background:#52e6a0!important}
+#algoTradeView .algo-stop-button{background:#000!important;color:#ff727c!important;border-color:#71343a!important}
+#algoTradeView .algo-stat-chip{background:#000!important;color:#fff!important;border-color:#303030!important}
+
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -2734,6 +2781,8 @@ function renderAlgoEventList(){
     time.textContent=new Date(event.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
     const message=document.createElement("span");
     message.textContent=(event.rate?" "+Math.round(event.rate*100)+"% · ":"")+event.message;
+    if(/\bWIN\b|\bWON\b|\bPROFIT\b/i.test(event.message))message.classList.add("algo-positive");
+    if(/\bLOSS\b|\bLOST\b/i.test(event.message))message.classList.add("algo-negative");
     row.append(time,message);list.append(row);
   });
   if(!algoEvents.length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="Strategy events will appear here.";list.append(empty);}
@@ -2788,7 +2837,7 @@ function renderAlgoDashboard(){
     const numbers=document.createElement("div");numbers.className="algo-tracker-numbers";
     const metric=(label,value)=>{
       const item=document.createElement("div"),caption=document.createElement("span"),number=document.createElement("strong");
-      caption.textContent=label;number.textContent=value;item.append(caption,number);return item;
+      caption.textContent=label;number.textContent=value;if(label==="WATCH STAT")number.className="algo-positive";item.append(caption,number);return item;
     };
     numbers.append(
       metric("LIVE COUNT",Number.isInteger(snap.currentCount)?String(snap.currentCount):"—"),
@@ -2797,8 +2846,8 @@ function renderAlgoDashboard(){
     const details=document.createElement("div");details.className="algo-tracker-details";
     const arm=document.createElement("span"),entry=document.createElement("span");
     if(Number.isInteger(snap.watchStat)){
-      arm.textContent="ARM AT ";const armValue=document.createElement("strong");armValue.textContent=String(snap.watchStat-1);arm.append(armValue);
-      entry.textContent="NEXT ENTRY ";const entryValue=document.createElement("strong");entryValue.textContent=String(snap.watchStat);entry.append(entryValue);
+      arm.textContent="ARM AT ";const armValue=document.createElement("strong");armValue.textContent=String(snap.watchStat-1);arm.append(armValue);armValue.className="algo-positive";
+      entry.textContent="NEXT ENTRY ";const entryValue=document.createElement("strong");entryValue.textContent=String(snap.watchStat);entryValue.className="algo-positive";entry.append(entryValue);
     }else{
       arm.textContent="LAST CUT ";const last=document.createElement("strong");last.textContent=Number.isInteger(snap.lastCompletedStat)?String(snap.lastCompletedStat):"—";arm.append(last);
       entry.textContent="COMPLETED RUNS ";const runs=document.createElement("strong");runs.textContent=String(snap.completedRuns||0);entry.append(runs);
@@ -2817,7 +2866,7 @@ function renderAlgoDashboard(){
   Object.values(algoContractsById).forEach(record=>{
     const row=document.createElement("div");row.className="algo-position-row";
     const left=document.createElement("span");left.textContent=Math.round(record.rate*100)+"% · "+record.symbol+" · #"+record.contractId;
-    const right=document.createElement("strong");right.textContent=(Number(record.ticksAfterEntry)||0)+"/2 ticks · "+(record.lastProfit===null||record.lastProfit===undefined?"OPEN":Number(record.lastProfit).toFixed(2)+" "+(algoConfig?.currency||activeTradeAccount?.currency||""));
+    const right=document.createElement("strong");right.textContent=(Number(record.ticksAfterEntry)||0)+"/2 ticks · "+(record.lastProfit===null||record.lastProfit===undefined?"OPEN":Number(record.lastProfit).toFixed(2)+" "+(algoConfig?.currency||activeTradeAccount?.currency||""));right.className=record.lastProfit===null||record.lastProfit===undefined?"algo-positive":Number(record.lastProfit)>0?"algo-positive":Number(record.lastProfit)<0?"algo-negative":"";
     row.append(left,right);positions.append(row);
   });
   if(!algoOpenContractCount()){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="No open Algo contracts.";positions.append(empty);}
