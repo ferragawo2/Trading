@@ -375,9 +375,12 @@
       this.ticksAfterEntry = Math.max(0, Number(record.ticksAfterEntry) || 0);
       this.entrySpotTime = Number.isFinite(Number(record.entrySpotTime)) ? Number(record.entrySpotTime) : null;
       this.lastContractSpotTime = Number.isFinite(Number(record.lastContractSpotTime)) ? Number(record.lastContractSpotTime) : null;
-      this.closeWhenSellable = record.closeWhenSellable === true;
-      this.closeRequested = record.closeRequested === true;
-      this.state = record.closeRequested ? STATES.CLOSE_PENDING : STATES.IN_TRADE;
+      this.closeWhenSellable = record.closeWhenSellable === true || this.ticksAfterEntry >= 2;
+      // A pre-refresh sell request cannot be assumed to have completed.
+      // Reconcile against the live Deriv contract and retry if it is still sellable.
+      this.closeRequested = false;
+      this.closeRequestId = null;
+      this.state = STATES.IN_TRADE;
       this.lastAction = 'Restored open contract; reconciling its live status with Deriv';
       return this.snapshot();
     }
