@@ -827,6 +827,45 @@ body.trade-active{padding-bottom:0!important}
  #algoTradeView .algo-stat-history{overscroll-behavior-x:contain;touch-action:pan-y}
 }
 
+/* Fix Android Algo scrolling: keep the page vertically scrollable while allowing the
+   Market Watch's wide table to receive horizontal touch gestures. */
+@media(max-width:800px){
+  main.wrap,body.trade-active main.wrap,body.trade-active .wrap{
+    height:100dvh!important;
+    height:100vh!important;
+    min-height:0!important;
+    overflow-x:hidden!important;
+    overflow-y:auto!important;
+    overscroll-behavior-y:auto!important;
+    -webkit-overflow-scrolling:touch!important;
+    touch-action:pan-y pinch-zoom!important;
+  }
+  body.trade-active #tradePage{
+    min-height:100%;
+    overflow:visible!important;
+  }
+  #algoTradeView{
+    min-height:max-content;
+    overflow:visible!important;
+    touch-action:pan-y pinch-zoom!important;
+  }
+  #algoTradeView .mw-scroll{
+    display:block!important;
+    width:100%!important;
+    max-width:100%!important;
+    overflow-x:auto!important;
+    overflow-y:hidden!important;
+    -webkit-overflow-scrolling:touch!important;
+    overscroll-behavior-x:contain!important;
+    touch-action:pan-x pan-y!important;
+    scrollbar-width:thin;
+  }
+  #algoTradeView .mw-table{
+    min-width:960px!important;
+    width:max-content!important;
+  }
+}
+
 /* Algo visual language: monochrome surfaces with green reserved for positive states. */
 #algoTradeView .algo-control-card,
 #algoTradeView .algo-section,
