@@ -1385,23 +1385,6 @@ body.trade-active{padding-bottom:0!important}
 </section>
 <section class="market-showcase"><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section></section>
 <section class="accu-promo" aria-label="Accumulator introduction"><img src="../file_00000000209c820a84bade880d8fefc1.png" alt="Accumulators — grow your potential payout exponentially while the spot price stays within the trade barriers"><a class="accu-promo-cta" href="#tradePage" data-page="trade">TRADE NOW</a></section>
-
-
-
-<div class="grid">
-<section class="card" id="marketView"><div class="row between"><h2>LIVE MARKET VIEW</h2><span class="pill" id="selectedMarketLabel">Select a market</span></div>
-<div class="controls"><div class="field"><label>Accumulator-supported synthetic index</label><select id="symbol" disabled><option>Loading supported markets…</option></select></div><button id="connectBtn">Connect / refresh</button></div>
-<div class="metrics"><div class="metric"><small>LIVE PRICE</small><strong id="price">—</strong></div><div class="metric"><small>LAST TICK</small><strong id="lastTick">—</strong></div><div class="metric"><small>TICKS RECEIVED</small><strong id="tickCount">0</strong></div></div>
-<div class="chart"><canvas id="chart"></canvas></div>
-<div class="row between" style="margin:15px 0 9px"><h2 style="margin:0">RECENT TICKS</h2><span class="muted" id="feedNote">Waiting for feed</span></div><div class="muted" id="tickHistory">No ticks received yet.</div>
-</section>
-<section class="card"><h2>MARKET DISCOVERY</h2><div class="metrics"><div class="metric"><small>SUPPORTED SYNTHETICS</small><strong id="marketCount">—</strong></div><div class="metric"><small>LIVE STREAMS</small><strong id="liveCount">0</strong></div><div class="metric"><small>API SOURCE</small><strong>Deriv</strong></div></div>
-<p class="muted" style="font-size:12px;margin:14px 0 0">The market list is requested from Deriv at connection time and filtered for the synthetic-index market with Accumulator (ACCU) availability. Newly supported instruments can appear automatically.</p>
-<div style="margin-top:16px"><h2>CONNECTION EVENTS</h2><div class="log" id="log" aria-live="polite"><div>Ready to discover Accumulator markets.</div></div></div>
-</section>
-
-</div><section class="card full"><div class="row between"><h2 style="margin:0">LIVE DERIV ACCUMULATOR BARRIERS</h2><span class="pill" id="barrierStatus">Waiting for market</span></div><p class="muted" style="font-size:12px;margin:8px 0 0">Streaming Deriv ACCU proposals for the selected synthetic index at each growth rate. Barrier values are displayed only when Deriv returns them; no percentage band is estimated by this app.</p><div class="barrier-grid" id="barrierGrid"><div class="barrier-card">Select a market to request live Accumulator barrier quotes.</div></div></section><div class="foot">Market data, quotes, account balances and contract status are supplied by Deriv. Trading involves risk; review every quote and account before confirming a purchase.</div>
-
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
 <div class="trade-control-header">
