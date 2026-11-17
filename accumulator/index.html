@@ -3350,7 +3350,17 @@ function startAccumulatorAlgo(){
   algoMoneyManagement=(savedRecovery||sameBaseStake)
     ?{...savedMoney,baseStake:stake,currentStake:Math.max(0.35,Number(savedMoney.currentStake)||stake),winCount:Math.max(0,Math.min(2,Number(savedMoney.winCount)||0)),cycleProfit:Math.max(0,Number(savedMoney.cycleProfit)||0),recoveryLoss:Math.max(0,Number(savedMoney.recoveryLoss)||0)}
     :{accountId:algoConfig.accountId,baseStake:stake,currentStake:stake,mode:"COMPOUNDING",winCount:0,cycleProfit:0,recoveryLoss:0,updatedAt:Date.now()};
-  if(algoMoneyManagement.recoveryLoss>0)algoMoneyManagement.mode="RECOVERY";
+  // Recovery is valid only while a confirmed, positive loss remains outstanding.
+  // Never trust a persisted RECOVERY label on its own: older/stale browser state
+  // could otherwise size the next quote from the entire account balance.
+  algoMoneyManagement.recoveryLoss=Math.max(0,Number(algoMoneyManagement.recoveryLoss)||0);
+  if(algoMoneyManagement.recoveryLoss>0.005){
+    algoMoneyManagement.mode="RECOVERY";
+  }else{
+    algoMoneyManagement.recoveryLoss=0;
+    algoMoneyManagement.mode="COMPOUNDING";
+    algoMoneyManagement.currentStake=Math.max(0.35,Number(algoMoneyManagement.currentStake)||stake);
+  }
   saveAlgoMoneyManagement();renderAlgoMoneyStatus();
   algoTrackers=new Map();algoEvents=[];algoPendingStake=0;algoRunning=true;startAlgoBalanceRefresh();
   symbols.forEach(symbol=>rates.forEach(rate=>{
