@@ -2614,7 +2614,7 @@ function requestAlgoQuote(rate,reason,symbol,forcedStake=null,sizingStage="initi
   if(pending)forgetAlgoQuote(rate,targetSymbol);
   try{
     const requestId=tradeSend({
-      proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency,
+      proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",duration:2,duration_unit:"t",currency:algoConfig.currency,
       growth_rate:Number(rate),underlying_symbol:targetSymbol,subscribe:1
     },"algo-proposal");
     algoQuoteRequests[requestId]={
