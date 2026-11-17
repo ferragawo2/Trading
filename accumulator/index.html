@@ -2576,9 +2576,10 @@ function renderAlgoMoneyStatus(){
 function recordAlgoMoneyResult(profit,record){
   if(!algoMoneyManagement||!Number.isFinite(profit))return;
   const m=algoMoneyManagement,currency=algoConfig?.currency||activeTradeAccount?.currency||"";
+  const verifiedRecovery=Number(m.moneyStateVersion)===2&&m.mode==="RECOVERY"&&Number(m.recoveryLoss)>0.005;
   m.moneyStateVersion=2;
-  if(!isAlgoRecoveryActive()&&m.mode==="RECOVERY"){m.mode="COMPOUNDING";m.recoveryLoss=0;}
-  if(isAlgoRecoveryActive()){
+  if(!verifiedRecovery&&m.mode==="RECOVERY"){m.mode="COMPOUNDING";m.recoveryLoss=0;}
+  if(verifiedRecovery){
     if(profit<0){m.recoveryLoss+=Math.abs(profit);algoLog("RECOVERY LOSS · outstanding amount increased to "+m.recoveryLoss.toFixed(2)+" "+currency,record.rate);}
     else if(profit>0){
       m.recoveryLoss=Math.max(0,m.recoveryLoss-profit);
@@ -2613,7 +2614,11 @@ function requestAlgoQuote(rate,reason,symbol,forcedStake=null,sizingStage="initi
     if(otherPending)return false;
   }
   const key=algoTrackerKey(targetSymbol,rate),tracker=getAlgoTracker(rate,targetSymbol);if(!tracker)return false;
-  const stake=Number.isFinite(Number(forcedStake))&&Number(forcedStake)>0?Number(forcedStake):algoMoneyStake();
+  const recoverySizing=isAlgoRecoveryActive();
+  const requestedStake=Number.isFinite(Number(forcedStake))&&Number(forcedStake)>0?Number(forcedStake):algoMoneyStake();
+  // A forced stake can only enlarge an order after a verified loss. Normal
+  // compounding always remains capped at its own configured/compounded stake.
+  const stake=recoverySizing?Math.min(requestedStake,algoAvailableBalance()):algoMoneyStake();
   if(!Number.isFinite(stake)||stake<0.35){algoLog("Quote not requested: available recovery balance is below Deriv's minimum stake.",rate);return false;}
   const cached=algoQuotes[key];
   const expectedStage=isAlgoRecoveryActive()?(sizingStage==="final"?"final":"all-in"):"normal";
