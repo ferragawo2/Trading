@@ -1042,6 +1042,7 @@ let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={},
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
 let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0;
 let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,algoDashboardRenderTimer=null;
+let algoStartAwaitingBalance=false,algoStartBalanceRequestId=null,algoStartBalanceAccountId=null,algoStartBalanceTimer=null;
 let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=null,algoStatsWatchQueue=[];
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
@@ -2032,6 +2033,7 @@ function tradeSend(payload,kind){
 }
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
+  if(algoStartBalanceTimer)clearTimeout(algoStartBalanceTimer);algoStartBalanceTimer=null;algoStartAwaitingBalance=false;algoStartBalanceRequestId=null;algoStartBalanceAccountId=null;
   loadAlgoContractRecords();loadAlgoPendingOrders();
   if(Object.values(algoPendingOrders).some(meta=>String(meta.accountId)!==String(accountId))){
     $("tradeMessage").textContent="A pending Algo buy belongs to another Deriv account. Select that account to reconcile it before switching.";
@@ -2059,13 +2061,13 @@ async function connectTradeAccount(accountId){
     const response=await fetch(OAUTH_API+"/api/account/otp",{method:"POST",headers:{"Content-Type":"application/json",Authorization:"Bearer "+sid},body:JSON.stringify({account_id:accountId})});
     const data=await response.json();if(!response.ok||!data.ws_url)throw new Error(data.error||"Could not authorize this Deriv account.");
     const socket=new WebSocket(data.ws_url);tradingSocket=socket;
-    socket.onopen=()=>{if(tradingSocket!==socket)return;$("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connected";$("tradeMessage").textContent="Authenticated to "+(account.is_virtual?"demo":"real")+" account.";$("getTradeQuote").disabled=false;try{tradeSend({balance:1,subscribe:1},"balance")}catch(e){$("tradeMessage").textContent=e.message}restoreAlgoContractsForAccount(account.account_id);if(selectedSymbol&&marketBySymbol[selectedSymbol])requestTradeQuote()};
+    socket.onopen=()=>{if(tradingSocket!==socket)return;$("tradeConnectionState").textContent=(account.is_virtual?"Demo":"Real")+" · Connected";$("tradeMessage").textContent="Authenticated to "+(account.is_virtual?"demo":"real")+" account.";$("getTradeQuote").disabled=false;try{tradeSend({balance:1,subscribe:1},"balance")}catch(e){$("tradeMessage").textContent=e.message}restoreAlgoContractsForAccount(account.account_id);renderAlgoDashboard();if(selectedSymbol&&marketBySymbol[selectedSymbol])requestTradeQuote()};
     socket.onmessage=event=>{
       let m;try{m=JSON.parse(event.data)}catch{return}
       const kind=tradingPending[m.req_id];delete tradingPending[m.req_id];
       if(handleAlgoTradingMessage(m))return;
       if(m.error){$("tradeMessage").textContent=m.error.message||m.error.code||"Deriv request failed";if(kind==="proposal"){currentTradeProposal=null;$("confirmTradeBuy").disabled=!!activeContractId?false:true}if(kind==="sell"){tpCloseRequested=false;$("confirmTradeBuy").disabled=!activeContractId;if(activeContractId)$("confirmTradeBuy").textContent="CLOSE";}return}
-      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();if(String(m.req_id)===String(algoBalanceRefreshRequestId))algoBalanceRefreshRequestId=null;if(kind==="algo-balance-refresh"){Object.entries(algoConfirmedStakeReservations).forEach(([contractId,reservation])=>{if(String(reservation.refreshRequestId)===String(m.req_id))delete algoConfirmedStakeReservations[contractId];});}recalculateAlgoReservedStake();const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance();if(algoRunning)algoTrackers.forEach((tracker,trackerKey)=>{if(tracker.state==="ARMED"){const split=trackerKey.lastIndexOf("|");if(split>0)trySubmitAlgoBuy(Number(trackerKey.slice(split+1)),trackerKey.slice(0,split));}});}
+      if(m.msg_type==="balance"&&m.balance){tradeBalance=Number(m.balance.balance);tradeBalanceUpdatedAt=Date.now();if(String(m.req_id)===String(algoBalanceRefreshRequestId))algoBalanceRefreshRequestId=null;if(kind==="algo-balance-refresh"){Object.entries(algoConfirmedStakeReservations).forEach(([contractId,reservation])=>{if(String(reservation.refreshRequestId)===String(m.req_id))delete algoConfirmedStakeReservations[contractId];});}recalculateAlgoReservedStake();const currency=m.balance.currency||account.currency||"";$("tradeBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2)+" "+currency:"—";$("tradeBalanceTime").textContent="Updated "+new Date().toLocaleTimeString();updateTradeHeaderBalance();if(kind==="algo-start-balance"&&algoStartAwaitingBalance&&String(m.req_id)===String(algoStartBalanceRequestId)){if(algoStartBalanceTimer)clearTimeout(algoStartBalanceTimer);algoStartBalanceTimer=null;algoStartAwaitingBalance=false;algoStartBalanceRequestId=null;const shouldResume=String(algoStartBalanceAccountId)===String(account.account_id);algoStartBalanceAccountId=null;if(shouldResume&&Number.isFinite(tradeBalance)&&tradeBalanceUpdatedAt&&Date.now()-tradeBalanceUpdatedAt<=30000){$("algoLiveText").textContent="Fresh Deriv balance confirmed · starting Algo…";setTimeout(()=>startAccumulatorAlgo(),0);}else{$("algoLiveText").textContent="Balance refresh completed for a different account. Select the intended account and try again.";renderAlgoDashboard();}}if(algoRunning)algoTrackers.forEach((tracker,trackerKey)=>{if(tracker.state==="ARMED"){const split=trackerKey.lastIndexOf("|");if(split>0)trySubmitAlgoBuy(Number(trackerKey.slice(split+1)),trackerKey.slice(0,split));}});}
       if(m.msg_type==="proposal"&&m.proposal){if(m.req_id!==latestTradeQuoteReqId||!latestTradeQuoteContext)return;const ctx=latestTradeQuoteContext;if(Number($("tradeStake").value)!==ctx.stake||Number($("tradeGrowth").value)!==ctx.rate||selectedSymbol!==ctx.symbol||account.account_id!==ctx.accountId)return;const p=m.proposal,quotedStake=ctx.stake,quotedRate=ctx.rate;currentTradeProposal={id:p.id,askPrice:Number(p.ask_price),payout:Number(p.payout),currency:p.currency||account.currency,stake:quotedStake,rate:quotedRate,symbol:ctx.symbol,accountId:ctx.accountId};$("quoteAsk").textContent=Number.isFinite(currentTradeProposal.askPrice)?currentTradeProposal.askPrice.toFixed(2)+" / "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("quotePayout").textContent=Number.isFinite(currentTradeProposal.payout)?currentTradeProposal.payout.toFixed(2)+" "+(p.currency||account.currency||""):"—";$("tradeMessage").textContent="Deriv quote received for "+quotedStake.toFixed(2)+" "+(p.currency||account.currency||"")+".";$("confirmTradeBuy").disabled=activeContractId?false:!(currentTradeProposal.id&&Number.isFinite(currentTradeProposal.askPrice))}
       if(m.msg_type==="buy"&&m.buy){activeContractId=m.buy.contract_id;tpCloseRequested=false;$("executionPanel").classList.add("contract-open");const tradeRate=Number($("tradeGrowth").value),tradeBarrier=barrierData[tradeRate]||{},tradeTick=latestTicks[selectedSymbol];
         window.__derivAccumulatorContractInfo=null;
@@ -2875,6 +2877,12 @@ function setAlgoScopeMode(scope){
   algoScopeMode=scope==="all"?"all":"selected";renderAlgoDashboard();
 }
 function renderAlgoDashboard(){
+  const controlsLocked=algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId;
+  const controlsConnected=!!activeTradeAccount&&!!tradingSocket&&tradingSocket.readyState===WebSocket.OPEN;
+  $("algoStart").disabled=controlsLocked||!controlsConnected;
+  $("algoStop").disabled=!algoRunning;
+  $("algoStake").disabled=algoRunning;
+  $("algoRiskMode").disabled=algoRunning;
   if(Date.now()<algoScrollBusyUntil){
     algoRenderDeferred=true;
     clearTimeout(algoScrollRenderTimer);
@@ -2970,7 +2978,7 @@ function startAccumulatorAlgo(){
   if(activeContractId){$("algoLiveText").textContent="Close the manual contract before starting Algo.";return;}
   if(algoOpenContractCount()>0||algoPendingBuyCount()>0){$("algoLiveText").textContent="Wait for all existing Algo orders and contracts to settle before restarting.";return;}
   if(!Number.isFinite(stake)||stake<0.35){$("algoLiveText").textContent="Enter a valid stake of at least 0.35.";return;}
-  if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||Date.now()-tradeBalanceUpdatedAt>30000){$("algoLiveText").textContent="Waiting for a fresh connected Deriv account balance.";return;}
+  if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||Date.now()-tradeBalanceUpdatedAt>30000){if(algoStartAwaitingBalance)return;algoStartAwaitingBalance=true;algoStartBalanceAccountId=String(activeTradeAccount.account_id);$("algoLiveText").textContent="Refreshing live Deriv balance before starting…";try{algoStartBalanceRequestId=String(tradeSend({balance:1},"algo-start-balance"));if(algoStartBalanceTimer)clearTimeout(algoStartBalanceTimer);algoStartBalanceTimer=setTimeout(()=>{if(!algoStartAwaitingBalance)return;algoStartAwaitingBalance=false;algoStartBalanceRequestId=null;algoStartBalanceAccountId=null;algoStartBalanceTimer=null;$("algoLiveText").textContent="Deriv did not return a fresh balance yet. Check the account connection and tap Start again.";renderAlgoDashboard();},12000);}catch(error){algoStartAwaitingBalance=false;algoStartBalanceRequestId=null;algoStartBalanceAccountId=null;$("algoLiveText").textContent="Could not refresh the Deriv balance: "+error.message;}return;}
   const maxExposure=stake*symbols.length;
   if(Number(tradeBalance)+1e-9<maxExposure){$("algoLiveText").textContent="Balance too low for maximum simultaneous exposure of "+maxExposure.toFixed(2)+" "+activeTradeAccount.currency+" across "+symbols.length+" instrument(s).";return;}
   if(!activeTradeAccount.is_virtual){
