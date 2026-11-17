@@ -1186,8 +1186,9 @@ body.trade-active{padding-bottom:0!important}
    <label class="algo-field">MAX LOSS<input id="algoMaxLoss" type="number" min="0.01" step="0.01" value="10" inputmode="decimal"></label>
    <div class="algo-action-row"><button id="algoStart" class="algo-start-button" type="button">START</button><button id="algoStop" class="algo-stop-button" type="button" disabled>STOPPED</button></div>
   </div>
-  <div class="algo-goal-note" id="algoGoalNote">Stops automatically at your profit aim or maximum loss · realized results for this run</div>
+  <div class="algo-goal-note" id="algoGoalNote">Profit aim stops normal mode; Max Loss pauses normal mode. Recovery mode continues until losses are recovered and can risk the full remaining balance.</div>
   <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic entries</span></div>
+  <div class="algo-goal-note" id="algoMoneyStatus">Money management · three-win compounding and loss recovery</div>
   <div class="algo-muted algo-account-note" id="algoAccountNote">Connect your Deriv account to start automated execution.</div>
  </section>
  <div class="algo-content-grid">
@@ -1233,7 +1234,8 @@ const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
-let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0;
+let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0,algoMoneyManagement=null;
+const ALGO_MONEY_STORAGE_KEY="deriv_accumulator_algo_money_v1";
 let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,algoDashboardRenderTimer=null;
 let algoStartAwaitingBalance=false,algoStartBalanceRequestId=null,algoStartBalanceAccountId=null,algoStartBalanceTimer=null;
 let algoSessionProfit=0,algoHasRun=false;
@@ -2541,32 +2543,83 @@ function forgetAllAlgoQuotes(){
   Object.keys(algoQuotes).forEach(key=>{const split=key.lastIndexOf("|");if(split>0)targets.set(key,{symbol:key.slice(0,split),rate:Number(key.slice(split+1))});});
   targets.forEach(meta=>forgetAlgoQuote(meta.rate,meta.symbol));
 }
-function requestAlgoQuote(rate,reason,symbol){
+function algoAvailableBalance(){
+  if(tradeBalance===null||!Number.isFinite(Number(tradeBalance)))return 0;
+  return Math.max(0,Number(tradeBalance)-Math.max(0,Number(algoPendingStake)||0));
+}
+function algoMoneyStake(){
+  if(!algoMoneyManagement)return Number(algoConfig?.stake)||0;
+  if(algoMoneyManagement.mode==="RECOVERY")return algoAvailableBalance();
+  return Math.max(0,Number(algoMoneyManagement.currentStake)||Number(algoConfig?.stake)||0);
+}
+function saveAlgoMoneyManagement(){
+  if(!algoMoneyManagement)return;
+  try{localStorage.setItem(ALGO_MONEY_STORAGE_KEY,JSON.stringify(algoMoneyManagement));}catch(error){console.warn("Could not save Algo money management state",error);}
+}
+function renderAlgoMoneyStatus(){
+  const el=$("algoMoneyStatus");if(!el)return;
+  const m=algoMoneyManagement;
+  if(!m){el.textContent="Money management · three-win compounding and loss recovery";return;}
+  if(m.mode==="RECOVERY"){
+    el.textContent="RECOVERY MODE · Outstanding loss "+m.recoveryLoss.toFixed(2)+" "+(algoConfig?.currency||"")+" · next stake sizes from the live Deriv proposal; may use 100% of available balance.";
+  }else{
+    el.textContent="COMPOUNDING · "+m.winCount+"/3 consecutive wins · cycle profit "+m.cycleProfit.toFixed(2)+" · next stake "+m.currentStake.toFixed(2)+" "+(algoConfig?.currency||"");
+  }
+}
+function recordAlgoMoneyResult(profit,record){
+  if(!algoMoneyManagement||!Number.isFinite(profit))return;
+  const m=algoMoneyManagement,currency=algoConfig?.currency||activeTradeAccount?.currency||"";
+  if(m.mode==="RECOVERY"){
+    if(profit<0){m.recoveryLoss+=Math.abs(profit);algoLog("RECOVERY LOSS · outstanding amount increased to "+m.recoveryLoss.toFixed(2)+" "+currency,record.rate);}
+    else if(profit>0){
+      m.recoveryLoss=Math.max(0,m.recoveryLoss-profit);
+      if(m.recoveryLoss<=0.005){
+        m.recoveryLoss=0;m.mode="COMPOUNDING";m.currentStake=m.baseStake;m.winCount=0;m.cycleProfit=0;
+        algoLog("RECOVERY COMPLETE · losses recovered; restarting the three-win cycle at "+m.currentStake.toFixed(2)+" "+currency,record.rate);
+      }else algoLog("RECOVERY WIN · "+profit.toFixed(2)+" "+currency+" recovered; "+m.recoveryLoss.toFixed(2)+" remains",record.rate);
+    }
+  }else if(profit<0){
+    m.mode="RECOVERY";m.recoveryLoss+=Math.abs(profit);m.winCount=0;m.cycleProfit=0;
+    algoLog("THREE-WIN CYCLE ABANDONED · switching to all-balance recovery; outstanding loss "+m.recoveryLoss.toFixed(2)+" "+currency,record.rate);
+  }else if(profit>0){
+    m.winCount+=1;m.cycleProfit+=profit;
+    algoLog("WIN "+m.winCount+"/3 · cycle profit "+m.cycleProfit.toFixed(2)+" "+currency,record.rate);
+    if(m.winCount>=3){
+      m.currentStake=Number((m.currentStake+m.cycleProfit).toFixed(2));
+      algoLog("THREE WINS COMPLETE · net profits compounded; next stake "+m.currentStake.toFixed(2)+" "+currency,record.rate);
+      m.winCount=0;m.cycleProfit=0;
+    }
+  }
+  m.updatedAt=Date.now();saveAlgoMoneyManagement();renderAlgoMoneyStatus();
+}
+function requestAlgoQuote(rate,reason,symbol,forcedStake=null,sizingStage="initial"){
   if(!algoRunning||!algoConfig||!activeTradeAccount||activeTradeAccount.account_id!==algoConfig.accountId||
      !tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)return false;
   const targetSymbol=String(symbol||algoConfig.symbol||selectedSymbol||"");if(!isAlgoSymbolAllowed(targetSymbol))return false;
+  if(algoMoneyManagement?.mode==="RECOVERY"){
+    if(algoOpenContractCount()>0||algoPendingBuyCount()>0)return false;
+    const otherPending=Object.values(algoQuoteRequests).some(meta=>meta.sizingStage!=="cancelled"&&algoTrackerKey(meta.symbol,meta.rate)!==algoTrackerKey(targetSymbol,rate));
+    if(otherPending)return false;
+  }
   const key=algoTrackerKey(targetSymbol,rate),tracker=getAlgoTracker(rate,targetSymbol);if(!tracker)return false;
-  const cached=algoQuotes[key];if(cached&&cached.id&&Date.now()-cached.receivedAt<=ALGO_QUOTE_MAX_AGE_MS)return true;
+  const stake=Number.isFinite(Number(forcedStake))&&Number(forcedStake)>0?Number(forcedStake):algoMoneyStake();
+  if(!Number.isFinite(stake)||stake<0.35){algoLog("Quote not requested: available recovery balance is below Deriv's minimum stake.",rate);return false;}
+  const cached=algoQuotes[key];
+  if(cached&&cached.id&&Date.now()-cached.receivedAt<=ALGO_QUOTE_MAX_AGE_MS&&Math.abs(Number(cached.stake)-stake)<0.005)return true;
   const pending=Object.entries(algoQuoteRequests).find(([,meta])=>Number(meta.rate)===Number(rate)&&String(meta.symbol)===targetSymbol);
-  if(pending&&Date.now()-pending[1].requestedAt<1000)return true;
+  if(pending&&Date.now()-pending[1].requestedAt<1000&&Math.abs(Number(pending[1].stake)-stake)<0.005)return true;
   if(pending)forgetAlgoQuote(rate,targetSymbol);
   try{
     const requestId=tradeSend({
-      proposal:1,
-      amount:algoConfig.stake,
-      basis:"stake",
-      contract_type:"ACCU",
-      currency:algoConfig.currency,
-      growth_rate:Number(rate),
-      underlying_symbol:targetSymbol,
-      subscribe:1
+      proposal:1,amount:stake,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency,
+      growth_rate:Number(rate),underlying_symbol:targetSymbol,subscribe:1
     },"algo-proposal");
     algoQuoteRequests[requestId]={
       requestId,rate:Number(rate),symbol:targetSymbol,accountId:algoConfig.accountId,
-      stake:algoConfig.stake,sequenceNumber:tracker.sequenceNumber,requestedAt:Date.now(),
-      reason:reason||"pre-entry quote"
+      stake,sequenceNumber:tracker.sequenceNumber,requestedAt:Date.now(),
+      reason:reason||"pre-entry quote",sizingStage
     };
-    algoLog("Preparing the "+Math.round(Number(rate)*100)+"% Accumulator quote"+(reason?" · "+reason:""),rate);
+    algoLog("Preparing the "+Math.round(Number(rate)*100)+"% Accumulator quote at "+stake.toFixed(2)+" "+algoConfig.currency+(algoMoneyManagement?.mode==="RECOVERY"?" · recovery sizing":"")+(reason?" · "+reason:""),rate);
     return true;
   }catch(error){
     algoLog("Quote request failed: "+error.message,rate);
@@ -2584,53 +2637,48 @@ function trySubmitAlgoBuy(rate,symbol){
     algoLog("Entry skipped because the account connection is unavailable",rate);
     renderAlgoDashboard();return false;
   }
-  const quote=algoQuotes[algoTrackerKey(targetSymbol,rate)];
-  if(!quote||!quote.id||!Number.isFinite(quote.askPrice)||Date.now()-quote.receivedAt>ALGO_QUOTE_MAX_AGE_MS){
-    requestAlgoQuote(rate,"final quote while armed",targetSymbol);
-    return false;
-  }
   const balanceAge=tradeBalanceUpdatedAt?Date.now()-tradeBalanceUpdatedAt:Infinity;
   if(tradeBalance===null||!Number.isFinite(Number(tradeBalance))||!tradeBalanceUpdatedAt||balanceAge>30000){
-    requestAlgoBalanceRefresh();
-    algoLog("Balance is stale; refreshing it before submitting the armed entry",rate);
-    return false;
+    requestAlgoBalanceRefresh();algoLog("Balance is stale; refreshing it before submitting the armed entry",rate);return false;
+  }
+  const recovery=algoMoneyManagement?.mode==="RECOVERY";
+  if(recovery&&(algoOpenContractCount()>0||algoPendingBuyCount()>0))return false;
+  const available=algoAvailableBalance();
+  const quote=algoQuotes[algoTrackerKey(targetSymbol,rate)];
+  const quoteFresh=quote&&quote.id&&Number.isFinite(quote.askPrice)&&Date.now()-quote.receivedAt<=ALGO_QUOTE_MAX_AGE_MS;
+  const quoteSized=quoteFresh&&(recovery
+    ?(["final","all-in"].includes(quote.sizingStage)&&Number(quote.stake)<=available+0.005)
+    :(Math.abs(Number(quote.stake)-algoMoneyStake())<0.005));
+  if(!quoteSized){requestAlgoQuote(rate,"final quote while armed",targetSymbol);return false;}
+  const stake=Number(quote.stake);
+  if(!Number.isFinite(stake)||stake<0.35||available+1e-9<stake){
+    tracker.skipArmedEntry("Entry skipped: available Deriv balance is below the quoted contract stake");
+    algoLog("Insufficient available balance: "+available.toFixed(2)+" "+algoConfig.currency+" available; "+(Number.isFinite(stake)?stake:0).toFixed(2)+" required",rate);
+    renderAlgoDashboard();return false;
   }
   const symbolBusy=Object.values(algoContractsById).some(record=>String(record.accountId)===String(algoConfig.accountId)&&String(record.symbol)===targetSymbol)||
     Object.values(algoPendingOrders).some(meta=>String(meta.accountId)===String(algoConfig.accountId)&&String(meta.symbol)===targetSymbol);
   if(symbolBusy){tracker.skipArmedEntry("Entry skipped: this instrument already has an open or pending Accumulator contract");forgetAlgoQuote(rate,targetSymbol);algoLog("Entry skipped because this instrument already has a live or pending Accumulator contract",rate);renderAlgoDashboard();return false;}
-  const available=Number(tradeBalance)-algoPendingStake;
-  if(available+1e-9<algoConfig.stake){
-    tracker.skipArmedEntry("Entry skipped: available Deriv balance is below the contract stake");
-    algoLog("Insufficient available balance: "+Math.max(0,available).toFixed(2)+" "+algoConfig.currency+" available; "+algoConfig.stake.toFixed(2)+" required",rate);
-    renderAlgoDashboard();return false;
-  }
-  if(!tracker.markBuySubmitted("submitting")){
-    algoLog("Entry skipped: pre-entry timing window is no longer valid",rate);
-    renderAlgoDashboard();return false;
-  }
+  if(!tracker.markBuySubmitted("submitting")){algoLog("Entry skipped: pre-entry timing window is no longer valid",rate);renderAlgoDashboard();return false;}
   try{
     const requestId=tradeSend({buy:quote.id,price:Number(quote.askPrice)},"algo-buy");
     tracker.buyRequestId=requestId;
     const submittedAt=Date.now();
     const meta={
       requestId,rate:Number(rate),symbol:targetSymbol,accountId:algoConfig.accountId,
-      stake:algoConfig.stake,watchStat:tracker.watchStat,signalCount:tracker.currentCount,
+      stake,watchStat:tracker.watchStat,signalCount:tracker.currentCount,
       sequenceNumber:tracker.sequenceNumber,submittedAt,
       intentId:String(algoConfig.accountId)+":"+String(requestId),
       quoteShortcode:quote.shortcode||"",quoteLongcode:quote.longcode||""
     };
-    algoBuyRequests[requestId]=meta;
-    algoPendingOrders[meta.intentId]=meta;
-    saveAlgoPendingOrders();
-    algoPendingStake+=algoConfig.stake;
+    algoBuyRequests[requestId]=meta;algoPendingOrders[meta.intentId]=meta;saveAlgoPendingOrders();
+    algoPendingStake+=stake;
     setTimeout(()=>{if(algoPendingOrders[meta.intentId]&&tradingSocket?.readyState===WebSocket.OPEN)reconcilePendingAlgoOrders(meta.accountId);},12000);
     forgetAlgoQuote(rate,targetSymbol);
-    algoLog("Buy submitted on "+targetSymbol+" at pre-entry count "+tracker.currentCount+" for Watch Stat "+tracker.watchStat,rate);
+    algoLog((recovery?"RECOVERY BUY":"Buy")+" submitted on "+targetSymbol+" at "+stake.toFixed(2)+" "+algoConfig.currency+" · Watch Stat "+tracker.watchStat,rate);
     renderAlgoDashboard();return true;
   }catch(error){
-    tracker.buyFailed(error.message||"Could not send Deriv buy request");
-    algoLog("Buy request failed: "+error.message,rate);
-    renderAlgoDashboard();return false;
+    tracker.buyFailed(error.message||"Could not send Deriv buy request");algoLog("Buy request failed: "+error.message,rate);renderAlgoDashboard();return false;
   }
 }
 function handleAlgoTrackerActions(rate,actions,symbol){
@@ -2662,17 +2710,33 @@ function handleAlgoProposalMessage(message){
     if(requestKey)delete algoQuoteRequests[requestKey];
     return true;
   }
-  if(subscriptionId){
-    meta.subscriptionId=String(subscriptionId);
-    algoQuoteSubscriptions[String(subscriptionId)]=meta;
-  }
-  const proposal=message.proposal||{};
-  const askPrice=Number(proposal.ask_price);
+  if(subscriptionId){meta.subscriptionId=String(subscriptionId);algoQuoteSubscriptions[String(subscriptionId)]=meta;}
+  const proposal=message.proposal||{},askPrice=Number(proposal.ask_price),payout=Number(proposal.payout);
   if(proposal.id&&Number.isFinite(askPrice)&&askPrice>0){
+    const recovery=algoMoneyManagement?.mode==="RECOVERY";
+    if(recovery&&meta.sizingStage==="initial"){
+      const available=algoAvailableBalance(),quotedProfit=Number.isFinite(payout)?payout-askPrice:NaN;
+      const profitPerDollar=quotedProfit>0&&Number(meta.stake)>0?quotedProfit/Number(meta.stake):NaN;
+      if(!Number.isFinite(profitPerDollar)||profitPerDollar<=0){
+        algoLog("Recovery quote did not show a positive proposal-implied payout margin; waiting for the next valid quote.",meta.rate);
+        forgetAlgoQuote(meta.rate,meta.symbol);renderAlgoDashboard();return true;
+      }
+      const needed=algoMoneyManagement.recoveryLoss/profitPerDollar;
+      if(Number.isFinite(needed)&&needed>=0.35&&needed<available-0.01){
+        forgetAlgoQuote(meta.rate,meta.symbol);
+        requestAlgoQuote(meta.rate,"recovery stake recalculated from Deriv proposal",meta.symbol,Number(needed.toFixed(2)),"final");
+        return true;
+      }
+      meta.sizingStage="all-in";
+    }
+    const sizingStage=recovery?(meta.sizingStage==="all-in"?"all-in":"final"):"normal";
     algoQuotes[algoTrackerKey(meta.symbol,meta.rate)]={
-      id:proposal.id,askPrice,receivedAt:Date.now(),subscriptionId:meta.subscriptionId||null,
-      requestId:requestKey||null,spot:Number.isFinite(Number(proposal.spot))?Number(proposal.spot):null,
-      shortcode:proposal.shortcode||"",longcode:proposal.longcode||""
+      id:proposal.id,askPrice,payout:Number.isFinite(payout)?payout:null,receivedAt:Date.now(),
+      subscriptionId:meta.subscriptionId||null,requestId:requestKey||null,
+      spot:Number.isFinite(Number(proposal.spot))?Number(proposal.spot):null,
+      shortcode:proposal.shortcode||"",longcode:proposal.longcode||"",
+      stake:Number(meta.stake),sizingStage,
+      proposalProfitPerDollar:Number.isFinite(payout)?(payout-askPrice)/Number(meta.stake):null
     };
     const tracker=getAlgoTracker(meta.rate,meta.symbol);
     if(tracker?.state==="ARMED")trySubmitAlgoBuy(meta.rate,meta.symbol);
@@ -2740,11 +2804,14 @@ function handleAlgoContractUpdate(contract,message){
   record.status=contract.status||"OPEN";
   if(actions.some(action=>action.type==="CONTRACT_SETTLED")){
     const settledProfit=Number(record.lastProfit);
-    if(Number.isFinite(settledProfit)){algoSessionProfit+=settledProfit;
+    if(Number.isFinite(settledProfit)){
+      algoSessionProfit+=settledProfit;
+      recordAlgoMoneyResult(settledProfit,record);
       if(settledProfit>0)algoLog("WIN · +"+settledProfit.toFixed(2)+" "+(algoConfig?.currency||activeTradeAccount?.currency||""),record.rate);
       else if(settledProfit<0)algoLog("LOSS · "+settledProfit.toFixed(2)+" "+(algoConfig?.currency||activeTradeAccount?.currency||""),record.rate);
-      if(algoRunning&&algoConfig&&algoSessionProfit>=algoConfig.aim){stopAccumulatorAlgo("Profit aim reached · "+algoSessionProfit.toFixed(2)+" "+algoConfig.currency+" · automatic stop.");}
-      else if(algoRunning&&algoConfig&&algoSessionProfit<=-algoConfig.maxLoss){stopAccumulatorAlgo("Maximum loss reached · "+algoSessionProfit.toFixed(2)+" "+algoConfig.currency+" · automatic stop.");}
+      const recovering=algoMoneyManagement?.mode==="RECOVERY";
+      if(algoRunning&&algoConfig&&!recovering&&algoSessionProfit>=algoConfig.aim){stopAccumulatorAlgo("Profit aim reached · "+algoSessionProfit.toFixed(2)+" "+algoConfig.currency+" · automatic stop.");}
+      else if(algoRunning&&algoConfig&&!recovering&&algoSessionProfit<=-algoConfig.maxLoss){stopAccumulatorAlgo("Maximum loss reached · "+algoSessionProfit.toFixed(2)+" "+algoConfig.currency+" · automatic stop.");}
     }
     if(record.subscriptionId){try{tradeSend({forget:record.subscriptionId},"algo-forget");}catch{}}
     delete algoContractsById[id];
@@ -3127,6 +3194,7 @@ function renderAlgoDashboard(){
   $("algoRiskMode").disabled=algoRunning;
   $("algoStake").disabled=algoRunning;
   $("algoLiveState").classList.toggle("is-running",algoRunning);
+  renderAlgoMoneyStatus();
   const goalNote=$("algoGoalNote");
   if(goalNote){
     const result=document.createElement("strong");
@@ -3255,12 +3323,18 @@ function startAccumulatorAlgo(){
     const accepted=window.confirm("REAL ACCOUNT · AUTOMATED ACCUMULATOR TRADING\n\n"+(scope==="all"?"WATCH ALL · "+symbols.length+" instruments":symbols[0])+
       "\nGrowth rates per instrument: "+rates.map(rate=>Math.round(rate*100)+"%").join(", ")+"\nStake per contract: "+stake.toFixed(2)+" "+activeTradeAccount.currency+
       "\nMaximum simultaneous stake exposure: "+maxExposure.toFixed(2)+" "+activeTradeAccount.currency+
-      "\n\nOnly one live or pending contract is allowed per instrument. Each contract can lose its full stake. Start Algo?");
+      "\n\nOnly one live or pending contract is allowed per instrument. Each contract can lose its full stake. After a loss, recovery may stake the full available balance, can continue beyond the configured Max Loss, and may lose the remaining account funds. Start Algo?");
     if(!accepted)return;
   }
   algoSessionProfit=0;algoHasRun=true;
   algoConfig={scope,symbol:scope==="selected"?selectedSymbol:null,symbols:symbols.slice(),accountId:activeTradeAccount.account_id,
     accountMode:activeTradeAccount.is_virtual?"demo":"real",currency:activeTradeAccount.currency,stake,aim,maxLoss,aggressive,rates:rates.slice()};
+  let savedMoney=null;try{savedMoney=JSON.parse(localStorage.getItem(ALGO_MONEY_STORAGE_KEY)||"null");}catch{}
+  algoMoneyManagement=savedMoney&&String(savedMoney.accountId)===String(algoConfig.accountId)&&Number(savedMoney.baseStake)>0
+    ?{...savedMoney,baseStake:stake,currentStake:Math.max(0.35,Number(savedMoney.currentStake)||stake),winCount:Math.max(0,Math.min(2,Number(savedMoney.winCount)||0)),cycleProfit:Math.max(0,Number(savedMoney.cycleProfit)||0),recoveryLoss:Math.max(0,Number(savedMoney.recoveryLoss)||0)}
+    :{accountId:algoConfig.accountId,baseStake:stake,currentStake:stake,mode:"COMPOUNDING",winCount:0,cycleProfit:0,recoveryLoss:0,updatedAt:Date.now()};
+  if(algoMoneyManagement.recoveryLoss>0)algoMoneyManagement.mode="RECOVERY";
+  saveAlgoMoneyManagement();renderAlgoMoneyStatus();
   algoTrackers=new Map();algoEvents=[];algoPendingStake=0;algoRunning=true;startAlgoBalanceRefresh();
   symbols.forEach(symbol=>rates.forEach(rate=>{
     const tracker=engine.createTracker({symbol,growthRate:rate}),saved=nativeStatsByKey[nativeStatsKey(symbol,rate)]||{};
