@@ -190,6 +190,8 @@ body.trade-active #tradePage #executionPanel{margin-top:18px}
 .trade-header-bottom{display:flex;align-items:center;gap:9px;margin-top:11px;min-width:0}
 /* Manual-only selectors: Algo has its own instrument scope and account pills. */
 #tradePage.algo-mode-active .trade-header-bottom{display:none!important}
+#tradePage.algo-mode-active #tradeHistoryOpen{display:none!important}
+#tradePage.history-mode-active .trade-header-bottom{display:none!important}
 
 .trade-select-shell{position:relative;display:flex;align-items:center;height:43px;min-width:0;border:1px solid #343434;border-radius:12px;background:#090909;color:#fff}
 .trade-select-shell select{height:100%;width:100%;min-width:0;appearance:none;-webkit-appearance:none;border:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:#f7f7f7;padding:0 29px 0 12px;font-size:12px;font-weight:750;white-space:nowrap;text-overflow:ellipsis}
@@ -1352,7 +1354,7 @@ body.trade-active{padding-bottom:0!important}
 .transaction-history-heading>div{display:flex;flex-direction:column;gap:4px;flex:1}
 .transaction-history-heading strong{font-size:13px;letter-spacing:.12em}
 .transaction-history-heading span{font-size:10px;color:#888}
-.history-back-button{width:38px;height:38px;border-radius:50%;background:#000;color:#fff;border:1px solid #444;font-size:22px}
+.history-back-button{width:auto;min-width:76px;height:38px;padding:0 14px;border-radius:8px;background:#000;color:#fff;border:1px solid #555;font-size:11px;font-weight:850;letter-spacing:.08em;display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .history-count{border:1px solid #333;border-radius:999px;padding:6px 10px;color:#bbb!important;font-variant-numeric:tabular-nums}
 .transaction-history-list{display:flex;flex-direction:column;gap:10px}
 .transaction-history-card{width:100%;margin:0;padding:15px 16px 16px;background:#000;border:1px solid rgba(255,255,255,.2);border-radius:0;box-shadow:0 0 10px rgba(255,255,255,.045);box-sizing:border-box}
@@ -1370,6 +1372,22 @@ body.trade-active{padding-bottom:0!important}
 .history-contract-id{grid-column:1/-1}
 .history-empty{padding:34px 18px;text-align:center;color:#777;font-size:12px;border-top:1px solid #222;border-bottom:1px solid #222}
 @media(min-width:801px){.transaction-history-view{width:100%;margin:0;min-height:calc(100vh - 80px)}.transaction-history-card{border-radius:12px}.transaction-history-list{padding:0 12px}}
+
+/* Compact Algo instrument cards: essential 1% row first, expand for full tracker detail. */
+#algoTradeView .algo-instrument-card{padding:6px 7px!important}
+#algoTradeView .algo-instrument-card-top{padding-bottom:4px!important;margin-bottom:4px!important}
+#algoTradeView .algo-instrument-heading{padding-bottom:3px!important}
+#algoTradeView .algo-instrument-growth,
+#algoTradeView .algo-instrument-value,
+#algoTradeView .algo-instrument-entry{min-height:22px!important;padding:2px 0!important}
+#algoTradeView .algo-instrument-table{row-gap:0!important}
+#algoTradeView .algo-instrument-card:not([data-expanded="true"]) .algo-instrument-table>*:nth-child(n+9){display:none!important}
+#algoTradeView .algo-instrument-card:not([data-expanded="true"]) .algo-instrument-contract,
+#algoTradeView .algo-instrument-card:not([data-expanded="true"]) .algo-instrument-note{display:none!important}
+#algoTradeView .algo-instrument-expand{display:block;width:100%;min-height:23px;margin-top:4px;padding:3px 6px;border:1px solid #303030;border-radius:6px;background:#000;color:#aaa;font-size:8px;font-weight:850;letter-spacing:.12em}
+#algoTradeView .algo-instrument-expand:active{transform:none}
+#algoTradeView .algo-instrument-card[data-expanded="true"] .algo-instrument-expand{color:#39d98a;border-color:rgba(57,217,138,.4)}
+
 
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
@@ -3800,6 +3818,12 @@ function renderAlgoDashboard(){
       table.append(growth,liveCell,watchCell,entryCell);
     });
     card.append(top,table);
+    const expandedSet=window.__expandedAlgoMarketCards||(window.__expandedAlgoMarketCards=new Set());
+    const expand=document.createElement("button");expand.type="button";expand.className="algo-instrument-expand";
+    const expanded=expandedSet.has(symbol);card.dataset.expanded=String(expanded);
+    expand.setAttribute("aria-expanded",String(expanded));expand.textContent=expanded?"LESS":"MORE";
+    expand.addEventListener("click",()=>{const next=card.dataset.expanded!=="true";card.dataset.expanded=String(next);expand.setAttribute("aria-expanded",String(next));expand.textContent=next?"LESS":"MORE";if(next)expandedSet.add(symbol);else expandedSet.delete(symbol);});
+    card.append(expand);
     const activeDetails=symbolTrackers.filter(item=>item.contractId);
     if(activeDetails.length){
       const contractLine=document.createElement("div");contractLine.className="algo-instrument-contract";
@@ -4029,12 +4053,14 @@ function openTransactionHistory(){
   const algo=!$("algoTradeView").hidden;
   transactionHistoryReturnTab=algo?"algo":"manual";
   $("manualTradeView").hidden=true;$("algoTradeView").hidden=true;
+  $("tradePage").classList.add("history-mode-active");
   $("transactionHistoryView").hidden=false;
   renderTransactionHistory();
   window.scrollTo({top:0,behavior:"smooth"});
 }
 function closeTransactionHistory(){
   $("transactionHistoryView").hidden=true;
+  $("tradePage").classList.remove("history-mode-active");
   setTradeTab(transactionHistoryReturnTab);
   window.scrollTo({top:0,behavior:"smooth"});
 }
@@ -4042,7 +4068,7 @@ function setTradeTab(mode){const manual=mode==="manual";$("tradePage").classList
 $("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
 $("tradeHistoryOpen").addEventListener("click",openTransactionHistory);$("transactionHistoryBack").addEventListener("click",closeTransactionHistory);
 
-function showAppPage(page){const trade=page==="trade";$("transactionHistoryView").hidden=true;document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
+function showAppPage(page){const trade=page==="trade";$("transactionHistoryView").hidden=true;$("tradePage").classList.remove("history-mode-active");document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("click",event=>{event.preventDefault();const page=link.dataset.page;showAppPage(page);history.replaceState(null,"",page==="trade"?"#tradePage":page==="markets"?"#marketView":"#homePage");const menu=link.closest("details");if(menu)menu.open=false;}));
 })();
 
