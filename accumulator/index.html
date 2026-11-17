@@ -1300,7 +1300,9 @@ body.trade-active{padding-bottom:0!important}
 }
 .market-watch-shell.algo-market-watch .mw-scroll,
 .market-watch-shell.algo-market-watch .mw-scroll *{
- touch-action:pan-x!important;
+ /* Keep horizontal table swipes while allowing vertical gestures to reach
+    the Algo page scroller on Android touch browsers. */
+ touch-action:pan-x pan-y pinch-zoom!important;
 }
 .market-watch-shell.algo-market-watch .mw-table{
  min-width:1180px!important;
