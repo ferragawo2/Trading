@@ -2801,7 +2801,7 @@ async function connectTradeAccount(accountId){
               pnl:finalProfit,currency:activeTradeOverlay.currency||c.currency||"",
               contractId:String(contractId),rate:Number(activeTradeOverlay.rate??activeTradeOverlay.growthRate),
               ticks:Number(c.tick_count??c.ticks_count??activeTradeOverlay.tickCount),
-              timeLabel:new Date(Number(c.date_start??activeTradeOverlay.openedAt/1000??Date.now()/1000)*1000).toLocaleString()
+              timeLabel:new Date(Number(c.date_start??(activeTradeOverlay.openedAt?activeTradeOverlay.openedAt/1000:Date.now()/1000))*1000).toLocaleString()
             });
             const highBarrier=asNumber(activeTradeOverlay.highBarrier);
             const lowBarrier=asNumber(activeTradeOverlay.lowBarrier);
@@ -3325,7 +3325,7 @@ function handleAlgoContractUpdate(contract,message){
       pnl:settledProfit,currency:contract.currency||algoConfig?.currency||activeTradeAccount?.currency||"",
       contractId:id,rate:Number(record.rate),
       ticks:Number(contract.tick_count??contract.ticks_count??record.ticksAfterEntry),
-      timeLabel:new Date(Number(contract.date_start??record.openedAt/1000??Date.now()/1000)*1000).toLocaleString()
+      timeLabel:new Date(Number(contract.date_start??(record.openedAt?record.openedAt/1000:Date.now()/1000))*1000).toLocaleString()
     });
     if(Number.isFinite(settledProfit)){
       algoSessionProfit+=settledProfit;
