@@ -188,6 +188,9 @@ body.trade-active #tradePage #executionPanel{margin-top:18px}
 .currency-logo{width:27px;height:27px;flex:0 0 27px;border:1px solid #777;border-radius:50%;display:grid;place-items:center;font-size:8px;font-weight:900;letter-spacing:-.04em;color:#fff}
 .trade-balance-value{font-size:17px;font-weight:750;white-space:nowrap}
 .trade-header-bottom{display:flex;align-items:center;gap:9px;margin-top:11px;min-width:0}
+/* Manual-only selectors: Algo has its own instrument scope and account pills. */
+#tradePage.algo-mode-active .trade-header-bottom{display:none!important}
+
 .trade-select-shell{position:relative;display:flex;align-items:center;height:43px;min-width:0;border:1px solid #343434;border-radius:12px;background:#090909;color:#fff}
 .trade-select-shell select{height:100%;width:100%;min-width:0;appearance:none;-webkit-appearance:none;border:0!important;outline:0;background:transparent!important;box-shadow:none!important;color:#f7f7f7;padding:0 29px 0 12px;font-size:12px;font-weight:750;white-space:nowrap;text-overflow:ellipsis}
 .trade-select-shell select option{background:#111;color:#fff}
