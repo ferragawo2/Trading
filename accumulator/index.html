@@ -1034,6 +1034,9 @@ body.trade-active{padding-bottom:0!important}
   color:#39d98a;font-size:7px;line-height:1.4;overflow-wrap:anywhere;
 }
 #algoTradeView .algo-instrument-note{color:#999}
+@media(min-width:560px){
+  #algoTradeView .algo-tracker-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:9px!important}
+}
 @media(min-width:760px){
   #algoTradeView .algo-tracker-grid{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important}
   #algoTradeView .algo-instrument-card{padding:12px 10px}
@@ -1046,6 +1049,10 @@ body.trade-active{padding-bottom:0!important}
 @media(min-width:1180px){
   #algoTradeView .algo-tracker-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}
 }
+.algo-money-controls{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+#algoTradeView .algo-reset-money{flex:0 0 auto;padding:8px 11px;border:1px solid #777;border-radius:9px;background:#000;color:#fff;font-size:9px;font-weight:900;letter-spacing:.04em;cursor:pointer}
+#algoTradeView .algo-reset-money:hover:not(:disabled){border-color:#39d98a;color:#39d98a;box-shadow:0 0 10px rgba(57,217,138,.25)}
+#algoTradeView .algo-reset-money:disabled{opacity:.38;cursor:not-allowed}
 @keyframes algoLiveValueFlash{
   0%{color:#fff;text-shadow:0 0 0 transparent;transform:scale(1)}
   35%{color:#39d98a;text-shadow:0 0 9px rgba(57,217,138,.95);transform:scale(1.09)}
@@ -1197,7 +1204,7 @@ body.trade-active{padding-bottom:0!important}
   </div>
   <div class="algo-goal-note" id="algoGoalNote">Profit aim stops normal mode; Max Loss pauses normal mode. Recovery mode continues until losses are recovered and can risk the full remaining balance.</div>
   <div class="algo-live-state" id="algoLiveState"><span class="algo-live-dot"></span><span id="algoLiveText">Stopped · no automatic entries</span></div>
-  <div class="algo-goal-note" id="algoMoneyStatus">Money management · three-win compounding and loss recovery</div>
+  <div class="algo-money-controls"><div class="algo-goal-note" id="algoMoneyStatus">Money management · three-win compounding and loss recovery</div><button id="algoResetMoney" class="algo-reset-money" type="button">RESET FUND MANAGEMENT</button></div>
   <div class="algo-muted algo-account-note" id="algoAccountNote">Connect your Deriv account to start automated execution.</div>
  </section>
  <div class="algo-content-grid">
@@ -2613,6 +2620,21 @@ function recordAlgoMoneyResult(profit,record){
   }
   m.updatedAt=Date.now();saveAlgoMoneyManagement();renderAlgoMoneyStatus();
 }
+function resetAlgoFundManagement(){
+  if(algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||activeContractId){
+    $("algoLiveText").textContent="Stop Algo and wait for all pending orders and open contracts to settle before resetting fund management.";
+    return;
+  }
+  if(!activeTradeAccount){$("algoLiveText").textContent="Connect your Deriv account before resetting fund management.";return;}
+  const stake=Number($("algoStake").value);
+  if(!Number.isFinite(stake)||stake<0.35){$("algoLiveText").textContent="Enter a valid base stake of at least 0.35 before resetting.";return;}
+  const accountId=String(activeTradeAccount.account_id);
+  const accepted=window.confirm("RESET FUND MANAGEMENT?\\n\\nThis will clear the saved recovery loss and three-win progress for this Deriv account, and set the next stake to "+stake.toFixed(2)+" "+(activeTradeAccount.currency||"")+" . It will not change trading statistics, watch stats, or trade history.");
+  if(!accepted)return;
+  const fresh={accountId,moneyStateVersion:2,baseStake:stake,currentStake:stake,mode:"COMPOUNDING",winCount:0,cycleProfit:0,recoveryLoss:0,updatedAt:Date.now()};
+  algoMoneyManagement=fresh;saveAlgoMoneyManagement();renderAlgoMoneyStatus();renderAlgoDashboard();
+  algoLog("FUND MANAGEMENT RESET BY USER · base stake "+stake.toFixed(2)+" "+(activeTradeAccount.currency||"")+" · recovery cleared · win cycle 0/3");
+}
 function requestAlgoQuote(rate,reason,symbol,forcedStake=null,sizingStage="initial"){
   if(!algoRunning||!algoConfig||!activeTradeAccount||activeTradeAccount.account_id!==algoConfig.accountId||
      !tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)return false;
@@ -2740,13 +2762,21 @@ function handleAlgoProposalMessage(message){
   const proposal=message.proposal||{},askPrice=Number(proposal.ask_price),payout=Number(proposal.payout);
   if(proposal.id&&Number.isFinite(askPrice)&&askPrice>0){
     const recovery=isAlgoRecoveryActive();
+    const quotedProfit=Number.isFinite(payout)?payout-askPrice:NaN;
+    const proposalProfitPerDollar=quotedProfit>0&&Number(meta.stake)>0?quotedProfit/Number(meta.stake):NaN;
+    // Deriv Accumulator proposals can return no usable payout margin for the
+    // two-tick horizon. Derive that horizon from the selected growth rate rather
+    // than dropping an otherwise valid streaming proposal and missing the entry.
+    const twoTickProfitPerDollar=Math.pow(1+Number(meta.rate),2)-1;
+    const profitPerDollar=Number.isFinite(proposalProfitPerDollar)&&proposalProfitPerDollar>0
+      ?proposalProfitPerDollar:twoTickProfitPerDollar;
     if(recovery&&meta.sizingStage==="initial"){
-      const available=algoAvailableBalance(),quotedProfit=Number.isFinite(payout)?payout-askPrice:NaN;
-      const profitPerDollar=quotedProfit>0&&Number(meta.stake)>0?quotedProfit/Number(meta.stake):NaN;
+      const available=algoAvailableBalance();
       if(!Number.isFinite(profitPerDollar)||profitPerDollar<=0){
-        algoLog("Recovery quote did not show a positive proposal-implied payout margin; waiting for the next valid quote.",meta.rate);
+        algoLog("Recovery sizing unavailable: Deriv quote and two-tick growth calculation both returned an invalid margin (ask "+askPrice+", payout "+(Number.isFinite(payout)?payout:"not supplied")+", growth "+(Number(meta.rate)*100)+"%).",meta.rate);
         forgetAlgoQuote(meta.rate,meta.symbol);renderAlgoDashboard();return true;
       }
+      if(!(Number.isFinite(proposalProfitPerDollar)&&proposalProfitPerDollar>0))algoLog("Recovery sizing using the Accumulator two-tick growth margin ("+(profitPerDollar*100).toFixed(3)+"% per dollar); Deriv payout field was not usable (ask "+askPrice+", payout "+(Number.isFinite(payout)?payout:"not supplied")+").",meta.rate);
       const needed=algoMoneyManagement.recoveryLoss/profitPerDollar;
       const sizedStake=Math.max(0.35,Number(needed.toFixed(2)));
       if(Number.isFinite(sizedStake)&&sizedStake<available-0.01){
@@ -2763,11 +2793,7 @@ function handleAlgoProposalMessage(message){
       }
       meta.sizingStage="all-in";
     }
-    if(recovery&&meta.sizingStage!=="initial"&&(!Number.isFinite(payout)||payout<=askPrice)){
-      algoLog("Recovery quote did not provide a valid positive two-tick payout margin; no purchase was sent.",meta.rate);
-      forgetAlgoQuote(meta.rate,meta.symbol);renderAlgoDashboard();return true;
-    }
-    if(recovery&&meta.sizingStage==="final"&&Number.isFinite(payout)&&payout-askPrice+0.005<algoMoneyManagement.recoveryLoss&&Number(meta.stake)<algoAvailableBalance()-0.01){
+    if(recovery&&meta.sizingStage==="final"&&Number.isFinite(profitPerDollar)&&profitPerDollar>0&&Number(meta.stake)*profitPerDollar+0.005<algoMoneyManagement.recoveryLoss&&Number(meta.stake)<algoAvailableBalance()-0.01){
       const fullBalanceStake=algoAvailableBalance();
       forgetAlgoQuote(meta.rate,meta.symbol);
       requestAlgoQuote(meta.rate,"available balance required by the refreshed two-tick proposal",meta.symbol,fullBalanceStake,"max");
@@ -2780,7 +2806,7 @@ function handleAlgoProposalMessage(message){
       spot:Number.isFinite(Number(proposal.spot))?Number(proposal.spot):null,
       shortcode:proposal.shortcode||"",longcode:proposal.longcode||"",
       stake:Number(meta.stake),sizingStage,
-      proposalProfitPerDollar:Number.isFinite(payout)?(payout-askPrice)/Number(meta.stake):null
+      proposalProfitPerDollar:Number.isFinite(proposalProfitPerDollar)&&proposalProfitPerDollar>0?proposalProfitPerDollar:twoTickProfitPerDollar
     };
     const tracker=getAlgoTracker(meta.rate,meta.symbol);
     if(tracker?.state==="ARMED")trySubmitAlgoBuy(meta.rate,meta.symbol);
@@ -3207,6 +3233,7 @@ function renderAlgoDashboard(){
   const controlsConnected=!!activeTradeAccount&&!!tradingSocket&&tradingSocket.readyState===WebSocket.OPEN;
   $("algoStart").disabled=!controlsConnected||(!algoRunning&&controlsLocked);
   $("algoStop").disabled=!algoRunning;
+  $("algoResetMoney").disabled=algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId;
   $("algoStake").disabled=algoRunning;
   $("algoRiskMode").disabled=algoRunning;
   if(Date.now()<algoScrollBusyUntil){
@@ -3455,6 +3482,7 @@ async function disconnectDeriv(){
 }
 $("derivLogin").onclick=startDerivLogin;
 $("algoStart").addEventListener("click",()=>{if(algoRunning)stopAccumulatorAlgo("Stopped by user.");else startAccumulatorAlgo();});
+$("algoResetMoney").addEventListener("click",resetAlgoFundManagement);
 $("algoStop").addEventListener("click",()=>stopAccumulatorAlgo());
 $("algoInstrumentSelect").addEventListener("change",()=>selectMarket($("algoInstrumentSelect").value));
 $("algoRiskMode").addEventListener("change",()=>{$("algoActiveTrackers").textContent=$("algoRiskMode").value==="aggressive"?"5":"4";renderAlgoDashboard();});
