@@ -1283,8 +1283,43 @@ body.trade-active{padding-bottom:0!important}
 .market-watch-shell.algo-market-watch .mw-scroll{
  background:#000000;
 }
+/* Force the Watch viewport itself to own horizontal swipes on touch screens.
+   Ancestor Algo touch-action rules must not turn this into a vertical-only region. */
+.market-watch-shell.algo-market-watch .mw-scroll{
+ display:block!important;
+ position:relative!important;
+ width:100%!important;
+ max-width:100%!important;
+ min-width:0!important;
+ overflow-x:scroll!important;
+ overflow-y:hidden!important;
+ -webkit-overflow-scrolling:touch!important;
+ overscroll-behavior-x:contain!important;
+ touch-action:pan-x!important;
+ scrollbar-width:thin!important;
+}
+.market-watch-shell.algo-market-watch .mw-scroll,
+.market-watch-shell.algo-market-watch .mw-scroll *{
+ touch-action:pan-x!important;
+}
 .market-watch-shell.algo-market-watch .mw-table{
+ min-width:1180px!important;
+ width:1180px!important;
+ max-width:none!important;
  background:#000000;
+}
+@media(max-width:800px){
+ .market-watch-shell.algo-market-watch .mw-scroll{
+  width:calc(100vw - 8px)!important;
+  max-width:calc(100vw - 8px)!important;
+  overflow-x:scroll!important;
+  touch-action:pan-x!important;
+  scrollbar-width:thin!important;
+ }
+ .market-watch-shell.algo-market-watch .mw-table{
+  min-width:1180px!important;
+  width:1180px!important;
+ }
 }
 .market-watch-shell.algo-market-watch .mw-market-row,
 .market-watch-shell.algo-market-watch .mw-market-row:nth-child(even){
