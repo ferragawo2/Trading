@@ -924,6 +924,19 @@ body.trade-active{padding-bottom:0!important}
   .algo-action-row .algo-start-button.is-working{animation:none;box-shadow:0 0 10px rgba(57,217,138,.55),0 0 22px rgba(57,217,138,.3)}
 }
 
+
+/* Clear, combined session summary; hide the redundant stopped/running sentence. */
+#algoLiveState{display:none!important}
+.algo-goal-note{
+  max-width:100%;margin:12px auto 0;text-align:center;
+  color:#f4f4f4;font-size:12px;font-weight:850;line-height:1.55;
+  letter-spacing:.015em;overflow-wrap:anywhere;
+}
+.algo-goal-note strong{font-weight:900;color:#f5f5f5}
+.algo-goal-note .algo-positive{color:#39d98a!important}
+.algo-goal-note .algo-negative{color:#ff626f!important}
+.algo-goal-note .algo-session-neutral{color:#fff!important}
+
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -1118,7 +1131,7 @@ let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new 
 let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,algoDashboardRenderTimer=null;
 let algoStartAwaitingBalance=false,algoStartBalanceRequestId=null,algoStartBalanceAccountId=null,algoStartBalanceTimer=null;
 let algoSessionProfit=0,algoHasRun=false;
-let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=null,algoStatsWatchQueue=[];
+let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=null,algoStatsWatchdogTimer=null,algoStatsWatchQueue=[];
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
@@ -2279,16 +2292,26 @@ function startAlgoStatsWatch(){
     const job=algoStatsWatchQueue.shift();if(!job)return;
     try{
       const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
-      algoStatsQuoteRequests[String(requestId)]={...job,requestId:String(requestId)};
+      algoStatsQuoteRequests[String(requestId)]={...job,requestId:String(requestId),sentAt:Date.now()};
     }catch(error){algoLog("Could not subscribe to "+job.symbol+" "+Math.round(job.rate*100)+"% Stats: "+error.message,job.rate);}
-    if(algoStatsWatchQueue.length)algoStatsWatchTimer=setTimeout(sendNext,65);else algoStatsWatchTimer=null;
+    // Watch All can create 100+ independent subscriptions. Pace requests to
+    // avoid bursts that Deriv may reject or leave without an initial response.
+    if(algoStatsWatchQueue.length)algoStatsWatchTimer=setTimeout(sendNext,250);else algoStatsWatchTimer=null;
   };
-  sendNext();algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s).");return true;
+  sendNext();
+  // Rebuild subscriptions periodically so any instrument/rate stream that
+  // failed to initialise gets another chance instead of remaining blank.
+  algoStatsWatchdogTimer=setInterval(()=>{
+    if(algoRunning&&algoStatsWatchActive&&ws?.readyState===WebSocket.OPEN)startAlgoStatsWatch();
+  },60000);
+  algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s).");return true;
 }
 function stopAlgoStatsWatch(){
   algoStatsWatchActive=false;algoStatsWatchGeneration++;
   if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
+  if(algoStatsWatchdogTimer){clearInterval(algoStatsWatchdogTimer);algoStatsWatchdogTimer=null;}
   algoStatsWatchQueue=[];
+  Object.keys(algoStatsQuoteRequests).forEach(requestId=>delete algoStatsQuoteRequests[requestId]);
   Object.keys(algoStatsQuoteSubscriptions).forEach(subscriptionId=>{
     try{if(ws?.readyState===WebSocket.OPEN)send({forget:subscriptionId});}catch{}
     delete algoStatsQuoteSubscriptions[subscriptionId];
@@ -2997,7 +3020,15 @@ function renderAlgoDashboard(){
   $("algoRiskMode").disabled=algoRunning;
   $("algoStake").disabled=algoRunning;
   $("algoLiveState").classList.toggle("is-running",algoRunning);
-  $("algoGoalNote").textContent="Session result: "+(algoSessionProfit>=0?"+":"")+algoSessionProfit.toFixed(2)+" "+(activeTradeAccount?.currency||"")+" · Aim "+Number($("algoAim").value||10).toFixed(2)+" · Max loss "+Number($("algoMaxLoss").value||10).toFixed(2);
+  const goalNote=$("algoGoalNote");
+  if(goalNote){
+    const result=document.createElement("strong");
+    result.className=algoSessionProfit>0?"algo-positive":algoSessionProfit<0?"algo-negative":"algo-session-neutral";
+    result.textContent="Session result: "+(algoSessionProfit>0?"+":"")+algoSessionProfit.toFixed(2)+" "+(activeTradeAccount?.currency||"");
+    const aim=document.createElement("strong");aim.textContent="Aim "+Number($("algoAim").value||10).toFixed(2);
+    const loss=document.createElement("strong");loss.textContent="Max loss "+Number($("algoMaxLoss").value||10).toFixed(2);
+    goalNote.replaceChildren(result,document.createTextNode(" · "),aim,document.createTextNode(" · "),loss);
+  }
   $("algoLiveText").textContent=algoRunning
     ?"Running · "+(algoConfig?.scope==="all"?"Watch All · "+(algoConfig.symbols||[]).length+" instruments":algoConfig?.symbol)+" · "+(algoConfig?.aggressive?"Aggressive · 1%–5%":"Normal · 1%–4%")
     :algoPendingBuyCount()?"Buy confirmation pending · reconciling with Deriv":"Stopped · no new automatic entries";
@@ -3026,7 +3057,7 @@ function renderAlgoDashboard(){
       caption.textContent=label;number.textContent=value;if(label==="WATCH STAT")number.className="algo-positive";item.append(caption,number);return item;
     };
     numbers.append(
-      metric("LIVE COUNT",Number.isInteger(snap.currentCount)?String(snap.currentCount):"—"),
+      metric("LIVE COUNT",Number.isInteger(snap.currentCount)?String(snap.currentCount):"WAITING"),
       metric("WATCH STAT",Number.isInteger(snap.watchStat)?String(snap.watchStat):"—")
     );
     const details=document.createElement("div");details.className="algo-tracker-details";
@@ -3039,7 +3070,9 @@ function renderAlgoDashboard(){
       entry.textContent="COMPLETED RUNS ";const runs=document.createElement("strong");runs.textContent=String(snap.completedRuns||0);entry.append(runs);
     }
     details.append(arm,entry);
-    const message=document.createElement("div");message.className="algo-tracker-message";message.textContent=snap.lastAction||"Waiting for live statistics";
+    const message=document.createElement("div");message.className="algo-tracker-message";
+    message.textContent=snap.lastAction||(Number.isInteger(snap.currentCount)?"Live Deriv Stats received":"Waiting for this instrument’s live Deriv Stats feed");
+    if(!Number.isInteger(snap.currentCount)&&Number.isInteger(snap.watchStat))message.textContent="Saved Watch Stat "+snap.watchStat+" · waiting for live count from Deriv";
     card.append(top,numbers,details,message);
     if(snap.contractId){
       const contract=document.createElement("div");contract.className="algo-muted";
