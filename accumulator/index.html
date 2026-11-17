@@ -1336,6 +1336,11 @@ body.trade-active{padding-bottom:0!important}
   border-radius:7px;
  }
 }
+
+/* Hide the duplicate tracker grid and engine snapshot in the Algo tab.
+   Keep their DOM nodes available because the live dashboard updates them. */
+#algoTradeView .algo-main-column > .algo-section:first-child,
+#algoTradeView .algo-side-column{display:none!important}
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
