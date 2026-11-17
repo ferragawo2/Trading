@@ -971,6 +971,78 @@ body.trade-active{padding-bottom:0!important}
   #algoTradeView .algo-action-row .algo-start-button.is-working{animation:none!important;box-shadow:0 0 10px rgba(57,217,138,.65),0 0 22px rgba(57,217,138,.35)!important}
 }
 
+
+/* Watch All: one full-width instrument card with compact growth-rate rows. */
+#algoTradeView .algo-tracker-grid{
+  display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:9px!important;
+}
+#algoTradeView .algo-instrument-card{
+  width:100%;min-width:0;padding:12px 11px;border:1px solid #fff;
+  border-radius:12px;background:#000!important;color:#fff;overflow:hidden;
+  transition:border-color .18s,box-shadow .18s;
+}
+#algoTradeView .algo-instrument-card.is-armed{
+  border-color:#39d98a;
+  box-shadow:0 0 5px rgba(57,217,138,.62),0 0 15px rgba(57,217,138,.32),inset 0 0 12px rgba(57,217,138,.07);
+}
+#algoTradeView .algo-instrument-card-top{
+  display:flex;align-items:center;justify-content:space-between;gap:10px;
+  padding-bottom:9px;margin-bottom:9px;border-bottom:1px solid #292929;
+}
+#algoTradeView .algo-instrument-name{font-size:12px;font-weight:900;letter-spacing:.07em}
+#algoTradeView .algo-instrument-status{
+  flex:0 0 auto;padding:3px 7px;border:1px solid #3a3a3a;border-radius:999px;
+  color:#bdbdbd;font-size:8px;font-weight:850;letter-spacing:.06em;
+}
+#algoTradeView .algo-instrument-status.is-active{
+  color:#39d98a;border-color:rgba(57,217,138,.6);
+  box-shadow:0 0 9px rgba(57,217,138,.18);
+}
+#algoTradeView .algo-instrument-table{
+  display:grid;grid-template-columns:minmax(0,.72fr) minmax(0,1.08fr) minmax(0,1.05fr) minmax(0,1.38fr);
+  align-items:center;column-gap:5px;row-gap:0;
+}
+#algoTradeView .algo-instrument-heading{
+  min-width:0;padding:0 1px 7px;color:#888;font-size:7px;
+  font-weight:850;letter-spacing:.045em;white-space:nowrap;
+}
+#algoTradeView .algo-instrument-growth,
+#algoTradeView .algo-instrument-value,
+#algoTradeView .algo-instrument-entry{
+  min-width:0;min-height:34px;display:flex;align-items:center;
+  padding:6px 1px;border-top:1px solid #202020;
+  font-size:11px;font-variant-numeric:tabular-nums;
+}
+#algoTradeView .algo-instrument-growth{font-weight:900;color:#fff}
+#algoTradeView .algo-instrument-value strong{font-size:13px;font-weight:850;color:#fff}
+#algoTradeView .algo-instrument-entry strong{
+  color:#ddd;font-size:10px;font-weight:800;white-space:nowrap;
+}
+#algoTradeView .algo-instrument-value strong.algo-positive,
+#algoTradeView .algo-instrument-entry strong.algo-positive{color:#39d98a!important}
+#algoTradeView .algo-live-value-updated{animation:algoLiveValueFlash .72s ease-out}
+#algoTradeView .algo-instrument-contract,
+#algoTradeView .algo-instrument-note{
+  margin-top:8px;padding-top:7px;border-top:1px solid #202020;
+  color:#39d98a;font-size:8px;line-height:1.45;overflow-wrap:anywhere;
+}
+#algoTradeView .algo-instrument-note{color:#999}
+@keyframes algoLiveValueFlash{
+  0%{color:#fff;text-shadow:0 0 0 transparent;transform:scale(1)}
+  35%{color:#39d98a;text-shadow:0 0 9px rgba(57,217,138,.95);transform:scale(1.09)}
+  100%{color:#fff;text-shadow:0 0 0 transparent;transform:scale(1)}
+}
+@media(max-width:390px){
+  #algoTradeView .algo-instrument-card{padding:10px 8px}
+  #algoTradeView .algo-instrument-table{grid-template-columns:minmax(0,.62fr) minmax(0,1.02fr) minmax(0,1fr) minmax(0,1.32fr);column-gap:3px}
+  #algoTradeView .algo-instrument-heading{font-size:6px;letter-spacing:.015em}
+  #algoTradeView .algo-instrument-growth,
+  #algoTradeView .algo-instrument-value,
+  #algoTradeView .algo-instrument-entry{font-size:9px;min-height:31px}
+  #algoTradeView .algo-instrument-value strong{font-size:11px}
+  #algoTradeView .algo-instrument-entry strong{font-size:8px}
+}
+
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -3073,49 +3145,87 @@ function renderAlgoDashboard(){
       (algoOpenContractCount()?" · Existing Algo positions are still monitored.":"")
     :"Connect a Deriv account to activate automated execution.";
   const grid=$("algoTrackerGrid");grid.replaceChildren();
-  const statusLabels={
-    OBSERVING:"LEARNING",WAITING_FOR_MATCH:"WATCHING",ARMED:"PRE-ENTRY",
+  const trackerSnapshots=Array.from(algoTrackers.values()).map(tracker=>tracker.snapshot());
+  const configuredSymbols=algoConfig?.scope==="all"&&Array.isArray(algoConfig.symbols)
+    ?algoConfig.symbols.slice()
+    :[algoConfig?.symbol||selectedSymbol].filter(Boolean);
+  const symbols=[...new Set([...configuredSymbols,...trackerSnapshots.map(item=>item.symbol).filter(Boolean)])];
+  const trackerByKey=new Map(trackerSnapshots.map(item=>[item.symbol+"|"+Number(item.growthRate).toFixed(2),item]));
+  const displayValues=window.__algoTrackerDisplayValues||(window.__algoTrackerDisplayValues=new Map());
+  const displayNumber=(key,value)=>{
+    const node=document.createElement("strong");
+    node.textContent=value;
+    if(displayValues.has(key)&&displayValues.get(key)!==value){
+      node.classList.add("algo-live-value-updated");
+    }
+    displayValues.set(key,value);
+    return node;
+  };
+  const stateLabels={
+    OBSERVING:"LEARNING",WAITING_FOR_MATCH:"WATCHING",ARMED:"ARMED",
     BUY_PENDING:"BUY PENDING",IN_TRADE:"CONTRACT OPEN",CLOSE_PENDING:"CLOSE PENDING",
     WAITING_FOR_RUN_END:"WAITING FOR CUT",PAUSED:"PAUSED"
   };
-  const sorted=Array.from(algoTrackers.values()).sort((a,b)=>a.growthRate-b.growthRate);
-  sorted.forEach(tracker=>{
-    const snap=tracker.snapshot(),ratePercent=Math.round(snap.growthRate*100);
-    const card=document.createElement("div");card.className="algo-tracker-card algo-rate-"+ratePercent;
-    const top=document.createElement("div");top.className="algo-tracker-top";
-    const rate=document.createElement("strong");rate.className="algo-tracker-rate";rate.textContent=ratePercent+"% · "+tracker.symbol;
-    const status=document.createElement("span");status.className="algo-tracker-status";status.textContent=statusLabels[snap.state]||snap.state;
-    top.append(rate,status);
-    const numbers=document.createElement("div");numbers.className="algo-tracker-numbers";
-    const metric=(label,value)=>{
-      const item=document.createElement("div"),caption=document.createElement("span"),number=document.createElement("strong");
-      caption.textContent=label;number.textContent=value;if(label==="WATCH STAT")number.className="algo-positive";item.append(caption,number);return item;
-    };
-    numbers.append(
-      metric("LIVE COUNT",Number.isInteger(snap.currentCount)?String(snap.currentCount):"WAITING"),
-      metric("WATCH STAT",Number.isInteger(snap.watchStat)?String(snap.watchStat):"—")
-    );
-    const details=document.createElement("div");details.className="algo-tracker-details";
-    const arm=document.createElement("span"),entry=document.createElement("span");
-    if(Number.isInteger(snap.watchStat)){
-      arm.textContent="ARM AT ";const armValue=document.createElement("strong");armValue.textContent=String(snap.watchStat-1);arm.append(armValue);armValue.className="algo-positive";
-      entry.textContent="NEXT ENTRY ";const entryValue=document.createElement("strong");entryValue.textContent=String(snap.watchStat);entryValue.className="algo-positive";entry.append(entryValue);
-    }else{
-      arm.textContent="LAST CUT ";const last=document.createElement("strong");last.textContent=Number.isInteger(snap.lastCompletedStat)?String(snap.lastCompletedStat):"—";arm.append(last);
-      entry.textContent="COMPLETED RUNS ";const runs=document.createElement("strong");runs.textContent=String(snap.completedRuns||0);entry.append(runs);
+  symbols.forEach(symbol=>{
+    const symbolTrackers=trackerSnapshots.filter(item=>item.symbol===symbol);
+    const hasOpen=symbolTrackers.some(item=>!!item.contractId||
+      ["IN_TRADE","CLOSE_PENDING"].includes(item.state));
+    const isArmed=symbolTrackers.some(item=>
+      ["ARMED","BUY_PENDING","IN_TRADE","CLOSE_PENDING"].includes(item.state));
+    const statusText=hasOpen?"CONTRACT OPEN":!algoRunning?"PAUSED":
+      isArmed?"ARMED":symbolTrackers.some(item=>item.state==="WAITING_FOR_MATCH")?"WATCHING":"LEARNING";
+    const card=document.createElement("article");
+    card.className="algo-instrument-card"+(isArmed?" is-armed":"");
+    const top=document.createElement("div");top.className="algo-instrument-card-top";
+    const name=document.createElement("strong");name.className="algo-instrument-name";name.textContent=symbol;
+    const status=document.createElement("span");status.className="algo-instrument-status"+(isArmed?" is-active":"");
+    status.textContent=statusText;
+    top.append(name,status);
+    const table=document.createElement("div");table.className="algo-instrument-table";
+    [["GROWTH","growth"],["LIVE COUNT","live"],["WATCH STAT","watch"],["ENTRY","entry"]].forEach(([label])=>{
+      const heading=document.createElement("span");heading.className="algo-instrument-heading";heading.textContent=label;table.append(heading);
+    });
+    activeRates.forEach(rate=>{
+      const key=symbol+"|"+Number(rate).toFixed(2);
+      const snap=trackerByKey.get(key)||null;
+      const growth=document.createElement("strong");growth.className="algo-instrument-growth";growth.textContent=Math.round(rate*100)+"%";
+      const liveCell=document.createElement("span");liveCell.className="algo-instrument-value";
+      const liveValue=Number.isInteger(snap?.currentCount)?String(snap.currentCount):"WAITING";
+      liveCell.append(displayNumber(key+"|live",liveValue));
+      const watchCell=document.createElement("span");watchCell.className="algo-instrument-value";
+      const watchValue=Number.isInteger(snap?.watchStat)?String(snap.watchStat):"—";
+      const watchNode=displayNumber(key+"|watch",watchValue);
+      if(Number.isInteger(snap?.watchStat))watchNode.classList.add("algo-positive");
+      watchCell.append(watchNode);
+      const entryCell=document.createElement("span");entryCell.className="algo-instrument-entry";
+      const entryValue=Number.isInteger(snap?.watchStat)?(String(snap.watchStat-1)+" → "+String(snap.watchStat)):"—";
+      const entryNode=document.createElement("strong");entryNode.textContent=entryValue;
+      if(Number.isInteger(snap?.watchStat)){
+        entryNode.classList.add("algo-positive");
+        entryNode.title="ARM AT "+(snap.watchStat-1)+" · NEXT ENTRY "+snap.watchStat;
+      }
+      entryCell.append(entryNode);
+      table.append(growth,liveCell,watchCell,entryCell);
+    });
+    card.append(top,table);
+    const activeDetails=symbolTrackers.filter(item=>item.contractId);
+    if(activeDetails.length){
+      const contractLine=document.createElement("div");contractLine.className="algo-instrument-contract";
+      contractLine.textContent=activeDetails.map(item=>Math.round(item.growthRate*100)+"% · "+item.ticksAfterEntry+"/2 ticks · #"+item.contractId).join("  |  ");
+      card.append(contractLine);
     }
-    details.append(arm,entry);
-    const message=document.createElement("div");message.className="algo-tracker-message";
-    message.textContent=snap.lastAction||(Number.isInteger(snap.currentCount)?"Live Deriv Stats received":"Waiting for this instrument’s live Deriv Stats feed");
-    if(!Number.isInteger(snap.currentCount)&&Number.isInteger(snap.watchStat))message.textContent="Saved Watch Stat "+snap.watchStat+" · waiting for live count from Deriv";
-    card.append(top,numbers,details,message);
-    if(snap.contractId){
-      const contract=document.createElement("div");contract.className="algo-muted";
-      contract.textContent="Contract #"+snap.contractId+" · "+snap.ticksAfterEntry+"/2 post-entry ticks";card.append(contract);
+    const notes=symbolTrackers.filter(item=>!Number.isInteger(item.currentCount)&&Number.isInteger(item.watchStat));
+    if(notes.length){
+      const note=document.createElement("div");note.className="algo-instrument-note";
+      note.textContent=notes.map(item=>Math.round(item.growthRate*100)+"% · Saved Watch Stat "+item.watchStat+" · waiting for live count from Deriv").join("  |  ");
+      card.append(note);
     }
     grid.append(card);
   });
-  if(!sorted.length){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="Start Algo to initialise the independent growth-rate trackers.";grid.append(empty);}
+  if(!symbols.length){
+    const empty=document.createElement("div");empty.className="algo-muted";
+    empty.textContent="Start Algo to initialise the independent growth-rate trackers.";grid.append(empty);
+  }
   const positions=$("algoPositionList");positions.replaceChildren();
   Object.values(algoContractsById).forEach(record=>{
     const row=document.createElement("div");row.className="algo-position-row";
