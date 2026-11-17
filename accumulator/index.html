@@ -2575,11 +2575,13 @@ function recordAlgoMoneyResult(profit,record){
       m.recoveryLoss=Math.max(0,m.recoveryLoss-profit);
       if(m.recoveryLoss<=0.005){
         m.recoveryLoss=0;m.mode="COMPOUNDING";m.currentStake=m.baseStake;m.winCount=0;m.cycleProfit=0;
+        forgetAllAlgoQuotes();
         algoLog("RECOVERY COMPLETE · losses recovered; restarting the three-win cycle at "+m.currentStake.toFixed(2)+" "+currency,record.rate);
       }else algoLog("RECOVERY WIN · "+profit.toFixed(2)+" "+currency+" recovered; "+m.recoveryLoss.toFixed(2)+" remains",record.rate);
     }
   }else if(profit<0){
     m.mode="RECOVERY";m.recoveryLoss+=Math.abs(profit);m.winCount=0;m.cycleProfit=0;
+    forgetAllAlgoQuotes();
     algoLog("THREE-WIN CYCLE ABANDONED · switching to all-balance recovery; outstanding loss "+m.recoveryLoss.toFixed(2)+" "+currency,record.rate);
   }else if(profit>0){
     m.winCount+=1;m.cycleProfit+=profit;
@@ -2605,7 +2607,8 @@ function requestAlgoQuote(rate,reason,symbol,forcedStake=null,sizingStage="initi
   const stake=Number.isFinite(Number(forcedStake))&&Number(forcedStake)>0?Number(forcedStake):algoMoneyStake();
   if(!Number.isFinite(stake)||stake<0.35){algoLog("Quote not requested: available recovery balance is below Deriv's minimum stake.",rate);return false;}
   const cached=algoQuotes[key];
-  if(cached&&cached.id&&Date.now()-cached.receivedAt<=ALGO_QUOTE_MAX_AGE_MS&&Math.abs(Number(cached.stake)-stake)<0.005)return true;
+  const expectedStage=algoMoneyManagement?.mode==="RECOVERY"?(sizingStage==="final"?"final":"all-in"):"normal";
+  if(cached&&cached.id&&Date.now()-cached.receivedAt<=ALGO_QUOTE_MAX_AGE_MS&&Math.abs(Number(cached.stake)-stake)<0.005&&cached.sizingStage===expectedStage)return true;
   const pending=Object.entries(algoQuoteRequests).find(([,meta])=>Number(meta.rate)===Number(rate)&&String(meta.symbol)===targetSymbol);
   if(pending&&Date.now()-pending[1].requestedAt<1000&&Math.abs(Number(pending[1].stake)-stake)<0.005)return true;
   if(pending)forgetAlgoQuote(rate,targetSymbol);
