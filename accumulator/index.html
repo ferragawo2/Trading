@@ -1343,6 +1343,34 @@ body.trade-active{padding-bottom:0!important}
    Keep their DOM nodes available because the live dashboard updates them. */
 #algoTradeView .algo-main-column > .algo-section:first-child,
 #algoTradeView .algo-side-column{display:none!important}
+
+/* Shared Manual + Algo contract history */
+.trade-history-trigger{width:40px;height:40px;flex:0 0 40px;border-radius:50%;display:grid;place-items:center;background:#000!important;color:#fff;border:1px solid rgba(255,255,255,.55);box-shadow:0 0 10px rgba(255,255,255,.08);padding:0;cursor:pointer}
+.trade-history-trigger svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.transaction-history-view{width:100vw;max-width:none;margin:0 0 0 calc(50% - 50vw);min-height:calc(100dvh - 100px);padding:12px 0 100px;background:#000;color:#fff}
+.transaction-history-heading{display:flex;align-items:center;gap:12px;padding:12px 14px 18px}
+.transaction-history-heading>div{display:flex;flex-direction:column;gap:4px;flex:1}
+.transaction-history-heading strong{font-size:13px;letter-spacing:.12em}
+.transaction-history-heading span{font-size:10px;color:#888}
+.history-back-button{width:38px;height:38px;border-radius:50%;background:#000;color:#fff;border:1px solid #444;font-size:22px}
+.history-count{border:1px solid #333;border-radius:999px;padding:6px 10px;color:#bbb!important;font-variant-numeric:tabular-nums}
+.transaction-history-list{display:flex;flex-direction:column;gap:10px}
+.transaction-history-card{width:100%;margin:0;padding:15px 16px 16px;background:#000;border:1px solid rgba(255,255,255,.2);border-radius:0;box-shadow:0 0 10px rgba(255,255,255,.045);box-sizing:border-box}
+.transaction-history-card.is-profit{border-color:rgba(40,255,130,.72);box-shadow:0 0 7px rgba(40,255,130,.28),inset 0 0 12px rgba(40,255,130,.045)}
+.transaction-history-card.is-loss{border-color:rgba(255,65,75,.78);box-shadow:0 0 7px rgba(255,65,75,.3),inset 0 0 12px rgba(255,65,75,.045)}
+.history-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.history-instrument{font-size:14px;font-weight:800;letter-spacing:.015em}
+.history-source{display:inline-flex;margin-top:5px;padding:4px 7px;border:1px solid #383838;border-radius:999px;color:#aaa;font-size:9px;font-weight:800;letter-spacing:.08em}
+.history-pnl{text-align:right;font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.is-profit .history-pnl{color:#50f59a}.is-loss .history-pnl{color:#ff626d}
+.history-details{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px 16px}
+.history-detail{min-width:0;display:flex;flex-direction:column;gap:4px}
+.history-detail small{font-size:9px;color:#858585;letter-spacing:.09em}
+.history-detail strong{font-size:11px;color:#eee;overflow-wrap:anywhere;font-variant-numeric:tabular-nums}
+.history-contract-id{grid-column:1/-1}
+.history-empty{padding:34px 18px;text-align:center;color:#777;font-size:12px;border-top:1px solid #222;border-bottom:1px solid #222}
+@media(min-width:801px){.transaction-history-view{width:100%;margin:0;min-height:calc(100vh - 80px)}.transaction-history-card{border-radius:12px}.transaction-history-list{padding:0 12px}}
+
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -1412,6 +1440,7 @@ body.trade-active{padding-bottom:0!important}
  <div class="trade-header-top">
   <div class="trade-tabs" role="tablist" aria-label="Trade mode"><button type="button" class="trade-tab is-active" id="manualTab" role="tab" aria-selected="true" aria-controls="manualTradeView">MANUAL</button><button type="button" class="trade-tab" id="algoTab" role="tab" aria-selected="false" aria-controls="algoTradeView">ALGO</button></div>
   <div class="trade-balance" aria-live="polite"><span class="currency-logo" id="tradeCurrencyLogo">—</span><span class="trade-balance-value" id="tradeHeaderBalance">—</span></div>
+  <button type="button" class="trade-history-trigger" id="tradeHistoryOpen" aria-label="Open transaction history" title="Transaction history"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"></circle><path d="M12 7v5l3 2"></path></svg></button>
  </div>
  <div class="trade-header-bottom">
   <label class="trade-select-shell instrument-shell"><span class="instrument-mark" id="tradeInstrumentMark">◈</span><select id="tradeInstrumentSelect" aria-label="Select instrument" disabled><option>Loading instruments…</option></select><span class="select-chevron">⌄</span></label>
@@ -1516,6 +1545,14 @@ body.trade-active{padding-bottom:0!important}
   </aside>
  </div>
 </section>
+<section id="transactionHistoryView" class="transaction-history-view" hidden aria-label="Transaction history">
+ <div class="transaction-history-heading">
+  <button type="button" id="transactionHistoryBack" class="history-back-button" aria-label="Back to trading">←</button>
+  <div><strong>TRANSACTION HISTORY</strong><span>Manual and Algo contracts</span></div>
+  <span id="transactionHistoryCount" class="history-count">0</span>
+ </div>
+ <div id="transactionHistoryList" class="transaction-history-list"><div class="history-empty">Completed contracts will appear here.</div></div>
+</section>
 </section>
 <nav class="mobile-nav" aria-label="Main navigation">
 <a href="#homePage" data-page="home" aria-label="Home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 10 9-7 9 7v10a1 1 0 0 1-1 1h-5v-7H9v7H4a1 1 0 0 1-1-1z"/></svg><span>Home</span></a>
@@ -1534,6 +1571,8 @@ let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={},
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
 let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0,algoMoneyManagement=null;
 const ALGO_MONEY_STORAGE_KEY="deriv_accumulator_algo_money_v1";
+const TRANSACTION_HISTORY_STORAGE_KEY="deriv_accumulator_transaction_history_v1";
+let transactionHistoryReturnTab="manual";
 let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,algoDashboardRenderTimer=null;
 let algoStartAwaitingBalance=false,algoStartBalanceRequestId=null,algoStartBalanceAccountId=null,algoStartBalanceTimer=null;
 let algoSessionProfit=0,algoHasRun=false;
@@ -2688,7 +2727,7 @@ async function connectTradeAccount(accountId){
         window.__derivAccumulatorClosedBarriers=null;
         lastTradeChartPosition=null;
         activeTradeOverlay={
-          contractId:activeContractId,symbol:selectedSymbol,rate:tradeRate,
+          contractId:activeContractId,symbol:selectedSymbol,rate:tradeRate,stake:Number(currentTradeProposal?.stake??$("tradeStake").value),buyPrice:Number(m.buy.buy_price),openedAt:Date.now(),
           entrySpot:null,barrier:null,
           highBarrier:tradeBarrier.highDisplay||tradeBarrier.high,
           lowBarrier:tradeBarrier.lowDisplay||tradeBarrier.low,
@@ -2757,6 +2796,13 @@ async function connectTradeAccount(accountId){
             const exitSpot=asNumber(c.exit_spot??c.sell_spot??c.current_spot??activeTradeOverlay.currentSpot);
             const exitEpoch=asNumber(c.exit_spot_time??c.sell_spot_time??c.sell_time??c.current_spot_time??c.date_expiry??activeTradeOverlay.currentSpotTime);
             const finalProfit=Number.isFinite(profit)?profit:activeTradeOverlay.profit;
+            saveTransactionHistoryRecord({
+              source:"manual",symbol:activeTradeOverlay.symbol,stake:Number(activeTradeOverlay.stake??activeTradeOverlay.buyPrice??c.buy_price),
+              pnl:finalProfit,currency:activeTradeOverlay.currency||c.currency||"",
+              contractId:String(contractId),rate:Number(activeTradeOverlay.rate??activeTradeOverlay.growthRate),
+              ticks:Number(c.tick_count??c.ticks_count??activeTradeOverlay.tickCount),
+              timeLabel:new Date(Number(c.date_start??activeTradeOverlay.openedAt/1000??Date.now()/1000)*1000).toLocaleString()
+            });
             const highBarrier=asNumber(activeTradeOverlay.highBarrier);
             const lowBarrier=asNumber(activeTradeOverlay.lowBarrier);
             if(Number.isFinite(highBarrier)&&Number.isFinite(lowBarrier)&&highBarrier>lowBarrier&&Number.isFinite(exitSpot)&&Number.isFinite(exitEpoch)&&Number.isFinite(finalProfit)){
@@ -3274,6 +3320,13 @@ function handleAlgoContractUpdate(contract,message){
   record.status=contract.status||"OPEN";
   if(actions.some(action=>action.type==="CONTRACT_SETTLED")){
     const settledProfit=Number(record.lastProfit);
+    saveTransactionHistoryRecord({
+      source:"algo",symbol:record.symbol,stake:Number(record.stake),
+      pnl:settledProfit,currency:contract.currency||algoConfig?.currency||activeTradeAccount?.currency||"",
+      contractId:id,rate:Number(record.rate),
+      ticks:Number(contract.tick_count??contract.ticks_count??record.ticksAfterEntry),
+      timeLabel:new Date(Number(contract.date_start??record.openedAt/1000??Date.now()/1000)*1000).toLocaleString()
+    });
     if(Number.isFinite(settledProfit)){
       algoSessionProfit+=settledProfit;
       recordAlgoMoneyResult(settledProfit,record);
@@ -3933,8 +3986,61 @@ $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",()=>{drawChart();renderPurposeChartScaffold();});setupPurposeChartInteractions();renderNativeStats();renderPurposeChartScaffold();
 connect();
 
+function loadTransactionHistory(){
+  try{const rows=JSON.parse(localStorage.getItem(TRANSACTION_HISTORY_STORAGE_KEY)||"[]");return Array.isArray(rows)?rows:[];}catch{return [];}
+}
+function saveTransactionHistoryRecord(record){
+  if(!record||!record.contractId)return;
+  const rows=loadTransactionHistory();
+  const id=String(record.contractId);
+  if(rows.some(item=>String(item.contractId)===id))return;
+  rows.unshift({...record,contractId:id,savedAt:Date.now()});
+  try{localStorage.setItem(TRANSACTION_HISTORY_STORAGE_KEY,JSON.stringify(rows.slice(0,500)));}catch(error){console.warn("Transaction history could not be saved:",error);}
+  renderTransactionHistory();
+}
+function renderTransactionHistory(){
+  const list=$("transactionHistoryList");if(!list)return;
+  const rows=loadTransactionHistory();
+  $("transactionHistoryCount").textContent=String(rows.length);
+  list.replaceChildren();
+  if(!rows.length){const empty=document.createElement("div");empty.className="history-empty";empty.textContent="Completed contracts will appear here.";list.append(empty);return;}
+  rows.forEach(item=>{
+    const card=document.createElement("article");card.className="transaction-history-card "+(Number(item.pnl)>0?"is-profit":Number(item.pnl)<0?"is-loss":"");
+    const top=document.createElement("div");top.className="history-card-top";
+    const title=document.createElement("div");
+    const instrument=document.createElement("div");instrument.className="history-instrument";instrument.textContent=item.symbol||"Accumulator";
+    const source=document.createElement("span");source.className="history-source";source.textContent=item.source==="algo"?"ALGO":"MANUAL";
+    title.append(instrument,source);
+    const pnl=document.createElement("div");pnl.className="history-pnl";const currency=item.currency?" "+item.currency:"";pnl.textContent=(Number(item.pnl)>0?"+":"")+(Number.isFinite(Number(item.pnl))?Number(item.pnl).toFixed(2):"—")+currency;
+    top.append(title,pnl);card.append(top);
+    const details=document.createElement("div");details.className="history-details";
+    const fields=[
+      ["STAKE",((Number.isFinite(Number(item.stake))?Number(item.stake).toFixed(2):"—")+(currency))],
+      ["DURATION",((Number.isFinite(Number(item.ticks))?String(item.ticks)+" ticks":"—"))],
+      ["GROWTH",Number.isFinite(Number(item.rate))?(Number(item.rate)*100).toFixed(0)+"%":"—"],
+      ["TIME",item.timeLabel||"—"],
+      ["CONTRACT ID",String(item.contractId)]
+    ];
+    fields.forEach(([label,value],index)=>{const cell=document.createElement("div");cell.className="history-detail"+(index===4?" history-contract-id":"");const small=document.createElement("small");small.textContent=label;const strong=document.createElement("strong");strong.textContent=value;cell.append(small,strong);details.append(cell);});
+    card.append(details);list.append(card);
+  });
+}
+function openTransactionHistory(){
+  const algo=!$("algoTradeView").hidden;
+  transactionHistoryReturnTab=algo?"algo":"manual";
+  $("manualTradeView").hidden=true;$("algoTradeView").hidden=true;
+  $("transactionHistoryView").hidden=false;
+  renderTransactionHistory();
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+function closeTransactionHistory(){
+  $("transactionHistoryView").hidden=true;
+  setTradeTab(transactionHistoryReturnTab);
+  window.scrollTo({top:0,behavior:"smooth"});
+}
 function setTradeTab(mode){const manual=mode==="manual";$("tradePage").classList.toggle("algo-mode-active",!manual);$("manualTradeView").hidden=!manual;$("algoTradeView").hidden=manual;$("manualTab").classList.toggle("is-active",manual);$("algoTab").classList.toggle("is-active",!manual);$("manualTab").setAttribute("aria-selected",String(manual));$("algoTab").setAttribute("aria-selected",String(!manual));window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page:"trade",tab:manual?"manual":"algo"}}));}
 $("manualTab").addEventListener("click",()=>setTradeTab("manual"));$("algoTab").addEventListener("click",()=>setTradeTab("algo"));
+$("tradeHistoryOpen").addEventListener("click",openTransactionHistory);$("transactionHistoryBack").addEventListener("click",closeTransactionHistory);
 
 function showAppPage(page){const trade=page==="trade";document.body.classList.toggle("trade-active",trade);$("homePage").hidden=trade;$("tradePage").hidden=!trade;document.querySelectorAll(".mobile-nav a[data-page]").forEach(link=>{const active=link.dataset.page===(page==="markets"?"markets":trade?"trade":"home");link.setAttribute("aria-current",active?"page":"false");});window.dispatchEvent(new CustomEvent("app-page-change",{detail:{page,tab:trade?"manual":null}}));if(trade){setTradeTab("manual");window.scrollTo({top:0,behavior:"smooth"});}else if(page==="markets"){window.scrollTo({top:$("marketView").getBoundingClientRect().top+window.scrollY-12,behavior:"smooth"});}else window.scrollTo({top:0,behavior:"smooth"});}
 document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("click",event=>{event.preventDefault();const page=link.dataset.page;showAppPage(page);history.replaceState(null,"",page==="trade"?"#tradePage":page==="markets"?"#marketView":"#homePage");const menu=link.closest("details");if(menu)menu.open=false;}));
