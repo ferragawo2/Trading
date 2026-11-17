@@ -2733,6 +2733,10 @@ function handleAlgoProposalMessage(message){
       }
       meta.sizingStage="all-in";
     }
+    if(recovery&&meta.sizingStage!=="initial"&&(!Number.isFinite(payout)||payout<=askPrice)){
+      algoLog("Recovery quote did not provide a valid positive two-tick payout margin; no purchase was sent.",meta.rate);
+      forgetAlgoQuote(meta.rate,meta.symbol);renderAlgoDashboard();return true;
+    }
     if(recovery&&meta.sizingStage==="final"&&Number.isFinite(payout)&&payout-askPrice+0.005<algoMoneyManagement.recoveryLoss&&Number(meta.stake)<algoAvailableBalance()-0.01){
       const fullBalanceStake=algoAvailableBalance();
       forgetAlgoQuote(meta.rate,meta.symbol);
@@ -3340,7 +3344,10 @@ function startAccumulatorAlgo(){
   algoConfig={scope,symbol:scope==="selected"?selectedSymbol:null,symbols:symbols.slice(),accountId:activeTradeAccount.account_id,
     accountMode:activeTradeAccount.is_virtual?"demo":"real",currency:activeTradeAccount.currency,stake,aim,maxLoss,aggressive,rates:rates.slice()};
   let savedMoney=null;try{savedMoney=JSON.parse(localStorage.getItem(ALGO_MONEY_STORAGE_KEY)||"null");}catch{}
-  algoMoneyManagement=savedMoney&&String(savedMoney.accountId)===String(algoConfig.accountId)&&Number(savedMoney.baseStake)>0
+  const savedForAccount=savedMoney&&String(savedMoney.accountId)===String(algoConfig.accountId)&&Number(savedMoney.baseStake)>0;
+  const savedRecovery=savedForAccount&&Number(savedMoney.recoveryLoss)>0;
+  const sameBaseStake=savedForAccount&&Math.abs(Number(savedMoney.baseStake)-stake)<0.005;
+  algoMoneyManagement=(savedRecovery||sameBaseStake)
     ?{...savedMoney,baseStake:stake,currentStake:Math.max(0.35,Number(savedMoney.currentStake)||stake),winCount:Math.max(0,Math.min(2,Number(savedMoney.winCount)||0)),cycleProfit:Math.max(0,Number(savedMoney.cycleProfit)||0),recoveryLoss:Math.max(0,Number(savedMoney.recoveryLoss)||0)}
     :{accountId:algoConfig.accountId,baseStake:stake,currentStake:stake,mode:"COMPOUNDING",winCount:0,cycleProfit:0,recoveryLoss:0,updatedAt:Date.now()};
   if(algoMoneyManagement.recoveryLoss>0)algoMoneyManagement.mode="RECOVERY";
