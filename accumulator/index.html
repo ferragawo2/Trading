@@ -1390,7 +1390,21 @@ body.trade-active{padding-bottom:0!important}
     </div>
   </div>
 </section>
-<section class="market-showcase"><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section></section>
+<section class="market-showcase" id="marketView"><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section></section>
+<!-- Hidden compatibility elements retained for the existing Deriv market-feed and chart code.
+     The visible Home UI remains the market cards and Accumulator promo only. -->
+<div id="legacyMarketCompatibility" hidden aria-hidden="true">
+  <div id="selectedMarketLabel">Select a market</div>
+  <select id="symbol" disabled><option>Loading supported markets…</option></select>
+  <button id="connectBtn" type="button">Connect / refresh</button>
+  <div id="marketCount">—</div><div id="liveCount">0</div>
+  <div id="price">—</div><div id="lastTick">—</div><div id="tickCount">0</div>
+  <div id="feedNote">Waiting for feed</div><div id="tickHistory">No ticks received yet.</div>
+  <canvas id="chart"></canvas>
+  <div id="log"><div>Ready to discover Accumulator markets.</div></div>
+  <div id="barrierStatus">Waiting for market</div><div id="barrierGrid"></div>
+  <div id="listStatus"></div>
+</div>
 <section class="accu-promo" aria-label="Accumulator introduction"><img src="../file_00000000209c820a84bade880d8fefc1.png" alt="Accumulators — grow your potential payout exponentially while the spot price stays within the trade barriers"><a class="accu-promo-cta" href="#tradePage" data-page="trade">TRADE NOW</a></section>
 </div>
 <section id="tradePage" class="app-page" hidden aria-label="Trade">
