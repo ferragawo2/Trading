@@ -102,7 +102,7 @@
 .balance-content{position:relative;z-index:2;width:58%;max-width:520px}.balance-chart{position:absolute;z-index:0;right:20px;top:24px;width:40%;height:112px;opacity:.62;pointer-events:none}
 .balance-chart path.area{fill:url(#balanceFill)}.balance-chart path.line{fill:none;stroke:rgba(255,255,255,.58);stroke-width:2;stroke-linecap:round;stroke-linejoin:round}.balance-chart circle{fill:#fff;opacity:.82}
 .balance-head{display:flex;align-items:center;justify-content:flex-start;gap:12px;position:relative}.balance-label{font-size:10px;font-weight:800;letter-spacing:.18em;color:#c8c8c8}
-.balance-value-row{display:flex;align-items:center;gap:12px;margin-top:8px}.balance-currency-flag{display:block;flex:0 0 30px;width:30px;height:30px;object-fit:contain;border:0;border-radius:0;overflow:visible;background:transparent;box-shadow:none}.balance-chart path.line{transition:stroke .2s}.balance-chart path.area{transition:fill .2s}.balance-visibility{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid #555;border-radius:50%;background:#000;color:#fff;padding:0;box-shadow:none}.balance-visibility:hover:not(:disabled){background:#111;transform:none}.balance-visibility svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.balance-amount{position:relative;margin:0;font-size:clamp(27px,5vw,36px);line-height:1.12;font-weight:750;letter-spacing:-.045em;color:#fff;font-variant-numeric:tabular-nums}.balance-foot{position:relative;margin-top:7px;font-size:9px;letter-spacing:.09em;color:#929292;text-transform:uppercase}
+.balance-value-row{display:flex;align-items:center;gap:12px;margin-top:8px}.balance-currency-flag{display:block;flex:0 0 30px;width:30px;height:30px;object-fit:contain;border:0;border-radius:0;overflow:visible;background:transparent;box-shadow:none}.balance-chart{opacity:.82}.balance-chart path.line{transition:stroke .2s}.balance-chart path.area{transition:fill .2s}.balance-chart circle{transition:cx .32s ease,cy .32s ease,fill .2s}.balance-visibility{display:grid;place-items:center;flex:0 0 34px;width:34px;height:34px;border:1px solid #555;border-radius:50%;background:#000;color:#fff;padding:0;box-shadow:none}.balance-visibility:hover:not(:disabled){background:#111;transform:none}.balance-visibility svg{width:17px;height:17px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}.balance-amount{position:relative;margin:0;font-size:clamp(27px,5vw,36px);line-height:1.12;font-weight:750;letter-spacing:-.045em;color:#fff;font-variant-numeric:tabular-nums}.balance-foot{position:relative;margin-top:7px;font-size:9px;letter-spacing:.09em;color:#929292;text-transform:uppercase}
 .balance-cta{position:absolute;z-index:3;left:50%;transform:translateX(-50%);bottom:20px;min-width:154px;padding:11px 22px;border:1px solid #fff;border-radius:999px;background:#fff;color:#000;font-size:10px;font-weight:900;letter-spacing:.1em;box-shadow:0 4px 16px #fff1}
 .balance-cta:hover:not(:disabled){background:#e9e9e9;transform:translateX(-50%) translateY(-1px)}
 @media(max-width:800px){.balance-hero{height:210px;margin-top:0;margin-bottom:18px;padding:22px 20px 20px;border-radius:0 0 54px 54px}.balance-hero:after{height:54px;border-radius:0 0 54px 54px;box-shadow:0 14px 19px -13px rgba(255,255,255,.78)}.balance-content{width:61%}.balance-chart{top:25px;right:18px;width:39%;height:106px;opacity:.62}.balance-value-row{gap:10px;margin-top:8px}.balance-amount{font-size:31px}.balance-visibility{width:32px;height:32px;flex-basis:32px}.balance-foot{font-size:8px;letter-spacing:.06em;max-width:100%}.balance-cta{left:50%;bottom:19px;min-width:150px;padding:11px 20px}}
@@ -4104,7 +4104,38 @@ document.querySelectorAll('a[data-page]').forEach(link=>link.addEventListener("c
  const heroBalance=document.getElementById("heroBalance"),balanceSource=document.getElementById("tradeBalance"),balanceEye=document.getElementById("balanceVisibility");
  const balanceChart=document.querySelector(".balance-chart"),balanceLine=balanceChart?.querySelector("path.line"),balanceArea=balanceChart?.querySelector("path.area"),balanceDot=balanceChart?.querySelector("circle");
  let balanceHidden=false,lastHeroBalance="—";const balanceSamples=[];let lastChartBalance=null;
- const syncBalanceChart=(value)=>{const match=value.match(/-?\d+(?:,\d{3})*(?:\.\d+)?/);if(!match)return;const amount=Number(match[0].replace(/,/g,""));if(!Number.isFinite(amount))return;if(lastChartBalance===null||Math.abs(amount-lastChartBalance)>0.0000001){balanceSamples.push(amount);if(balanceSamples.length>32)balanceSamples.shift();lastChartBalance=amount;}if(balanceSamples.length<2)return;const min=Math.min(...balanceSamples),max=Math.max(...balanceSamples),range=Math.max(max-min,Math.abs(max)*0.00001,0.01);const points=balanceSamples.map((v,i)=>({x:24+i*(372/Math.max(1,balanceSamples.length-1)),y:98-((v-min)/range)*78}));const d=points.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ");balanceLine?.setAttribute("d",d);balanceArea?.setAttribute("d",d+" L "+points[points.length-1].x.toFixed(1)+" 120 L "+points[0].x.toFixed(1)+" 120 Z");const last=points[points.length-1];balanceDot?.setAttribute("cx",last.x.toFixed(1));balanceDot?.setAttribute("cy",last.y.toFixed(1));const rising=balanceSamples[balanceSamples.length-1]>=balanceSamples[balanceSamples.length-2];const stroke=rising?"#39d98a":"#ff626d";balanceLine?.setAttribute("stroke",stroke);balanceDot?.setAttribute("fill",stroke);balanceArea?.setAttribute("fill",rising?"rgba(57,217,138,.12)":"rgba(255,98,109,.12)");};
+ const syncBalanceChart=(value)=>{
+   const match=value.match(/-?\d+(?:,\d{3})*(?:\.\d+)?/);
+   if(!match)return;
+   const amount=Number(match[0].replace(/,/g,""));
+   if(!Number.isFinite(amount))return;
+   if(lastChartBalance===null||Math.abs(amount-lastChartBalance)>0.0000001){
+     balanceSamples.push(amount);
+     if(balanceSamples.length>32)balanceSamples.shift();
+     lastChartBalance=amount;
+   }
+   if(!balanceSamples.length)return;
+   const min=Math.min(...balanceSamples),max=Math.max(...balanceSamples);
+   const range=Math.max(max-min,Math.abs(max)*0.00001,0.01);
+   const points=balanceSamples.map((v,i)=>({
+     x:24+i*(372/Math.max(1,balanceSamples.length-1)),
+     y:98-((v-min)/range)*78
+   }));
+   if(points.length===1)points[0].y=59;
+   const d=points.map((p,i)=>(i?"L":"M")+p.x.toFixed(1)+" "+p.y.toFixed(1)).join(" ");
+   const last=points[points.length-1],first=points[0];
+   balanceLine?.setAttribute("d",d);
+   balanceArea?.setAttribute("d",d+" L "+last.x.toFixed(1)+" 120 L "+first.x.toFixed(1)+" 120 Z");
+   balanceDot?.setAttribute("cx",last.x.toFixed(1));
+   balanceDot?.setAttribute("cy",last.y.toFixed(1));
+   const previous=balanceSamples.length>1?balanceSamples[balanceSamples.length-2]:amount;
+   const rising=amount>=previous;
+   const stroke=rising?"#39d98a":"#ff626d";
+   balanceLine?.setAttribute("stroke",stroke);
+   balanceDot?.setAttribute("fill",stroke);
+   balanceArea?.setAttribute("fill",rising?"rgba(57,217,138,.15)":"rgba(255,98,109,.15)");
+   balanceChart?.classList.add("has-live-balance");
+ };
  const syncHeroBalance=()=>{const value=(balanceSource?.textContent||"—").trim();if(value&&value!=="—"&&value!=="Connecting…"){lastHeroBalance=value;syncBalanceChart(value);}heroBalance.textContent=balanceHidden?"••••••":lastHeroBalance;document.getElementById("heroBalanceCaption").textContent=value==="—"||value==="Connecting…"?"Connect your Deriv account to see your live balance":"Live balance · selected Deriv account";};
  balanceEye.addEventListener("click",()=>{balanceHidden=!balanceHidden;balanceEye.setAttribute("aria-pressed",String(balanceHidden));balanceEye.setAttribute("aria-label",balanceHidden?"Show balance":"Hide balance");balanceEye.title=balanceHidden?"Show balance":"Hide balance";balanceEye.innerHTML=balanceHidden?'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m3 3 18 18M10.6 5.2A10.8 10.8 0 0 1 12 5c6.4 0 10 7 10 7a16 16 0 0 1-3.1 3.8M6.2 6.2C3.5 8 2 12 2 12s3.6 7 10 7c1.3 0 2.5-.3 3.5-.8"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>':'<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg>';syncHeroBalance();});
  new MutationObserver(syncHeroBalance).observe(balanceSource,{childList:true,characterData:true,subtree:true});syncHeroBalance();
