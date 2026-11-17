@@ -2521,7 +2521,7 @@ function reserveConfirmedAlgoStake(contractId,stake){
   }
   recalculateAlgoReservedStake();
 }
-function algoExposure(){return algoConfig?algoConfig.stake*Math.max(1,(algoConfig.symbols||[]).length):0;}
+function algoExposure(){if(!algoConfig)return 0;if(algoMoneyManagement?.mode==="RECOVERY")return algoAvailableBalance();return Math.max(0,Number(algoMoneyManagement?.currentStake)||algoConfig.stake)*Math.max(1,(algoConfig.symbols||[]).length);}
 function forgetAlgoQuote(rate,symbol){
   const subscriptionsToForget=new Set();
   Object.entries(algoQuoteRequests).forEach(([requestId,meta])=>{
