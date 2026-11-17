@@ -8,7 +8,7 @@
 
 <style>
 :root{color-scheme:dark;--bg:#000000;--panel:#000000;--panel2:#000000;--line:#000000;--line2:#000000;--text:#f7f7f7;--muted:#929292;--green:#d8f5e7;--red:#ff8585;--blue:#dedede;--radius:18px}
-*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:18px;overflow-y:auto!important;min-height:100%;touch-action:pan-y}body{margin:0;min-height:100%;overflow-x:hidden;overflow-y:auto!important;overscroll-behavior-y:auto;touch-action:pan-y;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}.wrap{min-height:100vh;overflow:visible;touch-action:pan-y}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:18px;overflow-y:auto!important;min-height:100%;touch-action:pan-x pan-y}body{margin:0;min-height:100%;overflow-x:hidden;overflow-y:auto!important;overscroll-behavior-y:auto;touch-action:pan-x pan-y;background:var(--bg);color:var(--text);font:14px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-font-smoothing:antialiased}.wrap{min-height:100vh;overflow:visible;touch-action:pan-x pan-y}
 .wrap{max-width:1180px;margin:auto;padding:26px 26px 40px}.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:24px;padding:4px 0}.app-toolbar{position:relative;min-height:48px}.toolbar-circle{width:44px;height:44px;flex:0 0 44px;display:grid;place-items:center;border:1px solid #383838;border-radius:50%;background:#000000;color:#fff;text-decoration:none;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.75),inset 0 0 0 1px rgba(255,255,255,.035);transition:background .18s,border-color .18s,transform .18s}.toolbar-circle:hover,.toolbar-circle:focus-visible{background:#000000;border-color:#686868;outline:none}.toolbar-circle:active{transform:scale(.96)}.toolbar-circle svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:2.7;stroke-linecap:round;stroke-linejoin:round}.toolbar-menu{position:relative;z-index:40}.toolbar-menu summary{list-style:none}.toolbar-menu summary::-webkit-details-marker{display:none}.toolbar-dropdown{position:absolute;top:50px;left:0;min-width:180px;padding:7px;border:1px solid rgba(255,255,255,.15);border-radius:15px;background:rgba(12,12,12,.94);box-shadow:0 14px 36px #000b;backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px)}.toolbar-dropdown a{display:block;padding:11px 12px;border-radius:9px;color:#f5f5f5;text-decoration:none;font-size:12px;font-weight:650}.toolbar-dropdown a:hover{background:rgba(255,255,255,.1)}.toolbar-brand{position:absolute;left:50%;transform:translateX(-50%);padding:12px 25px;border:1px solid #383838;border-radius:999px;background:#000000;color:#fff;font-size:11px;font-weight:900;letter-spacing:.16em;white-space:nowrap;box-shadow:0 3px 14px rgba(0,0,0,.8),inset 0 0 0 1px rgba(255,255,255,.035)}.toolbar-actions{display:flex;align-items:center;gap:9px}.toolbar-account{margin-top:8px;padding:10px;border-top:1px solid #000000}.toolbar-account>strong{display:block;margin-bottom:8px;color:#fff;font-size:10px;letter-spacing:.12em}.toolbar-account .account-actions{display:flex;gap:7px}.toolbar-account .account-actions button{width:100%;padding:9px 12px;font-size:11px}.toolbar-account .account-message{font-size:11px;color:#ddd}.mode-switch{display:flex;justify-content:center;align-items:center;gap:10px;margin:-5px 0 20px}.mode-pill{min-width:104px;padding:11px 24px;border:1px solid #fff;border-radius:999px;background:#fff;color:#000000;font-size:11px;font-weight:900;letter-spacing:.12em;cursor:pointer;box-shadow:0 3px 14px rgba(0,0,0,.55)}.mode-pill[aria-pressed="true"]{background:#fff;color:#000;border-color:#fff;box-shadow:0 0 0 2px rgba(255,255,255,.18),0 4px 18px rgba(255,255,255,.1)}.brand{display:flex;align-items:center;gap:13px}.logo{width:42px;height:42px;border-radius:13px;background:#f5f5f5;display:grid;place-items:center;color:#000000;font-weight:900;font-size:21px;letter-spacing:-.06em}.brand h1{font-size:15px;letter-spacing:.13em;margin:0;font-weight:800}.brand p{margin:3px 0 0;color:var(--muted);font-size:11px;letter-spacing:.02em}.status{display:flex;align-items:center;gap:9px;border:1px solid var(--line2);border-radius:999px;padding:8px 12px;color:#c8c8c8;background:#000000;font-size:11px}.dot{width:7px;height:7px;border-radius:50%;background:#666}.dot.on{background:#f5f5f5;box-shadow:0 0 10px #fff7}
 
 /* Purpose-built chart scaffold: restrained price and time axes only. */
@@ -1059,6 +1059,101 @@ body.trade-active{padding-bottom:0!important}
   100%{color:#fff;text-shadow:0 0 0 transparent;transform:scale(1)}
 }
 
+
+/* Market Watch table — compact instrument rows with native horizontal scrolling. */
+.market-watch-shell{width:100%;margin:0 0 18px;border:1px solid #252b33;border-radius:15px;background:linear-gradient(155deg,#0c1117 0%,#080c11 58%,#070a0e 100%);overflow:hidden;box-shadow:0 12px 30px rgba(0,0,0,.28)}
+.mw-topbar{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:14px 16px;border-bottom:1px solid rgba(164,177,191,.13)}
+.mw-brand{min-width:190px;flex:1}
+.mw-title-line{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.mw-brand h2{margin:0;color:#f4f7fb;font-size:18px;line-height:1.2;font-weight:850;letter-spacing:.045em}
+.mw-brand p{margin:5px 0 0;color:#9ca8b6;font-size:11px;letter-spacing:.02em}
+.mw-live-pill{display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid rgba(57,201,138,.28);border-radius:999px;background:rgba(28,111,72,.12);color:#72e6a6;font-size:9px;font-weight:850;letter-spacing:.08em}
+.mw-live-pill i{width:7px;height:7px;border-radius:50%;background:#69747f;display:block}
+.mw-live-pill.is-live i{background:#39d982;box-shadow:0 0 9px rgba(57,217,130,.8)}
+.mw-live-pill:not(.is-live){color:#aab3be;border-color:rgba(160,170,180,.2);background:rgba(100,110,120,.08)}
+.mw-summary{display:grid;grid-template-columns:repeat(3,minmax(105px,1fr));gap:7px;flex:2;max-width:570px}
+.mw-summary-card{min-width:0;min-height:48px;display:flex;align-items:center;gap:9px;padding:7px 9px;border:1px solid rgba(155,170,185,.18);border-radius:10px;background:rgba(5,9,14,.68)}
+.mw-summary-icon{width:27px;height:27px;flex:0 0 27px;display:grid;place-items:center;border-radius:8px;background:#102034;color:#58a8ff;font-size:15px;font-weight:900}
+.mw-summary-icon.purple{background:#211631;color:#c18aff}.mw-summary-icon.red{background:#271719;color:#ff7777}
+.mw-summary-copy{display:flex;flex-direction:column;min-width:0;line-height:1.15}
+.mw-summary-copy small{color:#a7b1be;font-size:8px;letter-spacing:.055em;font-weight:700;white-space:nowrap}
+.mw-summary-copy strong{margin-top:4px;color:#f2f5f9;font-size:16px;font-variant-numeric:tabular-nums;line-height:1}
+#marketWatchWaitingCount{color:#ff7777}
+.mw-view-all{flex:0 0 auto;min-width:118px;padding:10px 13px;border:1px solid #35414c;border-radius:9px;background:#0b1118;color:#e4ebf2;font-size:9px;font-weight:850;letter-spacing:.07em;white-space:nowrap}
+.mw-view-all:hover:not(:disabled){background:#121e28;border-color:#62836f;color:#8cf0b0;transform:none}
+.mw-view-all:disabled{opacity:.42}
+.mw-scroll{width:100%;max-width:100%;overflow-x:auto;overflow-y:hidden;overscroll-behavior-x:contain;scrollbar-width:thin;scrollbar-color:#48515b #090d12;-webkit-overflow-scrolling:touch;touch-action:pan-x pan-y}
+.mw-table{--mw-columns:minmax(176px,1.35fr) 105px 128px 128px 150px minmax(240px,1.75fr);min-width:960px;background:rgba(5,8,12,.56)}
+.mw-table-head,.mw-market-row{display:grid;grid-template-columns:var(--mw-columns)}
+.mw-table-head{min-height:43px;align-items:center;background:linear-gradient(90deg,rgba(24,31,39,.88),rgba(13,18,24,.92));border-bottom:1px solid rgba(160,174,188,.19);color:#edf2f7}
+.mw-table-head>span{padding:6px 10px;font-size:9px;font-weight:850;letter-spacing:.07em;line-height:1.5}
+.mw-table-head>span:not(:first-child){border-left:1px solid rgba(150,164,178,.1)}
+.mw-table-head small{display:block;color:#8996a4;font-size:8px;font-weight:500;letter-spacing:.045em}
+.mw-market-row{--mw-row-count:4;grid-template-rows:repeat(4,minmax(22px,auto));align-items:stretch;padding:4px 0;border-bottom:1px solid rgba(147,162,177,.16);background:rgba(5,8,12,.2);transition:background .14s}
+.mw-market-row:nth-child(even){background:rgba(18,24,31,.24)}
+.mw-market-row:hover{background:rgba(27,38,48,.34)}
+.mw-instrument{grid-column:1;grid-row:1 / span var(--mw-row-count);display:flex;align-items:center;gap:10px;min-width:0;padding:7px 12px;border-right:1px solid rgba(145,160,175,.1);text-align:left;color:#f3f6fa;background:transparent}
+.mw-instrument:hover{background:rgba(255,255,255,.025)}
+.mw-instrument-logo{width:36px;height:36px;flex:0 0 36px;border-radius:11px;display:block;overflow:hidden;border:1px solid rgba(180,195,208,.16);background-color:#111922;background-size:100% 100%;box-shadow:inset 0 0 12px rgba(255,255,255,.035)}
+.mw-instrument-copy{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.mw-instrument-name{font-size:12px;line-height:1.15;font-weight:850;letter-spacing:.015em;color:#f4f6fa;overflow-wrap:anywhere}
+.mw-instrument-status{display:inline-flex;align-items:center;padding:2px 6px;border-radius:4px;background:#202a35;color:#c5ced8;font-size:8px;line-height:1.2;font-weight:800;letter-spacing:.06em}
+.mw-instrument-status.is-active{background:rgba(32,111,73,.2);color:#69e29b}
+.mw-stack{grid-row:1 / span var(--mw-row-count);display:grid;grid-template-rows:repeat(var(--mw-row-count),minmax(22px,auto));align-items:center;min-width:0;padding:2px 7px;border-left:1px solid rgba(145,160,175,.075)}
+.mw-growth-stack{grid-column:2}.mw-live-stack{grid-column:3}.mw-watch-stack{grid-column:4}.mw-entry-stack{grid-column:5}
+.mw-stack-cell{min-width:0;display:flex;align-items:center;min-height:22px;border-bottom:1px solid rgba(147,162,177,.075)}
+.mw-stack-cell:last-child{border-bottom:0}
+.mw-growth-badge{display:inline-flex;align-items:center;justify-content:center;width:48px;min-height:17px;border-radius:5px;border:1px solid transparent;font-size:10px;line-height:1;font-weight:850;font-variant-numeric:tabular-nums}
+.mw-growth-1{color:#70e99e;background:rgba(37,151,84,.2);border-color:rgba(61,194,113,.18)}
+.mw-growth-2{color:#58c5ff;background:rgba(25,112,174,.23);border-color:rgba(61,160,222,.2)}
+.mw-growth-3{color:#d09aff;background:rgba(113,48,158,.24);border-color:rgba(163,91,212,.2)}
+.mw-growth-4{color:#ffd36b;background:rgba(171,102,15,.25);border-color:rgba(214,148,43,.2)}
+.mw-growth-5{color:#ff9cc5;background:rgba(167,52,107,.24);border-color:rgba(218,91,153,.2)}
+.mw-live-value,.mw-watch-value,.mw-entry-value{font-size:12px;line-height:1.15;font-weight:750;font-variant-numeric:tabular-nums;white-space:nowrap}
+.mw-live-value{color:#39d982}.mw-live-value.is-waiting{color:#f06e70;font-size:10px;letter-spacing:.035em}
+.mw-watch-value{color:#ffd044}.mw-watch-value.is-empty,.mw-entry-value.is-empty{color:#83909d;font-weight:500}
+.mw-entry-value{color:#ffd044}
+.mw-alerts{grid-column:6;grid-row:1 / span var(--mw-row-count);display:flex;flex-direction:column;justify-content:center;min-width:0;padding:5px 10px;border-left:1px solid rgba(145,160,175,.1)}
+.mw-alert-toggle{width:100%;display:flex;align-items:flex-start;gap:7px;padding:3px 2px;border:0;border-radius:0;background:transparent;color:#dce3eb;text-align:left;font-size:9px;line-height:1.35;font-weight:600;white-space:normal;min-width:0}
+.mw-alert-toggle:hover:not(:disabled){background:transparent;color:#fff;transform:none}
+.mw-alert-mark{flex:0 0 auto;color:#ff7777;font-size:12px;line-height:1.15}
+.mw-alert-toggle.is-quiet .mw-alert-mark{color:#7a8997}
+.mw-alert-text{flex:1;min-width:0;overflow-wrap:anywhere}
+.mw-alert-chevron{flex:0 0 auto;margin-left:auto;color:#b7c1cb;font-size:13px;line-height:1}
+.mw-alert-details{margin:4px 0 2px 19px;padding:6px 8px;border-left:2px solid rgba(255,119,119,.35);background:rgba(255,255,255,.025);color:#aeb9c5;font-size:9px;line-height:1.55;overflow-wrap:anywhere}
+.mw-alert-details[hidden]{display:none}
+.mw-alert-detail{padding:2px 0;border-bottom:1px solid rgba(150,165,180,.075)}
+.mw-alert-detail:last-child{border-bottom:0}
+.mw-loading{padding:20px;color:#9aa6b2;font-size:11px}
+.mw-empty{padding:22px;color:#98a4b0;font-size:11px}
+.mw-footer{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:8px 13px;border-top:1px solid rgba(150,164,178,.12);background:rgba(5,8,12,.6);color:#9aa6b2}
+.mw-legend{display:flex;align-items:center;gap:15px;flex-wrap:wrap}
+.mw-legend span{display:inline-flex;align-items:center;gap:6px;font-size:8px;white-space:nowrap}
+.mw-legend i{width:7px;height:7px;display:inline-block;border-radius:50%;background:#39d982}
+.mw-legend i.waiting{background:#d94c58}.mw-legend i.saved{background:#e0ae22}
+.mw-updated{font-size:8px;letter-spacing:.045em;white-space:nowrap;font-variant-numeric:tabular-nums}
+@media(max-width:800px){
+ .mw-topbar{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:11px;padding:13px 12px}
+ .mw-brand{grid-column:1 / -1}
+ .mw-summary{grid-column:1 / -1;grid-row:2;max-width:none;width:100%;grid-template-columns:repeat(3,minmax(0,1fr))}
+ .mw-summary-card{padding:6px;gap:6px;min-height:45px}
+ .mw-summary-icon{width:23px;height:23px;flex-basis:23px;font-size:13px}
+ .mw-summary-copy small{font-size:7px;white-space:normal;line-height:1.1}
+ .mw-summary-copy strong{font-size:15px}
+ .mw-view-all{grid-column:2;grid-row:3;justify-self:end;min-width:122px;padding:9px 11px}
+ .mw-scroll{touch-action:pan-x pan-y}
+ .mw-table{min-width:960px}
+ .mw-footer{align-items:flex-start;flex-direction:column;gap:7px;padding:9px 11px}
+ .mw-legend{gap:10px}
+ .mw-updated{align-self:flex-end}
+}
+@media(max-width:390px){
+ .mw-brand h2{font-size:16px}
+ .mw-summary-card{gap:4px;padding:5px}
+ .mw-summary-copy small{font-size:6.5px}
+ .mw-summary-copy strong{font-size:14px}
+ .mw-summary-icon{width:20px;height:20px;flex-basis:20px;font-size:11px}
+}
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -1106,7 +1201,29 @@ body.trade-active{padding-bottom:0!important}
     </div>
   </div>
 </section>
-<section class="market-showcase"><div class="market-grid" id="marketGrid"><div class="metric"><small>MARKETS</small><strong>Connect to load the Deriv market catalogue.</strong></div></div></section>
+<section class="market-watch-shell" aria-label="Market Watch">
+ <header class="mw-topbar">
+  <div class="mw-brand">
+   <div class="mw-title-line"><h2>MARKET WATCH</h2><span class="mw-live-pill" id="marketWatchLive"><i></i><span>CONNECTING</span></span></div>
+   <p>Real-time Accumulator Stats</p>
+  </div>
+  <div class="mw-summary">
+   <div class="mw-summary-card"><span class="mw-summary-icon">▥</span><span class="mw-summary-copy"><small>ACTIVE MARKETS</small><strong id="marketWatchMarketCount">—</strong></span></div>
+   <div class="mw-summary-card"><span class="mw-summary-icon purple">◉</span><span class="mw-summary-copy"><small>WATCH STATS SET</small><strong id="marketWatchWatchCount">0</strong></span></div>
+   <div class="mw-summary-card"><span class="mw-summary-icon red">◴</span><span class="mw-summary-copy"><small>WAITING FOR COUNT</small><strong id="marketWatchWaitingCount">0</strong></span></div>
+  </div>
+  <button class="mw-view-all" id="marketWatchViewAll" type="button" aria-expanded="false">VIEW ALL MARKETS</button>
+ </header>
+ <div class="mw-scroll" id="marketWatchScroll" tabindex="0" aria-label="Scrollable market statistics table">
+  <div class="mw-table" id="marketGrid" role="table" aria-label="Accumulator market statistics">
+   <div class="mw-loading">Connect to Deriv to load the market catalogue.</div>
+  </div>
+ </div>
+ <footer class="mw-footer">
+  <div class="mw-legend"><span><i class="active"></i>Live Count Active</span><span><i class="waiting"></i>Waiting for Live Count</span><span><i class="saved"></i>Watch Stat Saved</span></div>
+  <span class="mw-updated" id="marketWatchUpdated">LAST UPDATED&nbsp;&nbsp; —</span>
+ </footer>
+</section>
 <section class="accu-promo" aria-label="Accumulator introduction"><img src="../file_00000000209c820a84bade880d8fefc1.png" alt="Accumulators — grow your potential payout exponentially while the spot price stays within the trade barriers"><a class="accu-promo-cta" href="#tradePage" data-page="trade">TRADE NOW</a></section>
 
 
@@ -1259,6 +1376,8 @@ let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=nu
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
+let marketWatchShowAll=false;
+const marketWatchExpandedAlerts=new Set();
 const nativeChartTicks={};let activeTradeOverlay=null,lastTradeChartPosition=null;
 function publishTradeChartOverlay(){
   const position=activeTradeOverlay;
@@ -1631,7 +1750,11 @@ function updateNativeStats(symbol,rate,raw){
 }
 loadNativeStats();
 const log = msg => { const d=document.createElement("div"); d.textContent=new Date().toLocaleTimeString()+" · "+msg; $("log").prepend(d); };
-const setStatus = (s,on=false) => { $("connection").textContent=s; $("dot").className="dot"+(on?" on":""); };
+const setStatus = (s,on=false) => {
+  $("connection").textContent=s; $("dot").className="dot"+(on?" on":"");
+  const watchLive=$("marketWatchLive");
+  if(watchLive){watchLive.classList.toggle("is-live",!!on);watchLive.querySelector("span").textContent=on?"LIVE":String(s||"OFFLINE").toUpperCase();}
+};
 const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
 function connect(){
   manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
@@ -2036,17 +2159,114 @@ function updateMarketCard(symbol){
   if(status)status.textContent="";
 }
 function renderMarketCards(){
-  const box=$("marketGrid");box.replaceChildren();
-  markets.forEach(m=>{
-    const card=document.createElement("button");card.type="button";card.className="market-card"+(m.symbol===selectedSymbol?" selected":"");card.dataset.market=m.symbol;card.setAttribute("aria-label","Select "+m.name);card.onclick=()=>selectMarket(m.symbol);
-    const name=document.createElement("div");name.className="name";name.append(createIndexKindIcon(m.symbol,"card"));const title=document.createElement("span");title.textContent=m.name.toUpperCase();name.append(title);
-    const sym=document.createElement("div");sym.className="meta symbol-meta";sym.textContent=m.symbol+" · ACCU";
-    const price=document.createElement("strong");price.textContent="Waiting for tick…";
-    const change=document.createElement("div");change.className="market-change";change.textContent="24H CHANGE —";
-    const spark=document.createElementNS("http://www.w3.org/2000/svg","svg");spark.setAttribute("viewBox","0 0 100 34");spark.setAttribute("preserveAspectRatio","none");spark.setAttribute("class","market-sparkline");const area=document.createElementNS("http://www.w3.org/2000/svg","path");area.setAttribute("class","area");const path=document.createElementNS("http://www.w3.org/2000/svg","path");path.setAttribute("class","line");spark.append(area,path);
-    const status=document.createElement("div");status.className="market-live";status.textContent="WAITING FOR TICKS";
-    card.append(name,sym,price,change,spark,status);box.append(card);updateMarketCard(m.symbol);
+  const box=$("marketGrid");if(!box)return;
+  const scrollHost=$("marketWatchScroll"),savedScrollLeft=scrollHost?scrollHost.scrollLeft:0;
+  box.replaceChildren();
+  const snapshots=Array.from(algoTrackers.values()).map(tracker=>tracker.snapshot());
+  const rates=algoConfig
+    ?(algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04])
+    :(algoTrackers.size
+      ?[...new Set(snapshots.map(item=>Number(item.growthRate)))].sort((a,b)=>a-b)
+      :($("algoRiskMode")?.value==="aggressive"?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]));
+  const trackerByKey=new Map(snapshots.map(item=>[item.symbol+"|"+Number(item.growthRate).toFixed(2),item]));
+  const watchSetCount=snapshots.filter(item=>Number.isInteger(item.watchStat)).length;
+  const waitingCount=snapshots.filter(item=>Number.isInteger(item.watchStat)&&!Number.isInteger(item.currentCount)).length;
+  const marketCount=$("marketWatchMarketCount"),watchCount=$("marketWatchWatchCount"),waitingLabel=$("marketWatchWaitingCount");
+  if(marketCount)marketCount.textContent=String(markets.length);
+  if(watchCount)watchCount.textContent=String(watchSetCount);
+  if(waitingLabel)waitingLabel.textContent=String(waitingCount);
+  const updated=$("marketWatchUpdated");
+  if(updated)updated.textContent="LAST UPDATED   "+(Object.keys(nativeStatsByKey).length?new Date().toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"}):"—");
+  const viewButton=$("marketWatchViewAll");
+  if(viewButton){
+    viewButton.disabled=markets.length<=4;
+    viewButton.textContent=marketWatchShowAll?"SHOW FIRST 4":"VIEW ALL MARKETS";
+    viewButton.setAttribute("aria-expanded",String(marketWatchShowAll));
+  }
+  const heading=document.createElement("div");heading.className="mw-table-head";heading.setAttribute("role","row");
+  [["MARKET","STATUS"],["GROWTH","RATE"],["LIVE COUNT","FROM DERIV"],["WATCH STAT","SAVED"],["ENTRY SETUP","NEXT TRIGGER"],["ALERTS",""]].forEach(([label,sub])=>{
+    const cell=document.createElement("span");cell.setAttribute("role","columnheader");cell.append(document.createTextNode(label));
+    if(sub){const small=document.createElement("small");small.textContent=sub;cell.append(small);}
+    heading.append(cell);
   });
+  box.append(heading);
+  const visibleMarkets=marketWatchShowAll?markets:markets.slice(0,4);
+  visibleMarkets.forEach(m=>{
+    const symbol=m.symbol,symbolTrackers=snapshots.filter(item=>item.symbol===symbol);
+    const hasOpen=symbolTrackers.some(item=>!!item.contractId||["IN_TRADE","CLOSE_PENDING"].includes(item.state));
+    const isArmed=symbolTrackers.some(item=>["ARMED","BUY_PENDING","IN_TRADE","CLOSE_PENDING"].includes(item.state));
+    const statusText=hasOpen?"CONTRACT OPEN":!algoRunning?"PAUSED":isArmed?"ARMED":
+      symbolTrackers.some(item=>item.state==="WAITING_FOR_MATCH")?"WATCHING":"LEARNING";
+    const row=document.createElement("article");row.className="mw-market-row";row.style.setProperty("--mw-row-count",String(rates.length));row.style.gridTemplateRows="repeat("+rates.length+",minmax(22px,auto))";row.setAttribute("role","row");
+
+    const instrument=document.createElement("button");instrument.type="button";instrument.className="mw-instrument";instrument.style.gridRow="1 / span "+rates.length;
+    instrument.setAttribute("aria-label","Select "+(m.name||symbol));instrument.title="Open "+(m.name||symbol)+" in Live Market View";
+    const logo=createIndexKindIcon(symbol,"card");logo.classList.add("mw-instrument-logo");
+    const copy=document.createElement("span");copy.className="mw-instrument-copy";
+    const name=document.createElement("strong");name.className="mw-instrument-name";name.textContent=(m.name||symbol).toUpperCase();
+    const status=document.createElement("span");status.className="mw-instrument-status"+(isArmed?" is-active":"");status.textContent=statusText;
+    copy.append(name,status);instrument.append(logo,copy);instrument.onclick=()=>selectMarket(symbol);
+
+    const stacks=[];
+    [["mw-growth-stack","growth"],["mw-live-stack","live"],["mw-watch-stack","watch"],["mw-entry-stack","entry"]].forEach(([className])=>{
+      const stack=document.createElement("div");stack.className="mw-stack "+className;stack.style.gridRow="1 / span "+rates.length;stack.style.gridTemplateRows="repeat("+rates.length+",minmax(22px,auto))";stacks.push(stack);
+    });
+    const [growthStack,liveStack,watchStack,entryStack]=stacks;
+    rates.forEach(rate=>{
+      const key=symbol+"|"+Number(rate).toFixed(2),snap=trackerByKey.get(key)||null,native=nativeStatsByKey[nativeStatsKey(symbol,rate)]||null;
+      const growthCell=document.createElement("div");growthCell.className="mw-stack-cell";
+      const growth=document.createElement("span");growth.className="mw-growth-badge mw-growth-"+Math.round(rate*100);growth.textContent=Math.round(rate*100)+"%";growthCell.append(growth);growthStack.append(growthCell);
+
+      const currentCount=snap?(Number.isInteger(snap.currentCount)?snap.currentCount:null):(Number.isInteger(native?.current)?native.current:null);
+      const liveCell=document.createElement("div");liveCell.className="mw-stack-cell";
+      const live=document.createElement("strong");live.className="mw-live-value"+(Number.isInteger(currentCount)?"":" is-waiting");
+      live.textContent=Number.isInteger(currentCount)?String(currentCount):(snap?"WAITING":"—");liveCell.append(live);liveStack.append(liveCell);
+
+      const watchStat=Number.isInteger(snap?.watchStat)?snap.watchStat:null;
+      const watchCell=document.createElement("div");watchCell.className="mw-stack-cell";
+      const watch=document.createElement("strong");watch.className="mw-watch-value"+(Number.isInteger(watchStat)?"":" is-empty");
+      watch.textContent=Number.isInteger(watchStat)?String(watchStat):"—";watchCell.append(watch);watchStack.append(watchCell);
+
+      const entryCell=document.createElement("div");entryCell.className="mw-stack-cell";
+      const entry=document.createElement("strong");entry.className="mw-entry-value"+(Number.isInteger(watchStat)?"":" is-empty");
+      entry.textContent=Number.isInteger(watchStat)?(watchStat-1)+" → "+watchStat:"—";entryCell.append(entry);entryStack.append(entryCell);
+    });
+
+    const alertCell=document.createElement("div");alertCell.className="mw-alerts";alertCell.style.gridRow="1 / span "+rates.length;
+    const alertItems=symbolTrackers.filter(item=>Number.isInteger(item.watchStat)&&!Number.isInteger(item.currentCount))
+      .map(item=>Math.round(item.growthRate*100)+"% · Saved Watch Stat "+item.watchStat+" · waiting for live count from Deriv");
+    symbolTrackers.filter(item=>item.contractId).forEach(item=>alertItems.push(Math.round(item.growthRate*100)+"% · Contract open · "+(Number(item.ticksAfterEntry)||0)+"/2 ticks · #"+item.contractId));
+    const recentEvents=algoEvents.filter(event=>String(event.message||"").toUpperCase().includes(symbol.toUpperCase())).slice(0,4);
+    const expanded=marketWatchExpandedAlerts.has(symbol);
+    const toggle=document.createElement("button");toggle.type="button";toggle.className="mw-alert-toggle"+(alertItems.length||recentEvents.length?"":" is-quiet");
+    toggle.setAttribute("aria-expanded",String(expanded));toggle.setAttribute("aria-label","Show alerts and logs for "+symbol);
+    const mark=document.createElement("span");mark.className="mw-alert-mark";mark.textContent=alertItems.length?"ⓘ":"·";
+    const alertText=document.createElement("span");alertText.className="mw-alert-text";alertText.textContent=alertItems[0]||recentEvents[0]?.message||"No active alerts";
+    const chevron=document.createElement("span");chevron.className="mw-alert-chevron";chevron.textContent=expanded?"⌃":"⌄";
+    toggle.append(mark,alertText,chevron);
+    toggle.onclick=event=>{event.stopPropagation();if(marketWatchExpandedAlerts.has(symbol))marketWatchExpandedAlerts.delete(symbol);else marketWatchExpandedAlerts.add(symbol);renderMarketCards();};
+    alertCell.append(toggle);
+    const detail=document.createElement("div");detail.className="mw-alert-details";detail.hidden=!expanded;
+    const explanation=document.createElement("div");explanation.className="mw-alert-detail";
+    explanation.textContent=algoRunning
+      ?(statusText==="ARMED"?"Tracker is armed or managing an entry for this instrument.":statusText==="WATCHING"?"Tracker is waiting for its independently saved Watch Stat to match.":"Live Deriv Stats are being monitored; no entry is currently armed.")
+      :"Algo is paused for this instrument. No new automatic entries are being submitted.";
+    detail.append(explanation);
+    alertItems.forEach(item=>{const line=document.createElement("div");line.className="mw-alert-detail";line.textContent=item;detail.append(line);});
+    if(recentEvents.length){
+      recentEvents.forEach(event=>{
+        const line=document.createElement("div");line.className="mw-alert-detail";
+        const time=new Date(event.time).toLocaleTimeString([],{hour:"2-digit",minute:"2-digit",second:"2-digit"});
+        line.textContent=time+" · "+(event.rate?Math.round(event.rate*100)+"% · ":"")+event.message;detail.append(line);
+      });
+    }else if(!alertItems.length){
+      const line=document.createElement("div");line.className="mw-alert-detail";line.textContent="No recent strategy log entries were recorded for this instrument.";detail.append(line);
+    }
+    alertCell.append(detail);
+    row.append(instrument,...stacks,alertCell);box.append(row);
+  });
+  if(!markets.length){const empty=document.createElement("div");empty.className="mw-empty";empty.textContent="Waiting for Deriv to return the active Accumulator market catalogue.";box.append(empty);}
+  if(scrollHost)scrollHost.scrollLeft=savedScrollLeft;
 }
 function selectMarket(symbol){
   if(!marketBySymbol[symbol])return;
@@ -2460,6 +2680,7 @@ function algoLog(message,rate){
   const event={time:Date.now(),rate:rate===null||rate===undefined?null:Number(rate),message:String(message||"")};
   algoEvents.unshift(event);algoEvents=algoEvents.slice(0,30);
   renderAlgoEventList();
+  scheduleAlgoDashboardRender();
 }
 function saveAlgoContractRecords(){
   try{localStorage.setItem(ALGO_CONTRACTS_STORAGE_KEY,JSON.stringify(Object.values(algoContractsById)));}
@@ -3374,6 +3595,7 @@ function renderAlgoDashboard(){
   });
   if(!algoOpenContractCount()){const empty=document.createElement("div");empty.className="algo-muted";empty.textContent="No open Algo contracts.";positions.append(empty);}
   renderAlgoEventList();
+  renderMarketCards();
 }
 function startAccumulatorAlgo(){
   const engine=window.DerivAccumulatorAlgoEngine,stake=Number($("algoStake").value),aim=Number($("algoAim").value),maxLoss=Number($("algoMaxLoss").value),aggressive=$("algoRiskMode").value==="aggressive";
@@ -3523,6 +3745,11 @@ refreshDerivAccount();
 $("connectBtn").onclick=connect;
 
 $("statsToggle").onclick=()=>{const panel=$("statsHistory"),open=panel.hidden;panel.hidden=!open;$("statsToggle").setAttribute("aria-expanded",String(open));$("statsChevron").textContent=open?"⌃":"⌄";};
+$("marketWatchViewAll")?.addEventListener("click",()=>{
+  marketWatchShowAll=!marketWatchShowAll;
+  renderMarketCards();
+  if(!marketWatchShowAll){$("marketWatchScroll")?.scrollTo({left:0,behavior:"smooth"});}
+});
 $("symbol").onchange=()=>selectMarket($("symbol").value);
 window.addEventListener("resize",()=>{drawChart();renderPurposeChartScaffold();});setupPurposeChartInteractions();renderNativeStats();renderPurposeChartScaffold();
 connect();
