@@ -1066,7 +1066,7 @@ const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PEN
 let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0;
 let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,algoDashboardRenderTimer=null;
 let algoStartAwaitingBalance=false,algoStartBalanceRequestId=null,algoStartBalanceAccountId=null,algoStartBalanceTimer=null;
-let algoSessionProfit=0;
+let algoSessionProfit=0,algoHasRun=false;
 let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=null,algoStatsWatchQueue=[];
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
@@ -1870,6 +1870,7 @@ function selectMarket(symbol){
   $("tickCount").textContent=String(tickCounts[symbol]||0);
   $("tickHistory").textContent=(priceHistory[symbol]||[]).slice(-12).reverse().map(v=>v.toFixed(dp)).join("  ·  ")||"Waiting for ticks…";
   $("feedNote").textContent=t?"Live · "+(tickCounts[symbol]||0)+" ticks":"Waiting for feed";
+  renderAlgoTopSelectors();
   updateSelectedLabel();renderMarketCards();requestHistory(symbol);requestAccumulatorQuotes(symbol);renderNativeStats();drawChart();syncDerivAccumulatorChart();if(activeTradeAccount&&tradingSocket?.readyState===WebSocket.OPEN)requestTradeQuote();
 }
 
@@ -2913,7 +2914,7 @@ function setAlgoScopeMode(scope){
 function renderAlgoDashboard(){
   const controlsLocked=algoRunning||algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId;
   const controlsConnected=!!activeTradeAccount&&!!tradingSocket&&tradingSocket.readyState===WebSocket.OPEN;
-  $("algoStart").disabled=controlsLocked||!controlsConnected;
+  $("algoStart").disabled=!controlsConnected||(!algoRunning&&controlsLocked);
   $("algoStop").disabled=!algoRunning;
   $("algoStake").disabled=algoRunning;
   $("algoRiskMode").disabled=algoRunning;
@@ -2937,7 +2938,7 @@ function renderAlgoDashboard(){
   $("algoOpenContracts").textContent=String(algoOpenContractCount());
   $("algoMaxExposure").textContent=algoConfig?algoExposure().toFixed(2)+" "+algoConfig.currency:"—";
   $("algoStart").disabled=!connected||(!algoRunning&&(algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId));
-  $("algoStart").textContent=algoRunning?"WORKING":"START";
+  $("algoStart").textContent=algoRunning?"WORKING":(algoHasRun?"STOPPED":"START");
   $("algoStart").classList.toggle("is-working",algoRunning);
   $("algoStop").disabled=!algoRunning;
   $("algoInstrumentSelect").disabled=controlsLocked;
@@ -3028,7 +3029,7 @@ function startAccumulatorAlgo(){
       "\n\nOnly one live or pending contract is allowed per instrument. Each contract can lose its full stake. Start Algo?");
     if(!accepted)return;
   }
-  algoSessionProfit=0;
+  algoSessionProfit=0;algoHasRun=true;
   algoConfig={scope,symbol:scope==="selected"?selectedSymbol:null,symbols:symbols.slice(),accountId:activeTradeAccount.account_id,
     accountMode:activeTradeAccount.is_virtual?"demo":"real",currency:activeTradeAccount.currency,stake,aim,maxLoss,aggressive,rates:rates.slice()};
   algoTrackers=new Map();algoEvents=[];algoPendingStake=0;algoRunning=true;startAlgoBalanceRefresh();
