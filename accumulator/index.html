@@ -2561,7 +2561,7 @@ function renderAlgoMoneyStatus(){
   const m=algoMoneyManagement;
   if(!m){el.textContent="Money management · three-win compounding and loss recovery";return;}
   if(m.mode==="RECOVERY"){
-    el.textContent="RECOVERY MODE · Outstanding loss "+m.recoveryLoss.toFixed(2)+" "+(algoConfig?.currency||"")+" · next stake sizes from the live Deriv proposal; may use 100% of available balance.";
+    el.textContent="RECOVERY MODE · Outstanding loss "+m.recoveryLoss.toFixed(2)+" "+(algoConfig?.currency||"")+" · two-tick proposal payout is conditional on surviving the barriers; may stake 100% of available balance.";
   }else{
     el.textContent="COMPOUNDING · "+m.winCount+"/3 consecutive wins · cycle profit "+m.cycleProfit.toFixed(2)+" · next stake "+m.currentStake.toFixed(2)+" "+(algoConfig?.currency||"");
   }
@@ -2725,14 +2725,21 @@ function handleAlgoProposalMessage(message){
         forgetAlgoQuote(meta.rate,meta.symbol);renderAlgoDashboard();return true;
       }
       const needed=algoMoneyManagement.recoveryLoss/profitPerDollar;
-      if(Number.isFinite(needed)&&needed>=0.35&&needed<available-0.01){
+      const sizedStake=Math.max(0.35,Number(needed.toFixed(2)));
+      if(Number.isFinite(sizedStake)&&sizedStake<available-0.01){
         forgetAlgoQuote(meta.rate,meta.symbol);
-        requestAlgoQuote(meta.rate,"recovery stake recalculated from Deriv proposal",meta.symbol,Number(needed.toFixed(2)),"final");
+        requestAlgoQuote(meta.rate,"recovery stake recalculated from Deriv proposal",meta.symbol,sizedStake,"final");
         return true;
       }
       meta.sizingStage="all-in";
     }
-    const sizingStage=recovery?(meta.sizingStage==="all-in"?"all-in":"final"):"normal";
+    if(recovery&&meta.sizingStage==="final"&&Number.isFinite(payout)&&payout-askPrice+0.005<algoMoneyManagement.recoveryLoss&&Number(meta.stake)<algoAvailableBalance()-0.01){
+      const fullBalanceStake=algoAvailableBalance();
+      forgetAlgoQuote(meta.rate,meta.symbol);
+      requestAlgoQuote(meta.rate,"available balance required by the refreshed two-tick proposal",meta.symbol,fullBalanceStake,"max");
+      return true;
+    }
+    const sizingStage=recovery?(["all-in","max"].includes(meta.sizingStage)?"all-in":"final"):"normal";
     algoQuotes[algoTrackerKey(meta.symbol,meta.rate)]={
       id:proposal.id,askPrice,payout:Number.isFinite(payout)?payout:null,receivedAt:Date.now(),
       subscriptionId:meta.subscriptionId||null,requestId:requestKey||null,
