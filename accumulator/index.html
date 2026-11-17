@@ -1194,7 +1194,23 @@ body.trade-active{padding-bottom:0!important}
  .mw-summary-icon{width:20px;height:20px;flex-basis:20px;font-size:11px}
 }
 
-.market-watch-shell.algo-market-watch{border-left:0;border-right:0;border-radius:0;}
+/* Keep the Market Watch table exclusive to the Algo tab and let it span the full content width. */
+.market-watch-shell.algo-market-watch{
+ width:calc(100% + 52px);
+ margin-left:-26px;
+ margin-right:-26px;
+ border-left:0;
+ border-right:0;
+ border-radius:0;
+ box-sizing:border-box;
+}
+@media(max-width:800px){
+ .market-watch-shell.algo-market-watch{
+  width:calc(100% + 26px);
+  margin-left:-13px;
+  margin-right:-13px;
+ }
+}
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
