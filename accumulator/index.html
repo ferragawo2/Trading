@@ -937,6 +937,40 @@ body.trade-active{padding-bottom:0!important}
 .algo-goal-note .algo-negative{color:#ff626f!important}
 .algo-goal-note .algo-session-neutral{color:#fff!important}
 
+
+/* Algo action button: permanently black face, state-coloured glowing rim. */
+#algoTradeView .algo-action-row .algo-start-button{
+  background:#000000!important;
+  color:#39d98a!important;
+  border:2px solid #39d98a!important;
+  box-shadow:0 0 7px rgba(57,217,138,.58),0 0 18px rgba(57,217,138,.28),inset 0 0 0 1px rgba(57,217,138,.12)!important;
+  transition:color .18s,border-color .18s,box-shadow .18s,background .18s!important;
+}
+#algoTradeView .algo-action-row .algo-start-button:hover:not(:disabled){
+  background:#000000!important;
+  color:#65f0a8!important;
+}
+#algoTradeView .algo-action-row .algo-start-button.is-working{
+  background:#000000!important;
+  color:#39d98a!important;
+  border-color:#39d98a!important;
+  animation:algoWorkingGlow 1.15s ease-in-out infinite!important;
+}
+#algoTradeView .algo-action-row .algo-start-button.is-stopped{
+  background:#000000!important;
+  color:#ff4d5d!important;
+  border-color:#ff4d5d!important;
+  box-shadow:0 0 7px rgba(255,77,93,.58),0 0 18px rgba(255,77,93,.28),inset 0 0 0 1px rgba(255,77,93,.12)!important;
+  animation:none!important;
+}
+@keyframes algoWorkingGlow{
+  0%,100%{box-shadow:0 0 5px rgba(57,217,138,.38),0 0 12px rgba(57,217,138,.18),inset 0 0 0 1px rgba(57,217,138,.08)}
+  50%{box-shadow:0 0 12px rgba(57,217,138,.95),0 0 30px rgba(57,217,138,.62),0 0 46px rgba(57,217,138,.24),inset 0 0 12px rgba(57,217,138,.12)}
+}
+@media(prefers-reduced-motion:reduce){
+  #algoTradeView .algo-action-row .algo-start-button.is-working{animation:none!important;box-shadow:0 0 10px rgba(57,217,138,.65),0 0 22px rgba(57,217,138,.35)!important}
+}
+
 </style>
 <link rel="stylesheet" href="/dist/deriv-smartchart.css">
 </head>
@@ -3014,6 +3048,7 @@ function renderAlgoDashboard(){
   $("algoStart").disabled=!connected||(!algoRunning&&(algoOpenContractCount()>0||algoPendingBuyCount()>0||!!activeContractId));
   $("algoStart").textContent=algoRunning?"WORKING":(algoHasRun?"STOPPED":"START");
   $("algoStart").classList.toggle("is-working",algoRunning);
+  $("algoStart").classList.toggle("is-stopped",!algoRunning&&algoHasRun);
   $("algoStop").disabled=!algoRunning;
   $("algoInstrumentSelect").disabled=controlsLocked;
   $("algoAim").disabled=algoRunning;$("algoMaxLoss").disabled=algoRunning;
