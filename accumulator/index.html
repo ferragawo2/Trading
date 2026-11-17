@@ -1357,7 +1357,7 @@ body.trade-active{padding-bottom:0!important}
 .history-back-button{width:auto;min-width:76px;height:38px;padding:0 14px;border-radius:8px;background:#000;color:#fff;border:1px solid #555;font-size:11px;font-weight:850;letter-spacing:.08em;display:inline-flex;align-items:center;justify-content:center;gap:7px}
 .history-count{border:1px solid #333;border-radius:999px;padding:6px 10px;color:#bbb!important;font-variant-numeric:tabular-nums}
 .transaction-history-list{display:flex;flex-direction:column;gap:10px}
-.transaction-history-card{width:100%;margin:0;padding:15px 16px 16px;background:#000;border:1px solid rgba(255,255,255,.2);border-radius:0;box-shadow:0 0 10px rgba(255,255,255,.045);box-sizing:border-box}
+.transaction-history-card{width:100%;margin:0;padding:7px 10px 8px;background:#000;border:1px solid rgba(255,255,255,.2);border-radius:0;box-shadow:0 0 10px rgba(255,255,255,.045);box-sizing:border-box}.history-currency-flag{width:17px;height:17px;flex:0 0 17px;object-fit:contain}.history-pnl{display:flex;align-items:center;justify-content:flex-end;gap:5px}.history-compact{display:flex;align-items:center;gap:14px;margin-top:4px;color:#aaa;font-size:9px;font-weight:750;letter-spacing:.04em}.history-details{margin-top:9px;gap:7px 12px}.history-expand{display:block;margin-top:5px;padding:3px 0;border:0;background:transparent;color:#888;font-size:8px;font-weight:850;letter-spacing:.1em;text-align:left}.transaction-history-view[hidden]{display:none!important}.history-details[hidden]{display:none!important}
 .transaction-history-card.is-profit{border-color:rgba(40,255,130,.72);box-shadow:0 0 7px rgba(40,255,130,.28),inset 0 0 12px rgba(40,255,130,.045)}
 .transaction-history-card.is-loss{border-color:rgba(255,65,75,.78);box-shadow:0 0 7px rgba(255,65,75,.3),inset 0 0 12px rgba(255,65,75,.045)}
 .history-card-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
@@ -1372,6 +1372,9 @@ body.trade-active{padding-bottom:0!important}
 .history-contract-id{grid-column:1/-1}
 .history-empty{padding:34px 18px;text-align:center;color:#777;font-size:12px;border-top:1px solid #222;border-bottom:1px solid #222}
 @media(min-width:801px){.transaction-history-view{width:100%;margin:0;min-height:calc(100vh - 80px)}.transaction-history-card{border-radius:12px}.transaction-history-list{padding:0 12px}}
+
+/* Keep the shared history view completely absent unless explicitly opened. */
+.transaction-history-view[hidden]{display:none!important}
 
 /* Compact Algo instrument cards: essential 1% row first, expand for full tracker detail. */
 #algoTradeView .algo-instrument-card{padding:6px 7px!important}
@@ -1416,7 +1419,7 @@ body.trade-active{padding-bottom:0!important}
 <section class="balance-hero" aria-label="Total account balance">
   <div class="balance-content">
     <div class="balance-head"><span class="balance-label">TOTAL BALANCE</span></div>
-    <div class="balance-value-row"><img class="balance-currency-flag" src="https://hatscripts.github.io/circle-flags/flags/us.svg" alt="United States dollar" width="30" height="30"><div class="balance-amount" id="heroBalance" aria-live="polite">—</div><button class="balance-visibility" id="balanceVisibility" type="button" aria-label="Hide balance" aria-pressed="false" title="Hide balance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+    <div class="balance-value-row"><img class="balance-currency-flag" id="heroCurrencyFlag" src="https://hatscripts.github.io/circle-flags/flags/us.svg" alt="USD currency" width="30" height="30"><div class="balance-amount" id="heroBalance" aria-live="polite">—</div><button class="balance-visibility" id="balanceVisibility" type="button" aria-label="Hide balance" aria-pressed="false" title="Hide balance"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
     <div class="balance-foot" id="heroBalanceCaption">Connect your Deriv account to see your live balance</div>
   </div>
   <svg class="balance-chart" viewBox="0 0 420 120" preserveAspectRatio="none" aria-hidden="true">
@@ -2655,13 +2658,26 @@ async function startDerivLogin(){
     window.location.assign(data.authorization_url);
   }catch(e){message.textContent=e.message;button.disabled=false;}
 }
+function currencyFlagCountry(code){
+ const flags={USD:"us",EUR:"eu",GBP:"gb",NGN:"ng",AUD:"au",CAD:"ca",CHF:"ch",JPY:"jp",CNY:"cn",NZD:"nz",SGD:"sg",HKD:"hk",ZAR:"za",SEK:"se",NOK:"no",DKK:"dk",PLN:"pl",CZK:"cz",MXN:"mx",BRL:"br",INR:"in",AED:"ae",TRY:"tr",RUB:"ru",SAR:"sa",KES:"ke",GHS:"gh",UGX:"ug",TZS:"tz"};
+ return flags[String(code||"").toUpperCase()]||"";
+}
+function updateHeroCurrencyFlag(code){
+ const flag=$("heroCurrencyFlag");if(!flag)return;
+ const country=currencyFlagCountry(code);
+ if(country){flag.src="https://hatscripts.github.io/circle-flags/flags/"+country+".svg";flag.alt=String(code).toUpperCase()+" currency";flag.hidden=false;}
+ else{flag.hidden=true;}
+}
 function updateTradeHeaderBalance(){
  const account=activeTradeAccount;
  const currency=(account&&account.currency)||"";
- const code=currency.toUpperCase();
+ const code=currency.toUpperCase(),country=currencyFlagCountry(code);
  const logo=$("tradeCurrencyLogo");
- const currencyMarks={USD:"🇺🇸",EUR:"🇪🇺",GBP:"🇬🇧",BTC:"₿",ETH:"Ξ",USDT:"₮",LTC:"Ł",BCH:"◆"};logo.textContent=currencyMarks[code]|| (code?code.slice(0,3):"—");
+ logo.replaceChildren();
+ if(country){const img=document.createElement("img");img.src="https://hatscripts.github.io/circle-flags/flags/"+country+".svg";img.alt=code+" currency";img.width=27;img.height=27;logo.append(img);}
+ else{const currencyMarks={BTC:"₿",ETH:"Ξ",USDT:"₮",LTC:"Ł",BCH:"◆"};logo.textContent=currencyMarks[code]||(code?code.slice(0,3):"—");}
  logo.setAttribute("aria-label",code?currency+" currency":"Currency unavailable");
+ updateHeroCurrencyFlag(code);
  $("tradeHeaderBalance").textContent=Number.isFinite(tradeBalance)?tradeBalance.toFixed(2):"—";
  const mode=$("tradeAccountMode");
  if(account){mode.value=account.is_virtual?"demo":"real";}
@@ -4030,14 +4046,21 @@ function renderTransactionHistory(){
   if(!rows.length){const empty=document.createElement("div");empty.className="history-empty";empty.textContent="Completed contracts will appear here.";list.append(empty);return;}
   rows.forEach(item=>{
     const card=document.createElement("article");card.className="transaction-history-card "+(Number(item.pnl)>0?"is-profit":Number(item.pnl)<0?"is-loss":"");
+    const code=String(item.currency||"").toUpperCase(),flag=currencyFlagCountry(code);
+    const currency=item.currency?" "+item.currency:"";
     const top=document.createElement("div");top.className="history-card-top";
     const title=document.createElement("div");
     const instrument=document.createElement("div");instrument.className="history-instrument";instrument.textContent=item.symbol||"Accumulator";
     const source=document.createElement("span");source.className="history-source";source.textContent=item.source==="algo"?"ALGO":"MANUAL";
     title.append(instrument,source);
-    const pnl=document.createElement("div");pnl.className="history-pnl";const currency=item.currency?" "+item.currency:"";pnl.textContent=(Number(item.pnl)>0?"+":"")+(Number.isFinite(Number(item.pnl))?Number(item.pnl).toFixed(2):"—")+currency;
+    const pnl=document.createElement("div");pnl.className="history-pnl";
+    if(flag){const img=document.createElement("img");img.className="history-currency-flag";img.src="https://hatscripts.github.io/circle-flags/flags/"+flag+".svg";img.alt=code;img.width=17;img.height=17;pnl.append(img);}
+    const pnlValue=document.createElement("span");pnlValue.textContent=(Number(item.pnl)>0?"+":"")+(Number.isFinite(Number(item.pnl))?Number(item.pnl).toFixed(2):"—")+currency;pnl.append(pnlValue);
     top.append(title,pnl);card.append(top);
-    const details=document.createElement("div");details.className="history-details";
+    const compact=document.createElement("div");compact.className="history-compact";
+    [["STAKE",(Number.isFinite(Number(item.stake))?Number(item.stake).toFixed(2):"—")+currency],["GROWTH",Number.isFinite(Number(item.rate))?(Number(item.rate)*100).toFixed(0)+"%":"—"]].forEach(([label,value])=>{const cell=document.createElement("span");cell.textContent=label+"  "+value;compact.append(cell);});
+    card.append(compact);
+    const details=document.createElement("div");details.className="history-details";details.hidden=true;
     const fields=[
       ["STAKE",((Number.isFinite(Number(item.stake))?Number(item.stake).toFixed(2):"—")+(currency))],
       ["DURATION",((Number.isFinite(Number(item.ticks))?String(item.ticks)+" ticks":"—"))],
@@ -4046,7 +4069,9 @@ function renderTransactionHistory(){
       ["CONTRACT ID",String(item.contractId)]
     ];
     fields.forEach(([label,value],index)=>{const cell=document.createElement("div");cell.className="history-detail"+(index===4?" history-contract-id":"");const small=document.createElement("small");small.textContent=label;const strong=document.createElement("strong");strong.textContent=value;cell.append(small,strong);details.append(cell);});
-    card.append(details);list.append(card);
+    const toggle=document.createElement("button");toggle.type="button";toggle.className="history-expand";toggle.textContent="MORE DETAILS +";toggle.setAttribute("aria-expanded","false");
+    toggle.addEventListener("click",()=>{const expanded=!details.hidden;details.hidden=expanded;toggle.textContent=expanded?"MORE DETAILS +":"LESS DETAILS −";toggle.setAttribute("aria-expanded",String(!expanded));card.classList.toggle("is-expanded",!expanded);});
+    card.append(details,toggle);list.append(card);
   });
 }
 function openTransactionHistory(){
