@@ -1233,21 +1233,72 @@ body.trade-active{padding-bottom:0!important}
  .mw-summary-icon{width:20px;height:20px;flex-basis:20px;font-size:11px}
 }
 
-/* Keep the Market Watch table exclusive to the Algo tab and let it span the full content width. */
+/* Minimal full-width Algo Watch: keep only the instrument rows and a compact
+   icon-only expand control; remove dashboard chrome and use true black. */
 .market-watch-shell.algo-market-watch{
- width:calc(100% + 52px);
- margin-left:-26px;
- margin-right:-26px;
- border-left:0;
- border-right:0;
- border-radius:0;
+ width:calc(100% - 4px);
+ max-width:none;
+ margin:0 2px 12px;
+ padding:0;
  box-sizing:border-box;
+ border:1px solid #151515;
+ border-radius:8px;
+ background:#000000;
+ box-shadow:none;
+}
+.market-watch-shell.algo-market-watch .mw-topbar{
+ display:flex;
+ justify-content:flex-end;
+ min-height:0;
+ padding:2px 4px;
+ border:0;
+ background:#000000;
+}
+.market-watch-shell.algo-market-watch .mw-brand,
+.market-watch-shell.algo-market-watch .mw-summary,
+.market-watch-shell.algo-market-watch .mw-live-pill,
+.market-watch-shell.algo-market-watch .mw-table-head,
+.market-watch-shell.algo-market-watch .mw-footer{
+ display:none!important;
+}
+.market-watch-shell.algo-market-watch .mw-view-all{
+ min-width:24px;
+ width:24px;
+ height:20px;
+ padding:0;
+ border:0;
+ border-radius:4px;
+ background:#000000;
+ color:#aab4bf;
+ font-size:0;
+ line-height:1;
+}
+.market-watch-shell.algo-market-watch .mw-view-all::after{
+ content:"⌄";
+ font-size:16px;
+}
+.market-watch-shell.algo-market-watch .mw-view-all[aria-expanded="true"]::after{
+ content:"⌃";
+}
+.market-watch-shell.algo-market-watch .mw-scroll{
+ background:#000000;
+}
+.market-watch-shell.algo-market-watch .mw-table{
+ background:#000000;
+}
+.market-watch-shell.algo-market-watch .mw-market-row,
+.market-watch-shell.algo-market-watch .mw-market-row:nth-child(even){
+ background:#000000;
+}
+.market-watch-shell.algo-market-watch .mw-market-row:hover{
+ background:#080808;
 }
 @media(max-width:800px){
  .market-watch-shell.algo-market-watch{
-  width:calc(100% + 26px);
-  margin-left:-13px;
-  margin-right:-13px;
+  width:calc(100% - 4px);
+  margin-left:2px;
+  margin-right:2px;
+  border-radius:7px;
  }
 }
 </style>
