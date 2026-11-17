@@ -1027,6 +1027,34 @@ body.trade-active{padding-bottom:0!important}
   color:#39d98a;font-size:8px;line-height:1.45;overflow-wrap:anywhere;
 }
 #algoTradeView .algo-instrument-note{color:#999}
+
+/* Watch All compact market carousel: two readable rows, horizontal navigation. */
+#algoTradeView .algo-tracker-grid{
+  display:grid!important;
+  grid-auto-flow:column;
+  grid-template-columns:none!important;
+  grid-template-rows:repeat(2,max-content);
+  grid-auto-columns:minmax(260px,76vw);
+  gap:9px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  overscroll-behavior-x:contain;
+  scroll-snap-type:x proximity;
+  scrollbar-width:thin;
+  scrollbar-color:#444 #000;
+  padding:2px 2px 9px;
+  -webkit-overflow-scrolling:touch;
+}
+#algoTradeView .algo-instrument-card{
+  width:100%;
+  min-width:0;
+  scroll-snap-align:start;
+}
+@media(min-width:760px){
+  #algoTradeView .algo-tracker-grid{
+    grid-auto-columns:minmax(320px,calc((100% - 18px)/3));
+  }
+}
 @keyframes algoLiveValueFlash{
   0%{color:#fff;text-shadow:0 0 0 transparent;transform:scale(1)}
   35%{color:#39d98a;text-shadow:0 0 9px rgba(57,217,138,.95);transform:scale(1.09)}
@@ -3214,7 +3242,7 @@ function renderAlgoDashboard(){
   const activeRates=algoConfig?(algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]):(algoTrackers.size?Array.from(algoTrackers.values()).map(tracker=>tracker.growthRate):($("algoRiskMode").value==="aggressive"?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04]));
   renderAlgoStatsGrid(activeRates);
   const connected=!!activeTradeAccount&&!!tradingSocket&&tradingSocket.readyState===WebSocket.OPEN;
-  $("algoMarketLabel").textContent=algoConfig?.scope==="all"?"WATCH ALL · "+(algoConfig.symbols||[]).length+" INSTRUMENTS":(algoConfig?.symbol||selectedSymbol||"No market selected");
+  $("algoMarketLabel").textContent=algoConfig?.scope==="all"?"WATCH ALL · "+(algoConfig.symbols||[]).length+" INSTRUMENTS · SWIPE →":(algoConfig?.symbol||selectedSymbol||"No market selected");
   $("algoActiveTrackers").textContent=String(algoTrackers.size||activeRates.length||4);
   renderAlgoTopSelectors();
   $("algoOpenContracts").textContent=String(algoOpenContractCount());
