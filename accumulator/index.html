@@ -1598,7 +1598,7 @@ let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,al
 let algoStartAwaitingBalance=false,algoStartBalanceRequestId=null,algoStartBalanceAccountId=null,algoStartBalanceTimer=null;
 let algoSessionProfit=0,algoHasRun=false;
 let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=null,algoStatsWatchdogTimer=null,algoStatsWatchQueue=[];
-const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={};
+const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={},algoStatsRetryTimers={},algoStatsLastAttemptAt={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 let algoMarketWatchShowAll=false;
@@ -2061,7 +2061,12 @@ connect();return;}
       const failedHistorySymbol=marketHistoryReqs[m.req_id];
       if(failedHistorySymbol){delete marketHistoryReqs[m.req_id];const card=document.querySelector('.market-card[data-market="'+failedHistorySymbol+'"]');const status=card?.querySelector(".market-live");if(status)status.textContent="24H HISTORY UNAVAILABLE";log("24h chart unavailable for "+failedHistorySymbol+": "+(m.error.message||m.error.code||"Unknown error"));}
       const failedAlgoStats=algoStatsQuoteRequests[m.req_id];
-      if(failedAlgoStats){delete algoStatsQuoteRequests[m.req_id];log("Stats stream rejected for "+failedAlgoStats.symbol+" "+Math.round(failedAlgoStats.rate*100)+"%: "+(m.error.message||m.error.code||"Unknown error"));}
+      if(failedAlgoStats){
+        delete algoStatsQuoteRequests[m.req_id];
+        const statsError=m.error.message||m.error.code||"Unknown error";
+        log("Stats stream rejected for "+failedAlgoStats.symbol+" "+Math.round(failedAlgoStats.rate*100)+"%: "+statsError);
+        scheduleAlgoStatsRetry(failedAlgoStats,statsError);
+      }
       const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
     if(m.msg_type==="trading_times"&&m.trading_times){handleChartTradingTimes(m.trading_times);return;}
@@ -2482,7 +2487,7 @@ function renderAlgoMarketWatch(){
     const alertText=document.createElement("span");alertText.className="mw-alert-text";alertText.textContent=alertItems[0]||recentEvents[0]?.message||"No active alerts";
     const chevron=document.createElement("span");chevron.className="mw-alert-chevron";chevron.textContent=expanded?"⌃":"⌄";
     toggle.append(mark,alertText,chevron);
-    toggle.onclick=event=>{event.stopPropagation();if(algoMarketWatchExpandedAlerts.has(symbol))algoMarketWatchExpandedAlerts.delete(symbol);else algoMarketWatchExpandedAlerts.add(symbol);renderMarketCards();};
+    toggle.onclick=event=>{event.stopPropagation();if(algoMarketWatchExpandedAlerts.has(symbol))algoMarketWatchExpandedAlerts.delete(symbol);else algoMarketWatchExpandedAlerts.add(symbol);renderAlgoMarketWatch();};
     alertCell.append(toggle);
     const detail=document.createElement("div");detail.className="mw-alert-details";detail.hidden=!expanded;
     const explanation=document.createElement("div");explanation.className="mw-alert-detail";
@@ -2884,35 +2889,88 @@ function scheduleAlgoDashboardRender(){
   if(algoDashboardRenderTimer)return;
   algoDashboardRenderTimer=setTimeout(()=>{algoDashboardRenderTimer=null;renderAlgoDashboard();},350);
 }
+function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
+  if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning||!ws||ws.readyState!==WebSocket.OPEN||algoStatsWatchTimer)return;
+  const job=algoStatsWatchQueue.shift();if(!job)return;
+  const key=nativeStatsKey(job.symbol,job.rate);
+  try{
+    const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
+    const meta={...job,requestId:String(requestId),sentAt:Date.now(),lastStatsAt:0};
+    algoStatsQuoteRequests[String(requestId)]=meta;
+    algoStatsLastAttemptAt[key]=Date.now();
+  }catch(error){
+    scheduleAlgoStatsRetry(job,error.message||"WebSocket send failed",1000);
+  }
+  if(algoStatsWatchQueue.length)algoStatsWatchTimer=setTimeout(()=>{
+    algoStatsWatchTimer=null;pumpAlgoStatsWatchQueue(generation);
+  },250);
+}
+function scheduleAlgoStatsRetry(meta,reason,delayOverride){
+  if(!meta||!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration)return;
+  const key=nativeStatsKey(meta.symbol,meta.rate),attempts=Number(meta.retryCount)||0;
+  if(attempts>=5){
+    algoLog("Stats stream still unavailable for "+meta.symbol+" "+Math.round(meta.rate*100)+"% after 5 retries: "+reason,meta.rate);
+    return;
+  }
+  const retryCount=attempts+1;
+  if(meta.subscriptionId){
+    try{send({forget:meta.subscriptionId});}catch{}
+    delete algoStatsQuoteSubscriptions[String(meta.subscriptionId)];
+  }
+  if(algoStatsRetryTimers[key])clearTimeout(algoStatsRetryTimers[key]);
+  const delay=Number.isFinite(delayOverride)?delayOverride:Math.min(15000,1000*Math.pow(2,attempts));
+  algoStatsRetryTimers[key]=setTimeout(()=>{
+    delete algoStatsRetryTimers[key];
+    if(!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration||!ws||ws.readyState!==WebSocket.OPEN)return;
+    const alreadyQueued=algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key);
+    const alreadyRequested=Object.values(algoStatsQuoteRequests).some(item=>nativeStatsKey(item.symbol,item.rate)===key);
+    const alreadySubscribed=Object.values(algoStatsQuoteSubscriptions).some(item=>nativeStatsKey(item.symbol,item.rate)===key);
+    if(!alreadyQueued&&!alreadyRequested&&!alreadySubscribed)algoStatsWatchQueue.push({...meta,retryCount,subscriptionId:null});
+    pumpAlgoStatsWatchQueue(meta.generation);
+  },delay);
+}
 function startAlgoStatsWatch(){
   if(!algoRunning||!algoConfig||!ws||ws.readyState!==WebSocket.OPEN)return false;
   stopAlgoStatsWatch();algoStatsWatchActive=true;
   const generation=++algoStatsWatchGeneration,symbols=algoScopeSymbols();
   const rates=algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04];
-  algoStatsWatchQueue=symbols.flatMap(symbol=>rates.map(rate=>({symbol,rate,generation})));
-  const sendNext=()=>{
-    if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning)return;
-    const job=algoStatsWatchQueue.shift();if(!job)return;
-    try{
-      const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
-      algoStatsQuoteRequests[String(requestId)]={...job,requestId:String(requestId),sentAt:Date.now()};
-    }catch(error){algoLog("Could not subscribe to "+job.symbol+" "+Math.round(job.rate*100)+"% Stats: "+error.message,job.rate);}
-    // Watch All can create 100+ independent subscriptions. Pace requests to
-    // avoid bursts that Deriv may reject or leave without an initial response.
-    if(algoStatsWatchQueue.length)algoStatsWatchTimer=setTimeout(sendNext,250);else algoStatsWatchTimer=null;
-  };
-  sendNext();
-  // Rebuild subscriptions periodically so any instrument/rate stream that
-  // failed to initialise gets another chance instead of remaining blank.
+  algoStatsWatchQueue=symbols.flatMap(symbol=>rates.map(rate=>({symbol,rate,generation,retryCount:0})));
+  pumpAlgoStatsWatchQueue(generation);
+  // Check each instrument/rate independently. Never tear down every healthy stream
+  // on a timer: only retry a stream that has stopped delivering Deriv Stats.
   algoStatsWatchdogTimer=setInterval(()=>{
-    if(algoRunning&&algoStatsWatchActive&&ws?.readyState===WebSocket.OPEN)startAlgoStatsWatch();
-  },60000);
+    if(!algoRunning||!algoStatsWatchActive||ws?.readyState!==WebSocket.OPEN)return;
+    const now=Date.now();
+    symbols.forEach(symbol=>rates.forEach(rate=>{
+      const key=nativeStatsKey(symbol,rate);
+      if(algoStatsRetryTimers[key])return;
+      if(algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key))return;
+      const request=Object.values(algoStatsQuoteRequests).find(item=>nativeStatsKey(item.symbol,item.rate)===key);
+      if(request&&now-Number(request.sentAt||now)<25000)return;
+      const subscription=Object.values(algoStatsQuoteSubscriptions).find(item=>nativeStatsKey(item.symbol,item.rate)===key);
+      if(subscription){
+        const last=Number(subscription.lastStatsAt||subscription.sentAt||0);
+        if(last&&now-last<25000)return;
+        scheduleAlgoStatsRetry(subscription,"no live Stats update received for 25 seconds");
+        return;
+      }
+      if(request){
+        delete algoStatsQuoteRequests[String(request.requestId)];
+        scheduleAlgoStatsRetry(request,"Stats subscription did not initialise within 25 seconds");
+        return;
+      }
+      const lastAttempt=Number(algoStatsLastAttemptAt[key]||0);
+      if(now-lastAttempt>60000)algoStatsWatchQueue.push({symbol,rate,generation,retryCount:0});
+    }));
+    pumpAlgoStatsWatchQueue(generation);
+  },10000);
   algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s).");return true;
 }
 function stopAlgoStatsWatch(){
   algoStatsWatchActive=false;algoStatsWatchGeneration++;
   if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
   if(algoStatsWatchdogTimer){clearInterval(algoStatsWatchdogTimer);algoStatsWatchdogTimer=null;}
+  Object.keys(algoStatsRetryTimers).forEach(key=>{clearTimeout(algoStatsRetryTimers[key]);delete algoStatsRetryTimers[key];});
   algoStatsWatchQueue=[];
   Object.keys(algoStatsQuoteRequests).forEach(requestId=>delete algoStatsQuoteRequests[requestId]);
   Object.keys(algoStatsQuoteSubscriptions).forEach(subscriptionId=>{
@@ -2926,13 +2984,22 @@ function handleAlgoStatsProposal(message){
   const subscriptionId=message.subscription?.id;
   if(!meta&&subscriptionId)meta=algoStatsQuoteSubscriptions[String(subscriptionId)];
   if(!meta)return false;
-  if(subscriptionId){meta.subscriptionId=String(subscriptionId);algoStatsQuoteSubscriptions[String(subscriptionId)]=meta;if(requestKey)delete algoStatsQuoteRequests[requestKey];}
+  if(subscriptionId){
+    meta.subscriptionId=String(subscriptionId);
+    algoStatsQuoteSubscriptions[String(subscriptionId)]=meta;
+    if(requestKey)delete algoStatsQuoteRequests[requestKey];
+  }
   if(!algoStatsWatchActive||meta.generation!==algoStatsWatchGeneration||!algoRunning||!isAlgoSymbolAllowed(meta.symbol)){
     if(subscriptionId){try{if(ws?.readyState===WebSocket.OPEN)send({forget:subscriptionId});}catch{}delete algoStatsQuoteSubscriptions[String(subscriptionId)];}
     if(requestKey)delete algoStatsQuoteRequests[requestKey];return true;
   }
   const details=message.proposal?.contract_details||{};
-  if(Array.isArray(details.ticks_stayed_in))updateNativeStats(meta.symbol,meta.rate,details.ticks_stayed_in);
+  if(Array.isArray(details.ticks_stayed_in)){
+    meta.lastStatsAt=Date.now();meta.retryCount=0;
+    const key=nativeStatsKey(meta.symbol,meta.rate);
+    if(algoStatsRetryTimers[key]){clearTimeout(algoStatsRetryTimers[key]);delete algoStatsRetryTimers[key];}
+    updateNativeStats(meta.symbol,meta.rate,details.ticks_stayed_in);
+  }
   return true;
 }
 function algoLog(message,rate){
