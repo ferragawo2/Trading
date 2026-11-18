@@ -1598,8 +1598,10 @@ let algoScrollBusyUntil=0,algoRenderDeferred=false,algoScrollRenderTimer=null,al
 let algoStartAwaitingBalance=false,algoStartBalanceRequestId=null,algoStartBalanceAccountId=null,algoStartBalanceTimer=null;
 let algoSessionProfit=0,algoHasRun=false;
 let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=null,algoStatsWatchdogTimer=null,algoStatsWatchQueue=[];
+// Keep the Deriv native Stats subscription queue paced, but isolate failures
+// to the affected instrument/growth-rate stream. A single rejected proposal
+// must never pause every other tracker.
 const algoStatsQueueIntervalMs=1000;
-let algoStatsGlobalPauseUntil=0;
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={},algoStatsRetryTimers={},algoStatsLastAttemptAt={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
@@ -2069,13 +2071,11 @@ connect();return;}
         const rateLimited=/rate.?limit|too many requests/i.test(String(m.error.code||"")+" "+String(statsError));
         log("Stats stream rejected for "+failedAlgoStats.symbol+" "+Math.round(failedAlgoStats.rate*100)+"%: "+statsError);
         if(rateLimited){
-          // A rate-limit response is a shared-budget warning, not an isolated
-          // symbol failure. Pause the whole Stats queue before retrying one stream.
-          algoStatsGlobalPauseUntil=Math.max(algoStatsGlobalPauseUntil,Date.now()+60000);
-          if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
-          algoLog("Deriv rate limit detected. Pausing new Stats subscriptions for 60 seconds; queued instruments will resume gradually.",failedAlgoStats.rate);
+          // Back off only this symbol/rate. The shared queue continues serving
+          // every other instrument so one Deriv rejection cannot strand Watch All.
+          algoLog("Deriv rate limit on "+failedAlgoStats.symbol+" "+Math.round(failedAlgoStats.rate*100)+"%; retrying this Stats stream independently while the other trackers continue.",failedAlgoStats.rate);
         }
-        scheduleAlgoStatsRetry(failedAlgoStats,statsError,rateLimited?60000:undefined);
+        scheduleAlgoStatsRetry(failedAlgoStats,statsError);
       }
       const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
@@ -2901,13 +2901,8 @@ function scheduleAlgoDashboardRender(){
 }
 function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
   if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning||!ws||ws.readyState!==WebSocket.OPEN||algoStatsWatchTimer)return;
-  // Pace proposal subscriptions conservatively. They share Deriv's proposal/buy/sell
-  // request budget, so a Watch All startup burst must leave room for execution.
-  const pauseRemaining=algoStatsGlobalPauseUntil-Date.now();
-  if(pauseRemaining>0){
-    algoStatsWatchTimer=setTimeout(()=>{algoStatsWatchTimer=null;pumpAlgoStatsWatchQueue(generation);},pauseRemaining);
-    return;
-  }
+  // Pace proposal subscriptions conservatively. Failed streams are retried
+  // independently and never block unrelated instrument/rate subscriptions.
   const job=algoStatsWatchQueue.shift();if(!job)return;
   const key=nativeStatsKey(job.symbol,job.rate);
   try{
@@ -2949,7 +2944,8 @@ function startAlgoStatsWatch(){
   if(!algoRunning||!algoConfig||!ws||ws.readyState!==WebSocket.OPEN)return false;
   stopAlgoStatsWatch();algoStatsWatchActive=true;
   const generation=++algoStatsWatchGeneration,symbols=algoScopeSymbols();
-  const rates=algoConfig.aggressive?[0.01,0.02,0.03,0.04,0.05]:[0.01,0.02,0.03,0.04];
+  // Watch all five native Deriv accumulator growth-rate Stats for every selected instrument.
+  const rates=[0.01,0.02,0.03,0.04,0.05];
   algoStatsWatchQueue=symbols.flatMap(symbol=>rates.map(rate=>({symbol,rate,generation,retryCount:0})));
   pumpAlgoStatsWatchQueue(generation);
   // Check each instrument/rate independently. Never tear down every healthy stream
@@ -2983,7 +2979,7 @@ function startAlgoStatsWatch(){
   algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s), paced at one request per second to preserve room for trading.");return true;
 }
 function stopAlgoStatsWatch(){
-  algoStatsWatchActive=false;algoStatsWatchGeneration++;algoStatsGlobalPauseUntil=0;
+  algoStatsWatchActive=false;algoStatsWatchGeneration++;
   if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
   if(algoStatsWatchdogTimer){clearInterval(algoStatsWatchdogTimer);algoStatsWatchdogTimer=null;}
   Object.keys(algoStatsRetryTimers).forEach(key=>{clearTimeout(algoStatsRetryTimers[key]);delete algoStatsRetryTimers[key];});
