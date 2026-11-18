@@ -2895,7 +2895,7 @@ function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
   const key=nativeStatsKey(job.symbol,job.rate);
   try{
     const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
-    const meta={...job,requestId:String(requestId),sentAt:Date.now(),lastStatsAt:0};
+    const meta={...job,requestId:String(requestId),sentAt:Date.now(),lastResponseAt:0,lastStatsAt:0,missingStatsLogged:false};
     algoStatsQuoteRequests[String(requestId)]=meta;
     algoStatsLastAttemptAt[key]=Date.now();
   }catch(error){
@@ -2907,18 +2907,17 @@ function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
 }
 function scheduleAlgoStatsRetry(meta,reason,delayOverride){
   if(!meta||!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration)return;
-  const key=nativeStatsKey(meta.symbol,meta.rate),attempts=Number(meta.retryCount)||0;
-  if(attempts>=5){
-    algoLog("Stats stream still unavailable for "+meta.symbol+" "+Math.round(meta.rate*100)+"% after 5 retries: "+reason,meta.rate);
-    return;
-  }
+  const key=nativeStatsKey(meta.symbol,meta.rate),attempts=Math.max(0,Number(meta.retryCount)||0);
+  // Keep each instrument/rate recoverable for the whole Algo session. A fixed
+  // retry ceiling permanently strands trackers on WAITING after transient API
+  // errors or a temporary Deriv stream interruption.
   const retryCount=attempts+1;
   if(meta.subscriptionId){
     try{send({forget:meta.subscriptionId});}catch{}
     delete algoStatsQuoteSubscriptions[String(meta.subscriptionId)];
   }
   if(algoStatsRetryTimers[key])clearTimeout(algoStatsRetryTimers[key]);
-  const delay=Number.isFinite(delayOverride)?delayOverride:Math.min(15000,1000*Math.pow(2,attempts));
+  const delay=Number.isFinite(delayOverride)?delayOverride:Math.min(30000,1000*Math.pow(2,Math.min(attempts,5)));
   algoStatsRetryTimers[key]=setTimeout(()=>{
     delete algoStatsRetryTimers[key];
     if(!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration||!ws||ws.readyState!==WebSocket.OPEN)return;
@@ -2993,12 +2992,23 @@ function handleAlgoStatsProposal(message){
     if(subscriptionId){try{if(ws?.readyState===WebSocket.OPEN)send({forget:subscriptionId});}catch{}delete algoStatsQuoteSubscriptions[String(subscriptionId)];}
     if(requestKey)delete algoStatsQuoteRequests[requestKey];return true;
   }
-  const details=message.proposal?.contract_details||{};
-  if(Array.isArray(details.ticks_stayed_in)){
-    meta.lastStatsAt=Date.now();meta.retryCount=0;
+  const proposal=message.proposal||{};
+  const details=proposal.contract_details||{};
+  // Deriv's documented response places ticks_stayed_in under
+  // proposal.contract_details. Accept the top-level form as a compatibility
+  // fallback, but never derive this native statistic from ordinary price ticks.
+  const stats=Array.isArray(details.ticks_stayed_in)
+    ?details.ticks_stayed_in
+    :(Array.isArray(proposal.ticks_stayed_in)?proposal.ticks_stayed_in:null);
+  meta.lastResponseAt=Date.now();
+  if(Array.isArray(stats)&&stats.length){
+    meta.lastStatsAt=Date.now();meta.retryCount=0;meta.missingStatsLogged=false;meta.lastError=null;
     const key=nativeStatsKey(meta.symbol,meta.rate);
     if(algoStatsRetryTimers[key]){clearTimeout(algoStatsRetryTimers[key]);delete algoStatsRetryTimers[key];}
-    updateNativeStats(meta.symbol,meta.rate,details.ticks_stayed_in);
+    updateNativeStats(meta.symbol,meta.rate,stats);
+  }else if(!meta.missingStatsLogged){
+    meta.missingStatsLogged=true;
+    algoLog("Deriv accepted the "+Math.round(meta.rate*100)+"% proposal for "+meta.symbol+" but returned no ticks_stayed_in statistics; waiting briefly, then this stream will be retried.",meta.rate);
   }
   return true;
 }
