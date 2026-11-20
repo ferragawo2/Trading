@@ -3055,12 +3055,17 @@ function connectAlgoStatsSocket(){
     }
     if(message.msg_type==="proposal"&&message.proposal){
       const requestKey=String(message.req_id??"");
-      const meta=algoStatsQuoteRequests[requestKey];
-      if(!meta&&message.subscription?.id){forgetAlgoStatsSubscription(message.subscription.id);return;}
-      if(meta&&message.subscription?.id){
-        meta.subscriptionId=String(message.subscription.id);
-        algoStatsQuoteSubscriptions[meta.subscriptionId]=meta;
-        delete algoStatsQuoteRequests[requestKey];
+      const subscriptionId=message.subscription?.id?String(message.subscription.id):"";
+      // Deriv sends the first proposal with req_id, then subsequent live
+      // updates by subscription.id. Resolve both or valid updates get
+      // misclassified as orphaned and immediately forgotten.
+      const meta=algoStatsQuoteRequests[requestKey]||
+        (subscriptionId?algoStatsQuoteSubscriptions[subscriptionId]:null);
+      if(!meta&&subscriptionId){forgetAlgoStatsSubscription(subscriptionId);return;}
+      if(meta&&subscriptionId){
+        meta.subscriptionId=subscriptionId;
+        algoStatsQuoteSubscriptions[subscriptionId]=meta;
+        if(requestKey)delete algoStatsQuoteRequests[requestKey];
       }
       if(meta)handleAlgoStatsProposal(message);
     }
