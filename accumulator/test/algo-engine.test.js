@@ -255,3 +255,18 @@ test('markBuySubmitted rejects any tracker that is no longer exactly one count b
   tracker.observeCount(15, 'match-run');
   assert.equal(tracker.markBuySubmitted('on-time'), true);
 });
+
+test('Watch All stats queue starts each growth-rate wave across every instrument', () => {
+  const symbols = Array.from({ length: 27 }, (_, index) => 'SYMBOL_' + (index + 1));
+  const rates = engine.GROWTH_RATES;
+  const generation = 12;
+  const queue = engine.buildStatsWatchQueue(symbols, rates, generation);
+
+  assert.equal(queue.length, 27 * 5);
+  assert.deepEqual(queue.slice(0, 27).map(job => job.symbol), symbols);
+  assert.ok(queue.slice(0, 27).every(job => job.rate === 0.01));
+  assert.ok(queue.slice(27, 54).every(job => job.rate === 0.02));
+  assert.ok(queue.every(job => job.generation === generation));
+  assert.ok(queue.every(job => job.retryCount === 0));
+  assert.equal(new Set(queue.map(job => job.symbol + '|' + job.rate)).size, 27 * 5);
+});
