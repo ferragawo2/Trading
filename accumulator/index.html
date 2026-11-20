@@ -1648,7 +1648,7 @@ function noteProposalSuccess(){
 }
 
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={},algoStatsRetryTimers={},algoStatsLastAttemptAt={};
-let algoStatsSubscriptionLimit=Infinity,algoStatsSubscriptionReserve=2;
+let algoStatsSubscriptionLimit=Infinity,algoStatsSubscriptionReserve=2,algoStatsCapacityBlockedUntil=0,algoStatsCapacityTimer=null;
 function algoStatsActiveSlotCount(){return Object.keys(algoStatsQuoteSubscriptions).length+Object.keys(algoStatsQuoteRequests).length;}
 function algoStatsCanOpenSlot(){return algoStatsActiveSlotCount()<Math.max(1,algoStatsSubscriptionLimit-algoStatsSubscriptionReserve);}
 function forgetAlgoStatsSubscription(subscriptionId){if(!subscriptionId)return;try{if(statsWs?.readyState===WebSocket.OPEN)statsWs.send(JSON.stringify({forget:String(subscriptionId),req_id:++statsReqId}));}catch{}delete algoStatsQuoteSubscriptions[String(subscriptionId)];}
@@ -2968,6 +2968,7 @@ function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
   if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning||!statsWs||statsWs.readyState!==WebSocket.OPEN||algoStatsWatchTimer)return;
   // Respect Deriv's advertised simultaneous proposal-subscription cap. Pending
   // requests count as occupied slots until their response is classified.
+  if(Date.now()<algoStatsCapacityBlockedUntil)return;
   if(!algoStatsCanOpenSlot())return;
   // Pace proposal subscriptions conservatively. Failed streams are retried
   // independently and never block unrelated instrument/rate subscriptions.
@@ -3041,7 +3042,11 @@ function connectAlgoStatsSocket(){
       algoLog((subscriptionCap?"Deriv Stats subscription capacity reached":rateLimited?"Deriv rejected Stats request":"Deriv Stats request failed")+" · "+meta.symbol+" "+Math.round(meta.rate*100)+"% · "+error,meta.rate);
       if(subscriptionCap){
         const key=nativeStatsKey(meta.symbol,meta.rate);
-        if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.push({...meta,subscriptionId:null,retryCount:(Number(meta.retryCount)||0)+1});
+        if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.unshift({...meta,subscriptionId:null,retryCount:(Number(meta.retryCount)||0)+1});
+        algoStatsCapacityBlockedUntil=Date.now()+30000;
+        if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
+        if(algoStatsCapacityTimer)clearTimeout(algoStatsCapacityTimer);
+        algoStatsCapacityTimer=setTimeout(()=>{algoStatsCapacityTimer=null;algoStatsCapacityBlockedUntil=0;pumpAlgoStatsWatchQueue();},30000);
         return;
       }
       if(rateLimited)algoStatsQueueIntervalMs=Math.min(8000,Math.max(2000,algoStatsQueueIntervalMs*2));
@@ -3124,6 +3129,8 @@ function startAlgoStatsWatch(){
 function stopAlgoStatsWatch(keepSocket=false){
   algoStatsWatchActive=false;algoStatsWatchGeneration++;
   if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
+  if(algoStatsCapacityTimer){clearTimeout(algoStatsCapacityTimer);algoStatsCapacityTimer=null;}
+  algoStatsCapacityBlockedUntil=0;
   if(algoStatsWatchdogTimer){clearInterval(algoStatsWatchdogTimer);algoStatsWatchdogTimer=null;}
   Object.keys(algoStatsRetryTimers).forEach(key=>{clearTimeout(algoStatsRetryTimers[key]);delete algoStatsRetryTimers[key];});
   algoStatsWatchQueue=[];
