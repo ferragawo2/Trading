@@ -1601,7 +1601,9 @@ let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=nu
 // Keep the Deriv native Stats subscription queue paced, but isolate failures
 // to the affected instrument/growth-rate stream. A single rejected proposal
 // must never pause every other tracker.
-const algoStatsQueueIntervalMs=1000;
+// Deriv's documented WebSocket proposal budget averages 4 requests/second per hour.
+// Keep this queue at 3/second to reserve capacity for trade quotes, buys, sells and contract updates.
+const algoStatsQueueIntervalMs=333;
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={},algoStatsRetryTimers={},algoStatsLastAttemptAt={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
@@ -2946,7 +2948,7 @@ function startAlgoStatsWatch(){
   const generation=++algoStatsWatchGeneration,symbols=algoScopeSymbols();
   // Watch all five native Deriv accumulator growth-rate Stats for every selected instrument.
   const rates=[0.01,0.02,0.03,0.04,0.05];
-  algoStatsWatchQueue=symbols.flatMap(symbol=>rates.map(rate=>({symbol,rate,generation,retryCount:0})));
+  algoStatsWatchQueue=window.DerivAccumulatorAlgoEngine.buildStatsWatchQueue(symbols,rates,generation);
   pumpAlgoStatsWatchQueue(generation);
   // Check each instrument/rate independently. Never tear down every healthy stream
   // on a timer: only retry a stream that has stopped delivering Deriv Stats.
