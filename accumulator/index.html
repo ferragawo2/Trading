@@ -1588,7 +1588,7 @@ const $ = id => document.getElementById(id);
 const PUBLIC_WS = "wss://api.derivws.com/trading/v1/options/ws/public";
 const OAUTH_API = "https://ferragawo-accumulator-oauth-api.onrender.com";
 let ws=null, reqId=0, reconnectTimer=null, pingTimer=null, reconnectDelay=1500, manualClose=false;
-let statsWs=null,statsReqId=500000,statsReconnectTimer=null,statsPingTimer=null,statsReconnectDelay=1500,statsManualClose=false;
+const statsSockets=Object.create(null);let statsReqId=500000,statsManualClose=false;
 let derivAccounts=[], tradingSocket=null, tradingReqId=10000, tradingPending={}, activeTradeAccount=null, currentTradeProposal=null, activeContractId=null, tradeBalance=null, tradeBalanceUpdatedAt=0, latestTradeQuoteReqId=null, latestTradeQuoteContext=null, tradeQuoteDebounce=null, tpCloseRequested=false;
 const ALGO_CONTRACTS_STORAGE_KEY="deriv_accumulator_algo_contracts_v1", ALGO_PENDING_STORAGE_KEY="deriv_accumulator_algo_pending_v1", ALGO_QUOTE_MAX_AGE_MS=6000;
 let algoRunning=false,algoConfig=null,algoScopeMode="selected",algoTrackers=new Map(),algoPendingStake=0,algoEvents=[],algoBalanceRefreshTimer=null,algoBalanceRefreshRequestId=null,algoBalanceRefreshRequestedAt=0,algoMoneyManagement=null;
@@ -1649,18 +1649,31 @@ function noteProposalSuccess(){
 
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={},algoStatsRetryTimers={},algoStatsLastAttemptAt={};
 let algoStatsSubscriptionLimit=Infinity,algoStatsSubscriptionReserve=2,algoStatsCapacityBlockedUntil=0,algoStatsCapacityTimer=null,algoStatsRotationTimer=null;
+function getAlgoStatsSocketState(symbol){
+  const key=String(symbol||"");
+  if(!key)return null;
+  if(!statsSockets[key])statsSockets[key]={symbol:key,socket:null,reconnectTimer:null,pingTimer:null,reconnectDelay:1500,manualClose:false};
+  return statsSockets[key];
+}
+function getAlgoStatsSocket(symbol){return getAlgoStatsSocketState(symbol)?.socket||null;}
+function algoStatsSocketIsOpen(symbol){return getAlgoStatsSocket(symbol)?.readyState===WebSocket.OPEN;}
 function algoStatsActiveSlotCount(){return Object.keys(algoStatsQuoteSubscriptions).length+Object.keys(algoStatsQuoteRequests).length;}
 function algoStatsSlotLimit(){return Math.max(1,algoStatsSubscriptionLimit-algoStatsSubscriptionReserve);}
 function algoStatsCanOpenSlot(){return algoStatsActiveSlotCount()<algoStatsSlotLimit();}
+function forgetAlgoStatsSubscription(subscriptionId,fallbackSocket=null){
+  if(!subscriptionId)return;
+  const id=String(subscriptionId),meta=algoStatsQuoteSubscriptions[id],socket=meta?.socket||fallbackSocket;
+  try{if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({forget:id,req_id:++statsReqId}));}catch{}
+  delete algoStatsQuoteSubscriptions[id];
+}
 function rotateAlgoStatsSubscription(){
-  if(!algoStatsWatchActive||!algoRunning||!statsWs||statsWs.readyState!==WebSocket.OPEN||!algoStatsWatchQueue.length)return;
+  if(!algoStatsWatchActive||!algoRunning||!algoStatsWatchQueue.length)return;
   const active=Object.entries(algoStatsQuoteSubscriptions).sort((a,b)=>Number(a[1].sentAt||0)-Number(b[1].sentAt||0));
   if(!active.length)return;
   const [subscriptionId,meta]=active[0];
-  delete algoStatsQuoteSubscriptions[subscriptionId];
-  try{statsWs.send(JSON.stringify({forget:subscriptionId,req_id:++statsReqId}));}catch{}
+  forgetAlgoStatsSubscription(subscriptionId);
   const key=nativeStatsKey(meta.symbol,meta.rate);
-  if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key)&&!Object.values(algoStatsQuoteRequests).some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.push({...meta,subscriptionId:null});
+  if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key)&&!Object.values(algoStatsQuoteRequests).some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.push({...meta,socket:null,subscriptionId:null});
   pumpAlgoStatsWatchQueue();
 }
 function scheduleAlgoStatsRotation(){
@@ -1669,7 +1682,6 @@ function scheduleAlgoStatsRotation(){
     if(algoStatsWatchActive&&algoStatsWatchQueue.length&&algoStatsActiveSlotCount()>=algoStatsSlotLimit())rotateAlgoStatsSubscription();
   },10000);
 }
-function forgetAlgoStatsSubscription(subscriptionId){if(!subscriptionId)return;try{if(statsWs?.readyState===WebSocket.OPEN)statsWs.send(JSON.stringify({forget:String(subscriptionId),req_id:++statsReqId}));}catch{}delete algoStatsQuoteSubscriptions[String(subscriptionId)];}
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
 let algoMarketWatchShowAll=false;
@@ -2983,22 +2995,29 @@ function scheduleAlgoDashboardRender(){
   algoDashboardRenderTimer=setTimeout(()=>{algoDashboardRenderTimer=null;renderAlgoDashboard();},350);
 }
 function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
-  if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning||!statsWs||statsWs.readyState!==WebSocket.OPEN||algoStatsWatchTimer)return;
-  // Respect Deriv's advertised simultaneous proposal-subscription cap. Pending
-  // requests count as occupied slots until their response is classified.
+  if(!algoStatsWatchActive||generation!==algoStatsWatchGeneration||!algoRunning||algoStatsWatchTimer)return;
   if(Date.now()<algoStatsCapacityBlockedUntil)return;
   if(!algoStatsCanOpenSlot())return;
-  // Pace proposal subscriptions conservatively. Failed streams are retried
-  // independently and never block unrelated instrument/rate subscriptions.
-  const job=algoStatsWatchQueue.shift();if(!job)return;
+  // One global queue serves all 27 sockets. Find the first queued instrument
+  // whose own endpoint is OPEN so a reconnecting symbol cannot block others.
+  const queueIndex=algoStatsWatchQueue.findIndex(job=>algoStatsSocketIsOpen(job.symbol));
+  if(queueIndex<0)return;
+  const job=algoStatsWatchQueue.splice(queueIndex,1)[0];
+  const socket=getAlgoStatsSocket(job.symbol);
   const key=nativeStatsKey(job.symbol,job.rate);
+  if(!socket||socket.readyState!==WebSocket.OPEN){
+    algoStatsWatchQueue.unshift(job);
+    return;
+  }
+  const requestId=++statsReqId;
+  const meta={...job,socket,requestId:String(requestId),sentAt:Date.now(),lastResponseAt:0,lastStatsAt:0,missingStatsLogged:false};
+  algoStatsQuoteRequests[String(requestId)]=meta;
   try{
-    const requestId=++statsReqId;statsWs.send(JSON.stringify({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1,req_id:requestId}));
-    const meta={...job,requestId:String(requestId),sentAt:Date.now(),lastResponseAt:0,lastStatsAt:0,missingStatsLogged:false};
-    algoStatsQuoteRequests[String(requestId)]=meta;
+    socket.send(JSON.stringify({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1,req_id:requestId}));
     algoStatsLastAttemptAt[key]=Date.now();
   }catch(error){
-    scheduleAlgoStatsRetry(job,error.message||"WebSocket send failed",1000);
+    delete algoStatsQuoteRequests[String(requestId)];
+    scheduleAlgoStatsRetry(meta,error.message||"WebSocket send failed",1000);
   }
   if(algoStatsWatchQueue.length)algoStatsWatchTimer=setTimeout(()=>{
     algoStatsWatchTimer=null;pumpAlgoStatsWatchQueue(generation);
@@ -3007,64 +3026,77 @@ function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
 function scheduleAlgoStatsRetry(meta,reason,delayOverride){
   if(!meta||!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration)return;
   const key=nativeStatsKey(meta.symbol,meta.rate),attempts=Math.max(0,Number(meta.retryCount)||0);
-  // Keep each instrument/rate recoverable for the whole Algo session. A fixed
-  // retry ceiling permanently strands trackers on WAITING after transient API
-  // errors or a temporary Deriv stream interruption.
   const retryCount=attempts+1;
-  if(meta.subscriptionId)forgetAlgoStatsSubscription(meta.subscriptionId);
+  if(meta.subscriptionId)forgetAlgoStatsSubscription(meta.subscriptionId,meta.socket);
   if(algoStatsRetryTimers[key])clearTimeout(algoStatsRetryTimers[key]);
   const delay=Number.isFinite(delayOverride)?delayOverride:Math.min(30000,1000*Math.pow(2,Math.min(attempts,5)));
   algoStatsRetryTimers[key]=setTimeout(()=>{
     delete algoStatsRetryTimers[key];
-    if(!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration||!statsWs||statsWs.readyState!==WebSocket.OPEN)return;
+    if(!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration)return;
     const alreadyQueued=algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key);
     const alreadyRequested=Object.values(algoStatsQuoteRequests).some(item=>nativeStatsKey(item.symbol,item.rate)===key);
     const alreadySubscribed=Object.values(algoStatsQuoteSubscriptions).some(item=>nativeStatsKey(item.symbol,item.rate)===key);
-    if(!alreadyQueued&&!alreadyRequested&&!alreadySubscribed)algoStatsWatchQueue.push({...meta,retryCount,subscriptionId:null});
+    if(!alreadyQueued&&!alreadyRequested&&!alreadySubscribed)algoStatsWatchQueue.push({...meta,socket:null,retryCount,subscriptionId:null});
     pumpAlgoStatsWatchQueue(meta.generation);
   },delay);
 }
-function connectAlgoStatsSocket(){
-  if(!algoStatsWatchActive||statsWs&&[WebSocket.CONNECTING,WebSocket.OPEN].includes(statsWs.readyState))return;
-  statsManualClose=false;
-  try{statsWs=new WebSocket(PUBLIC_WS);}catch(error){algoLog("Could not open dedicated Deriv Stats connection: "+error.message);scheduleAlgoStatsReconnect();return;}
-  const socket=statsWs;
+function connectAlgoStatsSocket(symbol){
+  if(!algoStatsWatchActive)return;
+  const state=getAlgoStatsSocketState(symbol);
+  if(!state)return;
+  if(state.socket&&[WebSocket.CONNECTING,WebSocket.OPEN].includes(state.socket.readyState))return;
+  state.manualClose=false;
+  let socket;
+  try{socket=new WebSocket(PUBLIC_WS);state.socket=socket;}
+  catch(error){algoLog("Could not open dedicated Deriv Stats connection for "+symbol+": "+error.message);scheduleAlgoStatsReconnect(symbol);return;}
   socket.onopen=()=>{
-    if(statsWs!==socket)return;
-    statsReconnectDelay=1500;
-    algoLog("Dedicated Deriv Stats connection established · Accumulator statistics subscriptions only.");
-    statsPingTimer=setInterval(()=>{if(statsWs===socket&&socket.readyState===WebSocket.OPEN){try{socket.send(JSON.stringify({ping:1,req_id:++statsReqId}));}catch{}}},25000);
-    socket.send(JSON.stringify({website_status:1,req_id:++statsReqId}));
+    if(state.socket!==socket)return;
+    state.reconnectDelay=1500;
+    algoLog("Dedicated Deriv Stats endpoint connected · "+symbol+" · native Accumulator Stats only.");
+    state.pingTimer=setInterval(()=>{
+      if(state.socket===socket&&socket.readyState===WebSocket.OPEN){try{socket.send(JSON.stringify({ping:1,req_id:++statsReqId}));}catch{}}
+    },25000);
+    try{socket.send(JSON.stringify({website_status:1,req_id:++statsReqId}));}catch{}
     pumpAlgoStatsWatchQueue();
   };
   socket.onmessage=event=>{
-    if(statsWs!==socket)return;
+    if(state.socket!==socket)return;
     let message;try{message=JSON.parse(event.data);}catch{return;}
     if(message.msg_type==="website_status"&&message.website_status){
       const limits=message.website_status.api_call_limits||{};
       const advertised=Number(limits.max_proposal_subscription);
       if(Number.isFinite(advertised)&&advertised>0){
-        algoStatsSubscriptionLimit=advertised;
-        algoLog("Deriv Stats connection capacity · "+advertised+" simultaneous proposal subscriptions; reserving "+algoStatsSubscriptionReserve+" slots for other app activity.");
-        pumpAlgoStatsWatchQueue();
+        const previous=algoStatsSubscriptionLimit;
+        // The Deriv limit is account/API-wide, not multiplied by the number of
+        // WebSockets. Use the most conservative advertised value observed.
+        algoStatsSubscriptionLimit=Math.min(algoStatsSubscriptionLimit,advertised);
+        if(previous!==algoStatsSubscriptionLimit){
+          algoLog("Shared Deriv Stats capacity · "+algoStatsSubscriptionLimit+" simultaneous proposal subscriptions across all instrument endpoints; reserving "+algoStatsSubscriptionReserve+" slots.");
+          pumpAlgoStatsWatchQueue();
+        }
       }
       return;
     }
     if(message.error){
-      const meta=algoStatsQuoteRequests[String(message.req_id)];
-      if(!meta)return;
-      delete algoStatsQuoteRequests[String(message.req_id)];
+      const requestKey=String(message.req_id??""),meta=algoStatsQuoteRequests[requestKey];
+      if(!meta||meta.socket!==socket||meta.symbol!==state.symbol)return;
+      delete algoStatsQuoteRequests[requestKey];
       const error=message.error.message||message.error.code||"Unknown Deriv Stats error";
-      const rateLimited=/rate.?limit|too many requests|subscription limit exceeded/i.test(String(message.error.code||"")+" "+String(error));
-      const subscriptionCap=/subscription limit exceeded|max.*proposal.*subscription/i.test(String(message.error.code||"")+" "+String(error));
+      const detail=String(message.error.code||"")+" "+String(error);
+      const rateLimited=/rate.?limit|too many requests|subscription limit exceeded/i.test(detail);
+      const subscriptionCap=/subscription limit exceeded|max.*proposal.*subscription/i.test(detail);
       algoLog((subscriptionCap?"Deriv Stats subscription capacity reached":rateLimited?"Deriv rejected Stats request":"Deriv Stats request failed")+" · "+meta.symbol+" "+Math.round(meta.rate*100)+"% · "+error,meta.rate);
       if(subscriptionCap){
         const key=nativeStatsKey(meta.symbol,meta.rate);
-        if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.unshift({...meta,subscriptionId:null,retryCount:(Number(meta.retryCount)||0)+1});
-        algoStatsCapacityBlockedUntil=Date.now()+30000;
+        if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.unshift({...meta,socket:null,subscriptionId:null,retryCount:(Number(meta.retryCount)||0)+1});
+        algoStatsCapacityBlockedUntil=Date.now()+1500;
         if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
         if(algoStatsCapacityTimer)clearTimeout(algoStatsCapacityTimer);
-        algoStatsCapacityTimer=setTimeout(()=>{algoStatsCapacityTimer=null;algoStatsCapacityBlockedUntil=0;rotateAlgoStatsSubscription();pumpAlgoStatsWatchQueue();},1500);
+        algoStatsCapacityTimer=setTimeout(()=>{
+          algoStatsCapacityTimer=null;algoStatsCapacityBlockedUntil=0;
+          if(algoStatsActiveSlotCount()>=algoStatsSlotLimit())rotateAlgoStatsSubscription();
+          pumpAlgoStatsWatchQueue();
+        },1500);
         return;
       }
       if(rateLimited)algoStatsQueueIntervalMs=Math.min(8000,Math.max(2000,algoStatsQueueIntervalMs*2));
@@ -3074,62 +3106,71 @@ function connectAlgoStatsSocket(){
     if(message.msg_type==="proposal"&&message.proposal){
       const requestKey=String(message.req_id??"");
       const subscriptionId=message.subscription?.id?String(message.subscription.id):"";
-      // Deriv sends the first proposal with req_id, then subsequent live
-      // updates by subscription.id. Resolve both or valid updates get
-      // misclassified as orphaned and immediately forgotten.
-      const meta=algoStatsQuoteRequests[requestKey]||
-        (subscriptionId?algoStatsQuoteSubscriptions[subscriptionId]:null);
-      if(!meta&&subscriptionId){forgetAlgoStatsSubscription(subscriptionId);return;}
+      const requestMeta=algoStatsQuoteRequests[requestKey];
+      const subscriptionMeta=subscriptionId?algoStatsQuoteSubscriptions[subscriptionId]:null;
+      const meta=(requestMeta?.socket===socket?requestMeta:null)||(subscriptionMeta?.socket===socket?subscriptionMeta:null);
+      if(!meta&&subscriptionId){forgetAlgoStatsSubscription(subscriptionId,socket);return;}
       if(meta&&subscriptionId){
-        meta.subscriptionId=subscriptionId;
+        meta.subscriptionId=subscriptionId;meta.socket=socket;
         algoStatsQuoteSubscriptions[subscriptionId]=meta;
         if(requestKey)delete algoStatsQuoteRequests[requestKey];
       }
       if(meta)handleAlgoStatsProposal(message);
     }
   };
-  socket.onerror=()=>{if(statsWs===socket)algoLog("Dedicated Deriv Stats connection transport error; reconnecting.");};
+  socket.onerror=()=>{
+    if(state.socket===socket)algoLog("Dedicated Stats endpoint transport error · "+symbol+" · reconnecting.");
+  };
   socket.onclose=()=>{
-    if(statsWs!==socket)return;
-    clearInterval(statsPingTimer);statsPingTimer=null;statsWs=null;
+    if(state.socket!==socket)return;
+    clearInterval(state.pingTimer);state.pingTimer=null;state.socket=null;
     const disconnectedStreams=new Map();
     Object.keys(algoStatsQuoteRequests).forEach(id=>{
-      const meta=algoStatsQuoteRequests[id];delete algoStatsQuoteRequests[id];
-      if(meta)disconnectedStreams.set(nativeStatsKey(meta.symbol,meta.rate),meta);
+      const meta=algoStatsQuoteRequests[id];
+      if(meta?.socket!==socket)return;
+      delete algoStatsQuoteRequests[id];
+      disconnectedStreams.set(nativeStatsKey(meta.symbol,meta.rate),meta);
     });
     Object.keys(algoStatsQuoteSubscriptions).forEach(id=>{
-      const meta=algoStatsQuoteSubscriptions[id];delete algoStatsQuoteSubscriptions[id];
-      if(meta)disconnectedStreams.set(nativeStatsKey(meta.symbol,meta.rate),{...meta,subscriptionId:null});
+      const meta=algoStatsQuoteSubscriptions[id];
+      if(meta?.socket!==socket)return;
+      delete algoStatsQuoteSubscriptions[id];
+      disconnectedStreams.set(nativeStatsKey(meta.symbol,meta.rate),{...meta,socket:null,subscriptionId:null});
     });
-    disconnectedStreams.forEach(meta=>scheduleAlgoStatsRetry(meta,"dedicated Stats connection closed",1500));
-    if(algoStatsWatchActive&&!statsManualClose)scheduleAlgoStatsReconnect();
+    disconnectedStreams.forEach(meta=>scheduleAlgoStatsRetry(meta,"dedicated Stats endpoint closed",1500));
+    if(algoStatsWatchActive&&!state.manualClose)scheduleAlgoStatsReconnect(symbol);
   };
 }
-function scheduleAlgoStatsReconnect(){
-  if(!algoStatsWatchActive||statsManualClose||statsReconnectTimer)return;
-  const delay=statsReconnectDelay;statsReconnectDelay=Math.min(20000,statsReconnectDelay*2);
-  statsReconnectTimer=setTimeout(()=>{statsReconnectTimer=null;connectAlgoStatsSocket();},delay);
+function scheduleAlgoStatsReconnect(symbol){
+  const state=getAlgoStatsSocketState(symbol);
+  if(!state||!algoStatsWatchActive||state.manualClose||state.reconnectTimer)return;
+  const delay=state.reconnectDelay;state.reconnectDelay=Math.min(20000,state.reconnectDelay*2);
+  state.reconnectTimer=setTimeout(()=>{
+    state.reconnectTimer=null;
+    if(algoStatsWatchActive)connectAlgoStatsSocket(symbol);
+  },delay);
 }
 function startAlgoStatsWatch(){
   if(!algoRunning||!algoConfig)return false;
   stopAlgoStatsWatch(true);algoStatsWatchActive=true;
-  const generation=++algoStatsWatchGeneration,symbols=algoScopeSymbols();
-  // Watch all five native Deriv accumulator growth-rate Stats for every selected instrument.
+  const generation=++algoStatsWatchGeneration,symbols=[...new Set(algoScopeSymbols().map(String).filter(Boolean))];
   const rates=[0.01,0.02,0.03,0.04,0.05];
+  algoStatsSubscriptionLimit=Infinity;algoStatsCapacityBlockedUntil=0;
   algoStatsWatchQueue=window.DerivAccumulatorAlgoEngine.buildStatsWatchQueue(symbols,rates,generation);
-  pumpAlgoStatsWatchQueue(generation);
-  // Check each instrument/rate independently. Never tear down every healthy stream
-  // on a timer: only retry a stream that has stopped delivering Deriv Stats.
+  // Establish a dedicated Stats WebSocket for every instrument. Each endpoint
+  // is permanently assigned to one underlying_symbol and cannot serve another.
+  symbols.forEach(symbol=>connectAlgoStatsSocket(symbol));
   algoStatsWatchdogTimer=setInterval(()=>{
-    if(!algoRunning||!algoStatsWatchActive||statsWs?.readyState!==WebSocket.OPEN)return;
+    if(!algoRunning||!algoStatsWatchActive)return;
     const now=Date.now();
     symbols.forEach(symbol=>rates.forEach(rate=>{
+      if(!algoStatsSocketIsOpen(symbol))return;
       const key=nativeStatsKey(symbol,rate);
       if(algoStatsRetryTimers[key])return;
       if(algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key))return;
-      const request=Object.values(algoStatsQuoteRequests).find(item=>nativeStatsKey(item.symbol,item.rate)===key);
+      const request=Object.values(algoStatsQuoteRequests).find(item=>item.symbol===symbol&&Number(item.rate)===Number(rate));
       if(request&&now-Number(request.sentAt||now)<25000)return;
-      const subscription=Object.values(algoStatsQuoteSubscriptions).find(item=>nativeStatsKey(item.symbol,item.rate)===key);
+      const subscription=Object.values(algoStatsQuoteSubscriptions).find(item=>item.symbol===symbol&&Number(item.rate)===Number(rate));
       if(subscription){
         const last=Number(subscription.lastStatsAt||subscription.sentAt||0);
         if(last&&now-last<25000)return;
@@ -3146,8 +3187,9 @@ function startAlgoStatsWatch(){
     }));
     pumpAlgoStatsWatchQueue(generation);
   },10000);
-  connectAlgoStatsSocket();scheduleAlgoStatsRotation();
-  algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s) with fair rotation across Deriv's available subscription capacity.");return true;
+  scheduleAlgoStatsRotation();
+  algoLog("Live Deriv native Stats starting · "+symbols.length+" dedicated instrument endpoint(s) × 5 growth rates · shared Deriv capacity and request pacing.");
+  return true;
 }
 function stopAlgoStatsWatch(keepSocket=false){
   algoStatsWatchActive=false;algoStatsWatchGeneration++;
@@ -3161,8 +3203,16 @@ function stopAlgoStatsWatch(keepSocket=false){
   Object.keys(algoStatsQuoteSubscriptions).forEach(subscriptionId=>forgetAlgoStatsSubscription(subscriptionId));
   if(algoStatsRotationTimer){clearInterval(algoStatsRotationTimer);algoStatsRotationTimer=null;}
   if(!keepSocket){
-    statsManualClose=true;clearTimeout(statsReconnectTimer);statsReconnectTimer=null;clearInterval(statsPingTimer);statsPingTimer=null;
-    if(statsWs){const socket=statsWs;statsWs=null;socket.onclose=null;try{socket.close(1000,"Stats stopped");}catch{}}
+    statsManualClose=true;
+    Object.values(statsSockets).forEach(state=>{
+      state.manualClose=true;
+      if(state.reconnectTimer){clearTimeout(state.reconnectTimer);state.reconnectTimer=null;}
+      if(state.pingTimer){clearInterval(state.pingTimer);state.pingTimer=null;}
+      if(state.socket){
+        const socket=state.socket;state.socket=null;socket.onclose=null;
+        try{socket.close(1000,"Stats stopped");}catch{}
+      }
+    });
   }
 }
 function handleAlgoStatsProposal(message){
@@ -3177,7 +3227,7 @@ function handleAlgoStatsProposal(message){
     if(requestKey)delete algoStatsQuoteRequests[requestKey];
   }
   if(!algoStatsWatchActive||meta.generation!==algoStatsWatchGeneration||!algoRunning||!isAlgoSymbolAllowed(meta.symbol)){
-    if(subscriptionId)forgetAlgoStatsSubscription(subscriptionId);
+    if(subscriptionId)forgetAlgoStatsSubscription(subscriptionId,meta.socket);
     if(requestKey)delete algoStatsQuoteRequests[requestKey];return true;
   }
   const proposal=message.proposal||{};
