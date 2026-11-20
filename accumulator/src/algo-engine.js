@@ -396,6 +396,24 @@
     }
   }
 
+  // Schedule a complete Watch All set fairly: every instrument receives the
+  // 1% stream before the 2% wave begins, rather than filling one market's five
+  // rows before later instruments receive their first update.
+  function buildStatsWatchQueue(symbols, rates = GROWTH_RATES, generation = 0) {
+    const uniqueSymbols = Array.from(new Set((Array.isArray(symbols) ? symbols : [])
+      .filter(symbol => typeof symbol === 'string' && symbol.trim() !== '')
+      .map(symbol => symbol.trim())));
+    const uniqueRates = Array.from(new Set((Array.isArray(rates) ? rates : [])
+      .map(Number)
+      .filter(rate => GROWTH_RATES.includes(rate))));
+    return uniqueRates.flatMap(rate => uniqueSymbols.map(symbol => ({
+      symbol,
+      rate,
+      generation,
+      retryCount: 0,
+    })));
+  }
+
   function createTracker(options) {
     return new Tracker(options);
   }
@@ -411,6 +429,7 @@
     Tracker,
     createTracker,
     createTrackerSet,
+    buildStatsWatchQueue,
     isQualifyingWatchStat,
     normalizeTicksStayedIn,
   });
