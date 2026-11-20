@@ -1604,6 +1604,48 @@ let algoStatsWatchActive=false,algoStatsWatchGeneration=0,algoStatsWatchTimer=nu
 // Deriv's documented WebSocket proposal budget averages 4 requests/second per hour.
 // Keep this queue at 3/second to reserve capacity for trade quotes, buys, sells and contract updates.
 const algoStatsQueueIntervalMs=333;
+// One proposal dispatcher for BOTH public and authenticated sockets. The public
+// stats watcher, selected-market barriers and execution quotes must not each
+// run their own independent request-rate schedule.
+const proposalDispatchQueue=[];
+let proposalDispatchTimer=null,proposalDispatchIntervalMs=500,proposalDispatchNextAt=0,proposalRateLimitStreak=0;
+function enqueueProposalDispatch(socket,payload,requestId,priority=1){
+  proposalDispatchQueue.push({socket,payload:{...payload,req_id:requestId},requestId,priority,queuedAt:Date.now()});
+  proposalDispatchQueue.sort((a,b)=>b.priority-a.priority||a.queuedAt-b.queuedAt);
+  pumpProposalDispatchQueue();
+}
+function pumpProposalDispatchQueue(){
+  if(proposalDispatchTimer||!proposalDispatchQueue.length)return;
+  const delay=Math.max(0,proposalDispatchNextAt-Date.now());
+  proposalDispatchTimer=setTimeout(()=>{
+    proposalDispatchTimer=null;
+    while(proposalDispatchQueue.length){
+      const job=proposalDispatchQueue.shift();
+      if(!job.socket||job.socket.readyState!==WebSocket.OPEN)continue;
+      try{
+        job.socket.send(JSON.stringify(job.payload));
+        proposalDispatchNextAt=Date.now()+proposalDispatchIntervalMs;
+        break;
+      }catch(error){
+        console.warn("Queued Deriv proposal could not be sent:",error);
+      }
+    }
+    if(proposalDispatchQueue.length)pumpProposalDispatchQueue();
+  },delay);
+}
+function noteProposalRateLimit(){
+  proposalRateLimitStreak=Math.min(6,proposalRateLimitStreak+1);
+  // Back off the shared proposal flow, not only one stream. Trade quotes are
+  // still prioritised in the queue; stats retries cannot flood the same budget.
+  proposalDispatchIntervalMs=Math.min(4000,500*Math.pow(2,Math.min(3,proposalRateLimitStreak)));
+  proposalDispatchNextAt=Math.max(proposalDispatchNextAt,Date.now()+proposalDispatchIntervalMs);
+  if(!proposalDispatchTimer)pumpProposalDispatchQueue();
+}
+function noteProposalSuccess(){
+  proposalRateLimitStreak=0;
+  proposalDispatchIntervalMs=Math.max(500,Math.min(proposalDispatchIntervalMs,750));
+}
+
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={},algoStatsRetryTimers={},algoStatsLastAttemptAt={};
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
@@ -1986,7 +2028,15 @@ const setStatus = (s,on=false) => {
   const watchLive=$("algoMarketWatchLive");
   if(watchLive){watchLive.classList.toggle("is-live",!!on);watchLive.querySelector("span").textContent=on?"LIVE":String(s||"OFFLINE").toUpperCase();}
 };
-const send = payload => { if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open"); payload.req_id=++reqId; ws.send(JSON.stringify(payload)); return reqId; };
+const send = (payload,priority="normal") => {
+  if(!ws || ws.readyState!==WebSocket.OPEN) throw new Error("Deriv public data connection is not open");
+  const id=++reqId;
+  if(payload&&payload.proposal===1){
+    const level=priority==="stats"?1:priority==="trade"?3:2;
+    enqueueProposalDispatch(ws,payload,id,level);
+  }else ws.send(JSON.stringify({...payload,req_id:id}));
+  return id;
+};
 function connect(){
   manualClose=true; clearTimeout(reconnectTimer); clearInterval(pingTimer);
   if(ws){const previous=ws;previous.onclose=null;previous.onerror=null;previous.onmessage=null;try{previous.close(1000,"Refreshing market feed")}catch{}}
@@ -2038,6 +2088,7 @@ connect();return;}
   ws.onopen=()=>{
     reconnectDelay=1500;setStatus("Connected · loading markets",true);log("Connected to Deriv public endpoint.");
     window.dispatchEvent(new CustomEvent("deriv-chart-connection",{detail:{connected:true}}));
+    try{send({website_status:1});}catch(e){log("Could not retrieve Deriv request limits: "+e.message)}
     try{send({active_symbols:"brief",contract_type:["ACCU"]});}catch(e){log(e.message)}
     try{send({trading_times:"today"});}catch(e){log("Chart trading-times request failed: "+e.message)}
     pingTimer=setInterval(()=>{try{send({ping:1})}catch{}},25000);
@@ -2073,6 +2124,7 @@ connect();return;}
         const rateLimited=/rate.?limit|too many requests/i.test(String(m.error.code||"")+" "+String(statsError));
         log("Stats stream rejected for "+failedAlgoStats.symbol+" "+Math.round(failedAlgoStats.rate*100)+"%: "+statsError);
         if(rateLimited){
+          noteProposalRateLimit();
           // Back off only this symbol/rate. The shared queue continues serving
           // every other instrument so one Deriv rejection cannot strand Watch All.
           algoLog("Deriv rate limit on "+failedAlgoStats.symbol+" "+Math.round(failedAlgoStats.rate*100)+"%; retrying this Stats stream independently while the other trackers continue.",failedAlgoStats.rate);
@@ -2080,6 +2132,21 @@ connect();return;}
         scheduleAlgoStatsRetry(failedAlgoStats,statsError);
       }
       const failedRate=barrierRequests[m.req_id];if(failedRate!==undefined&&barrierData[failedRate]){barrierData[failedRate].status="Deriv quote error: "+(m.error.message||m.error.code||"Unknown error");renderBarrierCards();}log("Deriv API error: "+(m.error.message||m.error.code||"Unknown error"));return;}
+    if(m.msg_type==="website_status"&&m.website_status){
+      const limits=m.website_status.api_call_limits||{};
+      const pricing=Number(limits.max_requests_pricing),subscriptions=Number(limits.max_proposal_subscription);
+      if(Number.isFinite(pricing)&&pricing>0){
+        const safeInterval=Math.ceil(60000/(pricing*0.7));
+        proposalDispatchIntervalMs=Math.max(proposalDispatchIntervalMs,Math.min(4000,safeInterval));
+      }
+      if(Number.isFinite(subscriptions)&&subscriptions>0){
+        algoLog("Deriv reports a maximum of "+subscriptions+" simultaneous proposal subscriptions"+(Number.isFinite(pricing)&&pricing>0?" · pricing request limit "+pricing:"")+".");
+      }else if(Number.isFinite(pricing)&&pricing>0){
+        algoLog("Deriv pricing request limit detected: "+pricing+" per minute; shared proposal scheduler adjusted.");
+      }
+      return;
+    }
+    if(m.msg_type==="proposal"&&m.proposal)noteProposalSuccess();
     if(m.msg_type==="active_symbols"&&Array.isArray(m.active_symbols)){handleSymbols(m.active_symbols);return;}
     if(m.msg_type==="trading_times"&&m.trading_times){handleChartTradingTimes(m.trading_times);return;}
     if(m.msg_type==="tick"&&m.tick){handleTick(m.tick,m);return;}
@@ -2733,7 +2800,12 @@ function renderTradeAccounts(){
 }
 function tradeSend(payload,kind){
   if(!tradingSocket||tradingSocket.readyState!==WebSocket.OPEN)throw new Error("Selected Deriv account is not connected.");
-  const id=++tradingReqId;tradingPending[id]=kind||"other";tradingSocket.send(JSON.stringify({...payload,req_id:id}));return id;
+  const id=++tradingReqId;tradingPending[id]=kind||"other";
+  if(payload&&payload.proposal===1){
+    const priority=(kind==="algo-proposal"||kind==="proposal")?3:2;
+    enqueueProposalDispatch(tradingSocket,payload,id,priority);
+  }else tradingSocket.send(JSON.stringify({...payload,req_id:id}));
+  return id;
 }
 async function connectTradeAccount(accountId){
   const account=derivAccounts.find(a=>a.account_id===accountId);if(!account)return;
@@ -2908,7 +2980,7 @@ function pumpAlgoStatsWatchQueue(generation=algoStatsWatchGeneration){
   const job=algoStatsWatchQueue.shift();if(!job)return;
   const key=nativeStatsKey(job.symbol,job.rate);
   try{
-    const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1});
+    const requestId=send({proposal:1,amount:1,basis:"stake",contract_type:"ACCU",currency:algoConfig.currency||"USD",growth_rate:job.rate,underlying_symbol:job.symbol,subscribe:1},"stats");
     const meta={...job,requestId:String(requestId),sentAt:Date.now(),lastResponseAt:0,lastStatsAt:0,missingStatsLogged:false};
     algoStatsQuoteRequests[String(requestId)]=meta;
     algoStatsLastAttemptAt[key]=Date.now();
