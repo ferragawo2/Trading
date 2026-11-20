@@ -1648,9 +1648,27 @@ function noteProposalSuccess(){
 }
 
 const algoStatsQuoteRequests={},algoStatsQuoteSubscriptions={},algoStatsRetryTimers={},algoStatsLastAttemptAt={};
-let algoStatsSubscriptionLimit=Infinity,algoStatsSubscriptionReserve=2,algoStatsCapacityBlockedUntil=0,algoStatsCapacityTimer=null;
+let algoStatsSubscriptionLimit=Infinity,algoStatsSubscriptionReserve=2,algoStatsCapacityBlockedUntil=0,algoStatsCapacityTimer=null,algoStatsRotationTimer=null;
 function algoStatsActiveSlotCount(){return Object.keys(algoStatsQuoteSubscriptions).length+Object.keys(algoStatsQuoteRequests).length;}
-function algoStatsCanOpenSlot(){return algoStatsActiveSlotCount()<Math.max(1,algoStatsSubscriptionLimit-algoStatsSubscriptionReserve);}
+function algoStatsSlotLimit(){return Math.max(1,algoStatsSubscriptionLimit-algoStatsSubscriptionReserve);}
+function algoStatsCanOpenSlot(){return algoStatsActiveSlotCount()<algoStatsSlotLimit();}
+function rotateAlgoStatsSubscription(){
+  if(!algoStatsWatchActive||!algoRunning||!statsWs||statsWs.readyState!==WebSocket.OPEN||!algoStatsWatchQueue.length)return;
+  const active=Object.entries(algoStatsQuoteSubscriptions).sort((a,b)=>Number(a[1].sentAt||0)-Number(b[1].sentAt||0));
+  if(!active.length)return;
+  const [subscriptionId,meta]=active[0];
+  delete algoStatsQuoteSubscriptions[subscriptionId];
+  try{statsWs.send(JSON.stringify({forget:subscriptionId,req_id:++statsReqId}));}catch{}
+  const key=nativeStatsKey(meta.symbol,meta.rate);
+  if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key)&&!Object.values(algoStatsQuoteRequests).some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.push({...meta,subscriptionId:null});
+  pumpAlgoStatsWatchQueue();
+}
+function scheduleAlgoStatsRotation(){
+  if(algoStatsRotationTimer)clearInterval(algoStatsRotationTimer);
+  algoStatsRotationTimer=setInterval(()=>{
+    if(algoStatsWatchActive&&algoStatsWatchQueue.length&&algoStatsActiveSlotCount()>=algoStatsSlotLimit())rotateAlgoStatsSubscription();
+  },10000);
+}
 function forgetAlgoStatsSubscription(subscriptionId){if(!subscriptionId)return;try{if(statsWs?.readyState===WebSocket.OPEN)statsWs.send(JSON.stringify({forget:String(subscriptionId),req_id:++statsReqId}));}catch{}delete algoStatsQuoteSubscriptions[String(subscriptionId)];}
 const algoQuoteRequests={},algoQuoteSubscriptions={},algoQuotes={},algoBuyRequests={},algoSellRequests={},algoContractRequests={},algoContractsById={},algoStatementRequests={},algoLateBuyRequestIds={},algoPendingOrders={},algoConfirmedStakeReservations={};
 let markets=[], marketBySymbol={}, selectedSymbol="", subscriptions={}, priceHistory={}, marketHistory24h={}, marketHistoryReqs={}, tickCounts={}, latestTicks={};
@@ -3046,7 +3064,7 @@ function connectAlgoStatsSocket(){
         algoStatsCapacityBlockedUntil=Date.now()+30000;
         if(algoStatsWatchTimer){clearTimeout(algoStatsWatchTimer);algoStatsWatchTimer=null;}
         if(algoStatsCapacityTimer)clearTimeout(algoStatsCapacityTimer);
-        algoStatsCapacityTimer=setTimeout(()=>{algoStatsCapacityTimer=null;algoStatsCapacityBlockedUntil=0;pumpAlgoStatsWatchQueue();},30000);
+        algoStatsCapacityTimer=setTimeout(()=>{algoStatsCapacityTimer=null;algoStatsCapacityBlockedUntil=0;rotateAlgoStatsSubscription();pumpAlgoStatsWatchQueue();},1500);
         return;
       }
       if(rateLimited)algoStatsQueueIntervalMs=Math.min(8000,Math.max(2000,algoStatsQueueIntervalMs*2));
@@ -3128,8 +3146,8 @@ function startAlgoStatsWatch(){
     }));
     pumpAlgoStatsWatchQueue(generation);
   },10000);
-  connectAlgoStatsSocket();
-  algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s) on a dedicated Stats-only connection.");return true;
+  connectAlgoStatsSocket();scheduleAlgoStatsRotation();
+  algoLog("Live Deriv Stats subscriptions starting for "+symbols.length+" instrument(s) × "+rates.length+" growth rate(s) with fair rotation across Deriv's available subscription capacity.");return true;
 }
 function stopAlgoStatsWatch(keepSocket=false){
   algoStatsWatchActive=false;algoStatsWatchGeneration++;
@@ -3141,6 +3159,7 @@ function stopAlgoStatsWatch(keepSocket=false){
   algoStatsWatchQueue=[];
   Object.keys(algoStatsQuoteRequests).forEach(requestId=>delete algoStatsQuoteRequests[requestId]);
   Object.keys(algoStatsQuoteSubscriptions).forEach(subscriptionId=>forgetAlgoStatsSubscription(subscriptionId));
+  if(algoStatsRotationTimer){clearInterval(algoStatsRotationTimer);algoStatsRotationTimer=null;}
   if(!keepSocket){
     statsManualClose=true;clearTimeout(statsReconnectTimer);statsReconnectTimer=null;clearInterval(statsPingTimer);statsPingTimer=null;
     if(statsWs){const socket=statsWs;statsWs=null;socket.onclose=null;try{socket.close(1000,"Stats stopped");}catch{}}
