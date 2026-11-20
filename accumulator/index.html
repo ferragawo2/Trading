@@ -2124,6 +2124,7 @@ connect();return;}
       const pricing=Number(limits.max_requests_pricing),subscriptions=Number(limits.max_proposal_subscription);
       if(Number.isFinite(pricing)&&pricing>0){
         const safeInterval=Math.ceil(60000/(pricing*0.7));
+        algoStatsQueueIntervalMs=Math.max(1000,Math.min(8000,safeInterval));
         proposalDispatchIntervalMs=Math.max(proposalDispatchIntervalMs,Math.min(4000,safeInterval));
       }
       if(Number.isFinite(subscriptions)&&subscriptions>0){
@@ -3041,10 +3042,16 @@ function connectAlgoStatsSocket(){
   socket.onclose=()=>{
     if(statsWs!==socket)return;
     clearInterval(statsPingTimer);statsPingTimer=null;statsWs=null;
+    const disconnectedStreams=new Map();
     Object.keys(algoStatsQuoteRequests).forEach(id=>{
       const meta=algoStatsQuoteRequests[id];delete algoStatsQuoteRequests[id];
-      if(meta)scheduleAlgoStatsRetry(meta,"dedicated Stats connection closed",1500);
+      if(meta)disconnectedStreams.set(nativeStatsKey(meta.symbol,meta.rate),meta);
     });
+    Object.keys(algoStatsQuoteSubscriptions).forEach(id=>{
+      const meta=algoStatsQuoteSubscriptions[id];delete algoStatsQuoteSubscriptions[id];
+      if(meta)disconnectedStreams.set(nativeStatsKey(meta.symbol,meta.rate),{...meta,subscriptionId:null});
+    });
+    disconnectedStreams.forEach(meta=>scheduleAlgoStatsRetry(meta,"dedicated Stats connection closed",1500));
     if(algoStatsWatchActive&&!statsManualClose)scheduleAlgoStatsReconnect();
   };
 }
