@@ -1657,21 +1657,23 @@ function getAlgoStatsSocketState(symbol){
 }
 function getAlgoStatsSocket(symbol){return getAlgoStatsSocketState(symbol)?.socket||null;}
 function algoStatsSocketIsOpen(symbol){return getAlgoStatsSocket(symbol)?.readyState===WebSocket.OPEN;}
+function algoStatsSubscriptionKey(symbol,subscriptionId){return String(symbol||'')+'|'+String(subscriptionId||'');}
 function algoStatsActiveSlotCount(){return Object.keys(algoStatsQuoteSubscriptions).length+Object.keys(algoStatsQuoteRequests).length;}
 function algoStatsSlotLimit(){return Math.max(1,algoStatsSubscriptionLimit-algoStatsSubscriptionReserve);}
 function algoStatsCanOpenSlot(){return algoStatsActiveSlotCount()<algoStatsSlotLimit();}
-function forgetAlgoStatsSubscription(subscriptionId,fallbackSocket=null){
+function forgetAlgoStatsSubscription(subscriptionId,fallbackSocket=null,fallbackSymbol=null){
   if(!subscriptionId)return;
-  const id=String(subscriptionId),meta=algoStatsQuoteSubscriptions[id],socket=meta?.socket||fallbackSocket;
+  const id=String(subscriptionId),meta=Object.values(algoStatsQuoteSubscriptions).find(item=>item.subscriptionId===id&&(!fallbackSymbol||item.symbol===fallbackSymbol)&&(!fallbackSocket||item.socket===fallbackSocket));
+  const symbol=meta?.symbol||fallbackSymbol||"",socket=meta?.socket||fallbackSocket;
   try{if(socket?.readyState===WebSocket.OPEN)socket.send(JSON.stringify({forget:id,req_id:++statsReqId}));}catch{}
-  delete algoStatsQuoteSubscriptions[id];
+  if(symbol)delete algoStatsQuoteSubscriptions[algoStatsSubscriptionKey(symbol,id)];
 }
 function rotateAlgoStatsSubscription(){
   if(!algoStatsWatchActive||!algoRunning||!algoStatsWatchQueue.length)return;
   const active=Object.entries(algoStatsQuoteSubscriptions).sort((a,b)=>Number(a[1].sentAt||0)-Number(b[1].sentAt||0));
   if(!active.length)return;
   const [subscriptionId,meta]=active[0];
-  forgetAlgoStatsSubscription(subscriptionId);
+  forgetAlgoStatsSubscription(meta.subscriptionId,meta.socket,meta.symbol);
   const key=nativeStatsKey(meta.symbol,meta.rate);
   if(!algoStatsWatchQueue.some(job=>nativeStatsKey(job.symbol,job.rate)===key)&&!Object.values(algoStatsQuoteRequests).some(job=>nativeStatsKey(job.symbol,job.rate)===key))algoStatsWatchQueue.push({...meta,socket:null,subscriptionId:null});
   pumpAlgoStatsWatchQueue();
@@ -3027,7 +3029,7 @@ function scheduleAlgoStatsRetry(meta,reason,delayOverride){
   if(!meta||!algoStatsWatchActive||!algoRunning||meta.generation!==algoStatsWatchGeneration)return;
   const key=nativeStatsKey(meta.symbol,meta.rate),attempts=Math.max(0,Number(meta.retryCount)||0);
   const retryCount=attempts+1;
-  if(meta.subscriptionId)forgetAlgoStatsSubscription(meta.subscriptionId,meta.socket);
+  if(meta.subscriptionId)forgetAlgoStatsSubscription(meta.subscriptionId,meta.socket,meta.symbol);
   if(algoStatsRetryTimers[key])clearTimeout(algoStatsRetryTimers[key]);
   const delay=Number.isFinite(delayOverride)?delayOverride:Math.min(30000,1000*Math.pow(2,Math.min(attempts,5)));
   algoStatsRetryTimers[key]=setTimeout(()=>{
@@ -3107,15 +3109,15 @@ function connectAlgoStatsSocket(symbol){
       const requestKey=String(message.req_id??"");
       const subscriptionId=message.subscription?.id?String(message.subscription.id):"";
       const requestMeta=algoStatsQuoteRequests[requestKey];
-      const subscriptionMeta=subscriptionId?algoStatsQuoteSubscriptions[subscriptionId]:null;
+      const subscriptionMeta=subscriptionId?algoStatsQuoteSubscriptions[algoStatsSubscriptionKey(state.symbol,subscriptionId)]:null;
       const meta=(requestMeta?.socket===socket?requestMeta:null)||(subscriptionMeta?.socket===socket?subscriptionMeta:null);
-      if(!meta&&subscriptionId){forgetAlgoStatsSubscription(subscriptionId,socket);return;}
+      if(!meta&&subscriptionId){forgetAlgoStatsSubscription(subscriptionId,socket,state.symbol);return;}
       if(meta&&subscriptionId){
         meta.subscriptionId=subscriptionId;meta.socket=socket;
-        algoStatsQuoteSubscriptions[subscriptionId]=meta;
+        algoStatsQuoteSubscriptions[algoStatsSubscriptionKey(meta.symbol,subscriptionId)]=meta;
         if(requestKey)delete algoStatsQuoteRequests[requestKey];
       }
-      if(meta)handleAlgoStatsProposal(message);
+      if(meta)handleAlgoStatsProposal(message,meta);
     }
   };
   socket.onerror=()=>{
@@ -3200,7 +3202,7 @@ function stopAlgoStatsWatch(keepSocket=false){
   Object.keys(algoStatsRetryTimers).forEach(key=>{clearTimeout(algoStatsRetryTimers[key]);delete algoStatsRetryTimers[key];});
   algoStatsWatchQueue=[];
   Object.keys(algoStatsQuoteRequests).forEach(requestId=>delete algoStatsQuoteRequests[requestId]);
-  Object.keys(algoStatsQuoteSubscriptions).forEach(subscriptionId=>forgetAlgoStatsSubscription(subscriptionId));
+  Object.values(algoStatsQuoteSubscriptions).forEach(meta=>forgetAlgoStatsSubscription(meta.subscriptionId,meta.socket,meta.symbol));
   if(algoStatsRotationTimer){clearInterval(algoStatsRotationTimer);algoStatsRotationTimer=null;}
   if(!keepSocket){
     statsManualClose=true;
@@ -3215,19 +3217,19 @@ function stopAlgoStatsWatch(keepSocket=false){
     });
   }
 }
-function handleAlgoStatsProposal(message){
+function handleAlgoStatsProposal(message,resolvedMeta=null){
   const requestKey=String(message.req_id??"");
-  let meta=requestKey?algoStatsQuoteRequests[requestKey]:null;
+  let meta=resolvedMeta||(requestKey?algoStatsQuoteRequests[requestKey]:null);
   const subscriptionId=message.subscription?.id;
-  if(!meta&&subscriptionId)meta=algoStatsQuoteSubscriptions[String(subscriptionId)];
+  if(!meta&&subscriptionId)meta=Object.values(algoStatsQuoteSubscriptions).find(item=>item.subscriptionId===String(subscriptionId));
   if(!meta)return false;
   if(subscriptionId){
     meta.subscriptionId=String(subscriptionId);
-    algoStatsQuoteSubscriptions[String(subscriptionId)]=meta;
+    algoStatsQuoteSubscriptions[algoStatsSubscriptionKey(meta.symbol,subscriptionId)]=meta;
     if(requestKey)delete algoStatsQuoteRequests[requestKey];
   }
   if(!algoStatsWatchActive||meta.generation!==algoStatsWatchGeneration||!algoRunning||!isAlgoSymbolAllowed(meta.symbol)){
-    if(subscriptionId)forgetAlgoStatsSubscription(subscriptionId,meta.socket);
+    if(subscriptionId)forgetAlgoStatsSubscription(subscriptionId,meta.socket,meta.symbol);
     if(requestKey)delete algoStatsQuoteRequests[requestKey];return true;
   }
   const proposal=message.proposal||{};
